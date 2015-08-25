@@ -47,6 +47,12 @@ BEGIN
 	HSTRING_TYPE,					// First parameter type.
 	0,								// NOTE: 0 required to terminate list of parameter types.
 
+	"SCGetCameraTemperature\0",		// Function name.
+	F_UTIL | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	HSTRING_TYPE,					// First parameter type.
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
 
 	0,								// NOTE: 0 required to terminate the resource.
 END

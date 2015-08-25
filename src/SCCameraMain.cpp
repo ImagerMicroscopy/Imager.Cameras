@@ -137,6 +137,14 @@ struct SCGetCameraExposureTimeParams {
 typedef struct SCGetCameraExposureTimeParams SCGetCameraExposureTimeParams;
 #pragma pack() // Reset structure alignment.
 
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetCameraTemperatureParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetCameraTemperatureParams SCGetCameraTemperatureParams;
+#pragma pack() // Reset structure alignment.
+
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
@@ -391,6 +399,42 @@ int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
 	return err;
 }
 
+extern "C"
+int ExecuteSCGetCameraTemperature(SCGetCameraTemperatureParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	}
+	else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		double temperature = camPtr->getTemperature();
+		p->result = temperature;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
 static int
 RegisterSCListAvailableCameras(void)
 {
@@ -439,6 +483,8 @@ XOPIORecResult RegisterFunction(int funcIndex) {
 			return (XOPIORecResult)ExecuteSCGetCameraEMGain;
 		case 1:
 			return (XOPIORecResult)ExecuteSCGetCameraExposureTime;
+		case 2:
+			return (XOPIORecResult)ExecuteSCGetCameraTemperature;
 		default:
 			return (XOPIORecResult)0;
 	}
