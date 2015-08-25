@@ -167,11 +167,12 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\BaseCameraClass.cpp" />
+    <ClCompile Include="..\src\PhotometricsCamera.cpp" />
     <ClCompile Include="..\src\SCCameraMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\BaseCameraClass.h" />
+    <ClInclude Include="..\src\PhotometricsCamera.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

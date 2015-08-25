@@ -1,8 +1,7 @@
 
 #include <string>
 #include <vector>
-
-#include <Eigen/Dense>
+#include <cstdint>
 
 class BaseCameraClass {
 public:
@@ -11,13 +10,14 @@ public:
 
 	virtual std::string getIdentifierStr() const = 0;
 
-	virtual bool setExposureTime(const double exposureTime);
-	virtual bool setEMGain(const double emGain);
-	virtual bool setTemperature(const double temperature);
+	virtual bool setExposureTime(const double exposureTime) = 0;
+	virtual bool setEMGain(const double emGain) = 0;
+	virtual bool setTemperature(const double temperature) = 0;
 
-	virtual double getExposureTime() const;
-	virtual double getEMGain() const;
-	virtual double getTemperature() const;
+	virtual double getExposureTime() const = 0;
+	virtual double getEMGain() const = 0;
+	virtual double getTemperature() const = 0;
+	virtual std::pair<int, int> getSensorSize() const = 0;
 
-	virtual std::vector<Eigen::ArrayXXd> acquireImages(const int nImages);
+	virtual std::vector<uint16_t> acquireImages(const int nImages) = 0;
 };
