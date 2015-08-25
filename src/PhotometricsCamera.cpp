@@ -67,6 +67,39 @@ bool PhotometricsCamera::setTemperature(const double temperature) {
 	}
 }
 
+double PhotometricsCamera::getExposureTime() const {
+	return _requestedExposureTime;
+}
+
+double PhotometricsCamera::getEMGain() const {
+	int readoutPort;
+	int err = pl_get_param(_pvcamHandle, PARAM_READOUT_PORT, ATTR_CURRENT, &readoutPort);
+	if (!err) {
+		// handle me
+	}
+
+	if (readoutPort != READOUT_PORT_MULT_GAIN)
+		return 0.0;
+
+	uint16_t gain;
+	err = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_CURRENT, &gain);
+	if (!err) {
+		// handle me
+	}
+
+	return gain;
+}
+
+double PhotometricsCamera::getTemperature() const {
+	int16_t temperature;
+
+	int err = pl_get_param(_pvcamHandle, PARAM_TEMP, ATTR_CURRENT, &temperature);
+	if (err)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	return (static_cast<double>(temperature) / 100.0);
+}
+
 std::pair<int, int> PhotometricsCamera::getSensorSize() const {
 	int err;
 	int nRows, nCols;

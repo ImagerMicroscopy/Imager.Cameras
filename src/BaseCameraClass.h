@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <limits>
 
 class BaseCameraClass {
 public:

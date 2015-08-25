@@ -10,7 +10,10 @@ public:
 	bool setEMGain(const double emGain) override;
 	bool setTemperature(const double temperature) override;
 
-	std::pair<int, int> getSensorSize() const;
+	double getExposureTime() const override;
+	double getEMGain() const override;
+	double getTemperature() const override;
+	std::pair<int, int> getSensorSize() const override;
 
 	std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) override;
 
