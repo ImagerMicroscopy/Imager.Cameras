@@ -22,19 +22,19 @@ std::string PhotometricsCamera::getIdentifierStr() const {
 
 bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 	// ensure camera is set to accept exposure time in milliseconds
-	int exposureTimeResolution = EXP_RES_ONE_MILLISEC;
+	std::uint16_t exposureTimeResolution = EXP_RES_ONE_MILLISEC;
 	int err = pl_set_param(_pvcamHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
 	if (err == 0) {
-		return false;
+		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
 
 	double minExposureTime;
 	err = pl_get_param(_pvcamHandle, PARAM_EXP_MIN_TIME, ATTR_CURRENT, &minExposureTime);
 	if (err == 0) {
-		return false;
+		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
 
-	if (exposureTime < minExposureTime) {
+	if ((exposureTime < minExposureTime) || (exposureTime > 10.0)) {
 		return false;
 	}
 
@@ -45,32 +45,30 @@ bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 bool PhotometricsCamera::setEMGain(const double emGain) {
 	int result;
 	if (emGain > 0) {
-		int multFactor = emGain;
+		std::uint16_t multFactor = emGain;
 		int readoutPort = READOUT_PORT_MULT_GAIN;
 		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
 		if (!result)
-			return false;
+			throw std::runtime_error(_getPVCAMErrorMessage());
 		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
 		if (!result)
-			return false;
+			throw std::runtime_error(_getPVCAMErrorMessage());
 	} else {
 		int readoutPort = READOUT_PORT_NORMAL;
 		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
 		if (!result)
-			return false;
+			throw std::runtime_error(_getPVCAMErrorMessage());
 	}
 	return true;
 }
 
 bool PhotometricsCamera::setTemperature(const double temperature) {
-	int scaledSetPoint = temperature * 1000.0;
+	std::int16_t scaledSetPoint = temperature * 1000.0;
 	int err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
 	if (err == 0) {
-		return false;
+		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
-	else {
-		return true;
-	}
+	return true;
 }
 
 double PhotometricsCamera::getExposureTime() const {
