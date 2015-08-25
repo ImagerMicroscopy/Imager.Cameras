@@ -33,6 +33,25 @@ BEGIN
 	"\0"							// NOTE: NULL required to terminate the resource.
 END
 
+1100 XOPF							// Describes functions added by XOP to IGOR.
+BEGIN
+	"SCGetCameraEMGain\0",					// Function name.
+	F_UTIL | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	HSTRING_TYPE,					// First parameter type.
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"SCGetCameraExposureTime\0",	// Function name.
+	F_UTIL | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	HSTRING_TYPE,					// First parameter type.
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+
+	0,								// NOTE: 0 required to terminate the resource.
+END
+
+
 1100 STR#
 BEGIN
 	"\0"	

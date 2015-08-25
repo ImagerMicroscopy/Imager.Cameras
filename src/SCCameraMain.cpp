@@ -121,6 +121,22 @@ typedef struct SCSetCameraSettingsRuntimeParams SCSetCameraSettingsRuntimeParams
 typedef struct SCSetCameraSettingsRuntimeParams* SCSetCameraSettingsRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetCameraEMGainParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetCameraEMGainParams SCGetCameraEMGainParams; 
+#pragma pack() // Reset structure alignment.
+
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetCameraExposureTimeParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetCameraExposureTimeParams SCGetCameraExposureTimeParams;
+#pragma pack() // Reset structure alignment.
+
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
@@ -304,6 +320,77 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 	return err;
 }
 
+extern "C"
+int ExecuteSCGetCameraEMGain(SCGetCameraEMGainParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	} else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		double emGain = camPtr->getEMGain();
+		p->result = emGain;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
+extern "C"
+int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	}
+	else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		double exposureTime = camPtr->getExposureTime();
+		p->result = exposureTime;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
 static int
 RegisterSCListAvailableCameras(void)
 {
@@ -346,6 +433,17 @@ RegisterSCSetCameraSettings(void)
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCSetCameraSettingsRuntimeParams), (void*)ExecuteSCSetCameraSettings, 0);
 }
 
+XOPIORecResult RegisterFunction(int funcIndex) {
+	switch (funcIndex) {
+		case 0:
+			return (XOPIORecResult)ExecuteSCGetCameraEMGain;
+		case 1:
+			return (XOPIORecResult)ExecuteSCGetCameraExposureTime;
+		default:
+			return (XOPIORecResult)0;
+	}
+}
+
 /*	XOPEntry()
 
 This is the entry point from the host application to the XOP for all
@@ -360,6 +458,9 @@ static void XOPEntry(void) {
 			break;
 		case CLEANUP:
 			StopCameraManager();
+			break;
+		case FUNCADDRS:
+			result = RegisterFunction(GetXOPItem(0));
 			break;
 	}
 	SetXOPResult(result);

@@ -23,6 +23,8 @@ public:
 	std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) override;
 
 private:
+	void _selectFastestReadoutPort(bool useEMGain);
+	void _validateExposureTime();
 	std::string _getPVCAMErrorMessage() const;
 
 	std::string _identifier;

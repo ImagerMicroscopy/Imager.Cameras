@@ -1,5 +1,8 @@
 
 #include "PhotometricsCamera.h"
+
+#include <algorithm>
+
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
 #include "XOPStandardHeaders.h"
@@ -13,6 +16,11 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	err = pl_cam_get_diags(_pvcamHandle);
 	if (!err)
 		throw std::runtime_error(_getPVCAMErrorMessage());
+
+	// default values
+
+	this->setExposureTime(50e-3);
+	this->setCoolerOnOff(false);
 }
 
 PhotometricsCamera::~PhotometricsCamera() {
@@ -27,38 +35,22 @@ bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 	// ensure camera is set to accept exposure time in milliseconds
 	std::uint16_t exposureTimeResolution = EXP_RES_ONE_MILLISEC;
 	int err = pl_set_param(_pvcamHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
-	if (err == 0) {
+	if (!err) {
 		throw std::runtime_error(_getPVCAMErrorMessage());
-	}
-
-	double minExposureTime;
-	err = pl_get_param(_pvcamHandle, PARAM_EXP_MIN_TIME, ATTR_CURRENT, &minExposureTime);
-	if (err == 0) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
-	}
-
-	if ((exposureTime < minExposureTime) || (exposureTime > 10.0)) {
-		return false;
 	}
 
 	_requestedExposureTime = exposureTime;
-	return true;
+	_validateExposureTime();
+	return (exposureTime == _requestedExposureTime);
 }
 
 bool PhotometricsCamera::setEMGain(const double emGain) {
 	int result;
+
+	_selectFastestReadoutPort(emGain != 0.0);
 	if (emGain > 0) {
 		std::uint16_t multFactor = emGain;
-		int readoutPort = READOUT_PORT_MULT_GAIN;
-		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
-		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
 		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
-		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
-	} else {
-		int readoutPort = READOUT_PORT_NORMAL;
-		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
 		if (!result)
 			throw std::runtime_error(_getPVCAMErrorMessage());
 	}
@@ -127,6 +119,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
 
+	// init exposure functionality
 	err = pl_exp_init_seq();
 	if (err == 0)
 		throw std::runtime_error(_getPVCAMErrorMessage());
@@ -173,6 +166,70 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	}
 
 	return images;
+}
+
+void PhotometricsCamera::_selectFastestReadoutPort(bool useEMGain) {
+	int result;
+	if (useEMGain) {
+		int readoutPort = READOUT_PORT_MULT_GAIN;
+		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
+		if (!result)
+			throw std::runtime_error(_getPVCAMErrorMessage());
+	} else {
+		int readoutPort = READOUT_PORT_NORMAL;
+		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
+		if (!result)
+			throw std::runtime_error(_getPVCAMErrorMessage());
+	}
+
+	std::int16_t nSpeedTableEntries;
+	result = pl_get_param(_pvcamHandle, PARAM_SPDTAB_INDEX, ATTR_MAX, &nSpeedTableEntries);
+	if (!result)
+		throw std::runtime_error(_getPVCAMErrorMessage());
+
+	std::int16_t fastestIndex = 0;
+	std::uint16_t pixelTime, shortestPixelTime = -1;
+	for (std::int16_t i = 0; i < nSpeedTableEntries; i++) {
+		result = pl_set_param(_pvcamHandle, PARAM_SPDTAB_INDEX, &i);
+		if (!result)
+			throw std::runtime_error(_getPVCAMErrorMessage());
+
+		std::int16_t bitDepth;
+		result = pl_get_param(_pvcamHandle, PARAM_BIT_DEPTH, ATTR_CURRENT, &bitDepth);
+		if (!result)
+			throw std::runtime_error(_getPVCAMErrorMessage());
+		if (bitDepth < 12)
+			continue;
+
+		result = pl_get_param(_pvcamHandle, PARAM_PIX_TIME, ATTR_CURRENT, &pixelTime);
+		if (!result)
+			throw std::runtime_error(_getPVCAMErrorMessage());
+
+		if (pixelTime < shortestPixelTime) {
+			shortestPixelTime = pixelTime;
+			fastestIndex = i;
+		}
+	}
+
+	result = pl_set_param(_pvcamHandle, PARAM_SPDTAB_INDEX, &fastestIndex);
+	if (!result)
+		throw std::runtime_error(_getPVCAMErrorMessage());
+}
+
+void PhotometricsCamera::_validateExposureTime() {
+	double minExposureTime;
+	int err = pl_get_param(_pvcamHandle, PARAM_EXP_MIN_TIME, ATTR_MIN, &minExposureTime);
+	if (!err) {
+		throw std::runtime_error(_getPVCAMErrorMessage());
+	}
+
+	// according to the PVCAM manual, the minimal exposure time should be reported in seconds,
+	// but I kept getting a value of 1.0. So now I'm thinking this value is in milliseconds instead
+	// (probably in units of PARAM_EXP_RES_INDEX).
+	minExposureTime /= 1.0e3;
+
+	_requestedExposureTime = std::max(_requestedExposureTime, minExposureTime);
+	_requestedExposureTime = std::min(_requestedExposureTime, 10.0);
 }
 
 std::string PhotometricsCamera::_getPVCAMErrorMessage() const {
