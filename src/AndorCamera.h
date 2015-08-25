@@ -1,18 +1,16 @@
-#ifndef PHOTOMETRICSCAMERA_H
-#define PHOTOMETRICSCAMERA_H
 
 #include "BaseCameraClass.h"
 
-class PhotometricsCamera : public BaseCameraClass {
+class AndorCamera : public BaseCameraClass {
 public:
-	PhotometricsCamera(const std::string& cameraName);
-	~PhotometricsCamera();
+	AndorCamera();
+	~AndorCamera();
 
 	std::string getIdentifierStr() const override;
 
 	bool setExposureTime(const double exposureTime) override;
 	bool setEMGain(const double emGain) override;
-	bool setCoolerOnOff(const bool on) { return false; };
+	bool setCoolerOnOff(const bool on);
 	bool setTemperature(const double temperature) override;
 
 	double getExposureTime() const override;
@@ -23,13 +21,8 @@ public:
 	std::vector<uint16_t> acquireImages(const int nImages) override;
 
 private:
-	void _selectFastestReadoutPort(bool useEMGain);
-	void _validateExposureTime();
-	std::string _getPVCAMErrorMessage() const;
+	void _selectFastestRecommendedReadoutSpeed();
+	std::string _andorErrorCodeToMessage(int errorCode) const;
 
-	std::string _identifier;
-	std::int16_t _pvcamHandle;
-	double _requestedExposureTime;
+	bool _coolerOn;
 };
-
-#endif
