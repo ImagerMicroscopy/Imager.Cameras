@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <cassert>
+#include <cmath>
 
 #include "XOPStandardHeaders.h"
 #include "CameraManager.h"
@@ -11,10 +12,19 @@
 CameraManager* gCameraManager = nullptr;
 
 bool StartCameraManager() {
-	if (gCameraManager == nullptr) {
-		gCameraManager = new CameraManager();
-		if (gCameraManager != nullptr)
+	try {
+		if (gCameraManager == nullptr) {
+			gCameraManager = new CameraManager();
 			gCameraManager->discoverCameras();
+		}
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+		if (gCameraManager != nullptr) {
+			delete gCameraManager;
+			gCameraManager = nullptr;
+		}
 	}
 
 	return (gCameraManager != nullptr);
@@ -71,6 +81,46 @@ typedef struct SCAcquireCameraImagesRuntimeParams SCAcquireCameraImagesRuntimePa
 typedef struct SCAcquireCameraImagesRuntimeParams* SCAcquireCameraImagesRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
+// Runtime param structure for SCSetCameraSettings operation.
+#pragma pack(2)	// All structures passed to Igor are two-byte aligned.
+struct SCSetCameraSettingsRuntimeParams {
+	// Flag parameters.
+
+	// Main parameters.
+
+	// Parameters for exposureTime keyword group.
+	int exposureTimeEncountered;
+	double exposureTime_exposureTime;
+	int exposureTimeParamsSet[1];
+
+	// Parameters for emGain keyword group.
+	int emGainEncountered;
+	double emGain_emGain;
+	int emGainParamsSet[1];
+
+	// Parameters for coolerOn keyword group.
+	int coolerOnEncountered;
+	double coolerOn_coolerOnOff;
+	int coolerOnParamsSet[1];
+
+	// Parameters for coolerTemperature keyword group.
+	int coolerTemperatureEncountered;
+	double coolerTemperature_setpoint;
+	int coolerTemperatureParamsSet[1];
+
+	// Parameters for cameraID keyword group.
+	int cameraIDEncountered;
+	Handle cameraID_cameraID;
+	int cameraIDParamsSet[1];
+
+	// These are postamble fields that Igor sets.
+	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
+	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+};
+typedef struct SCSetCameraSettingsRuntimeParams SCSetCameraSettingsRuntimeParams;
+typedef struct SCSetCameraSettingsRuntimeParams* SCSetCameraSettingsRuntimeParamsPtr;
+#pragma pack()	// Reset structure alignment to default.
+
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
@@ -102,7 +152,7 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 	int nImages = 1;
 	if (p->nImagesEncountered) {
 		// Parameter: p->nImages_nImages
-		nImages = p->nImages_nImages;
+		nImages = std::round(p->nImages_nImages);
 		if (nImages <= 0)
 			return EXPECT_POS_NUM;
 	}
@@ -128,9 +178,6 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		int nElements = chipDimensions.first * chipDimensions.second * nImages;
 		assert(nElements == acquiredImages.size());
 
-		char buf[128];
-		sprintf_s(buf, "have %d elements\r", nElements);
-		XOPNotice(buf);
 		waveHndl waveH;
 		CountInt dimensionSizes[MAX_DIMENSIONS + 1];
 		dimensionSizes[0] = chipDimensions.first;
@@ -152,6 +199,107 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		XOPNotice("Unknown exception\r");
 		return NOMEM;
 	}
+
+	return err;
+}
+
+extern "C" int
+ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
+{
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	// Main parameters.
+
+	bool haveExposureTime = false;
+	double exposureTime;
+	if (p->exposureTimeEncountered) {
+		// Parameter: p->exposureTime_exposureTime
+		exposureTime = p->exposureTime_exposureTime;
+		if (exposureTime <= 0.0)
+			return EXPECT_POS_NUM;
+		haveExposureTime = true;
+	}
+
+	bool haveEMGain = false;
+	double emGain;
+	if (p->emGainEncountered) {
+		// Parameter: p->emGain_emGain
+		emGain = p->emGain_emGain;
+		if (emGain < 0.0)
+			return EXPECT_POS_NUM;
+		haveEMGain = true;
+	}
+
+	bool haveCoolerOn = false;
+	bool coolerOn;
+	if (p->coolerOnEncountered) {
+		// Parameter: p->coolerOn_coolerOnOff
+		coolerOn = (p->coolerOn_coolerOnOff != 0.0);
+		haveCoolerOn = true;
+	}
+
+	bool haveCoolerTemperature = false;
+	double coolerTemperature;
+	if (p->coolerTemperatureEncountered) {
+		// Parameter: p->coolerTemperature_setpoint
+		coolerTemperature = p->coolerTemperature_setpoint;
+		haveCoolerTemperature = true;
+	}
+
+	std::string identifier;
+	if (p->cameraIDEncountered) {
+		// Parameter: p->cameraID_cameraID (test for NULL handle before using)
+		if (p->cameraID_cameraID == nullptr)
+			return EXPECTED_STRING;
+		char buf[128];
+		err = GetCStringFromHandle(p->cameraID_cameraID, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	}
+	else {
+		return EXPECTED_STRING;
+	}
+
+	bool success, atLeastOneFailure = false;
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		if (haveExposureTime) {
+			success = camPtr->setExposureTime(exposureTime);
+			if (!success)
+				atLeastOneFailure = true;
+		}
+		if (haveEMGain) {
+			success = camPtr->setEMGain(emGain);
+			if (!success)
+				atLeastOneFailure = true;
+		}
+		if (haveCoolerOn) {
+			success = camPtr->setCoolerOnOff(coolerOn);
+			if (!success)
+				atLeastOneFailure = true;
+		}
+		if (haveCoolerTemperature) {
+			success = camPtr->setTemperature(coolerTemperature);
+			if (!success)
+				atLeastOneFailure = true;
+		}
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+		atLeastOneFailure = true;
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+		atLeastOneFailure = true;
+	}
+
+	SetOperationNumVar("V_flag", atLeastOneFailure);
 
 	return err;
 }
@@ -184,6 +332,20 @@ RegisterSCAcquireCameraImages(void)
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAcquireCameraImagesRuntimeParams), (void*)ExecuteSCAcquireCameraImages, 0);
 }
 
+static int
+RegisterSCSetCameraSettings(void)
+{
+	const char* cmdTemplate;
+	const char* runtimeNumVarList;
+	const char* runtimeStrVarList;
+
+	// NOTE: If you change this template, you must change the SCSetCameraSettingsRuntimeParams structure as well.
+	cmdTemplate = "SCSetCameraSettings exposureTime=number:exposureTime, emGain=number:emGain, coolerOn=number:coolerOnOff, coolerTemperature=number:setpoint, cameraID=string:cameraID ";
+	runtimeNumVarList = "V_flag";
+	runtimeStrVarList = "";
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCSetCameraSettingsRuntimeParams), (void*)ExecuteSCSetCameraSettings, 0);
+}
+
 /*	XOPEntry()
 
 This is the entry point from the host application to the XOP for all
@@ -210,6 +372,8 @@ static int RegisterOperations(void)		// Register any operations with Igor.
 	if ((result = RegisterSCListAvailableCameras()))
 		return result;
 	if ((result = RegisterSCAcquireCameraImages()))
+		return result;
+	if ((result = RegisterSCSetCameraSettings()))
 		return result;
 
 	// There are no more operations added by this XOP.

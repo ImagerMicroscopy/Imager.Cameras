@@ -10,6 +10,9 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
 		throw std::runtime_error(_getPVCAMErrorMessage());
+	err = pl_cam_get_diags(_pvcamHandle);
+	if (!err)
+		throw std::runtime_error(_getPVCAMErrorMessage());
 }
 
 PhotometricsCamera::~PhotometricsCamera() {

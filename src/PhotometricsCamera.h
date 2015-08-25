@@ -12,6 +12,7 @@ public:
 
 	bool setExposureTime(const double exposureTime) override;
 	bool setEMGain(const double emGain) override;
+	bool setCoolerOnOff(const bool on) { return false; };
 	bool setTemperature(const double temperature) override;
 
 	double getExposureTime() const override;
