@@ -22,6 +22,8 @@ public:
 	std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) override;
 
 private:
+	std::string _getPVCAMErrorMessage() const;
+
 	std::string _identifier;
 	std::int16_t _pvcamHandle;
 	double _requestedExposureTime;

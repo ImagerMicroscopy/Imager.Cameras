@@ -10,6 +10,27 @@
 
 CameraManager* gCameraManager = nullptr;
 
+bool StartCameraManager() {
+	if (gCameraManager == nullptr) {
+		gCameraManager = new CameraManager();
+		if (gCameraManager != nullptr)
+			gCameraManager->discoverCameras();
+	}
+
+	return (gCameraManager != nullptr);
+}
+
+void StopCameraManager() {
+	if (gCameraManager != nullptr) {
+		delete gCameraManager;
+		gCameraManager = nullptr;
+	}
+}
+
+bool CameraManagerIsAvailable() {
+	return StartCameraManager();
+}
+
 // Runtime param structure for SCListAvailableCameras operation.
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
 struct SCListAvailableCamerasRuntimeParams {
@@ -53,6 +74,10 @@ typedef struct SCAcquireCameraImagesRuntimeParams* SCAcquireCameraImagesRuntimeP
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
 	std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
 	std::string identifierList;
 
@@ -67,6 +92,10 @@ extern "C" int
 ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 {
 	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
 
 	// Main parameters.
 
@@ -92,23 +121,37 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		return EXPECTED_STRING;
 	}
 
-	std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
-	std::pair<int, int> chipDimensions = camPtr->getSensorSize();
-	std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
-	int nElements = chipDimensions.first * chipDimensions.second * nImages;
-	assert(nElements == acquiredImages.size());
-	
-	waveHndl waveH;
-	CountInt dimensionSizes[MAX_DIMENSIONS + 1];
-	dimensionSizes[0] = chipDimensions.first;
-	dimensionSizes[1] = chipDimensions.second;
-	dimensionSizes[2] = nImages;
-	dimensionSizes[3] = 0;
-	err = MDMakeWave(&waveH, "M_AcquiredImages", NULL, dimensionSizes, NT_I16 | NT_UNSIGNED, 1);
-	if (err)
-		return err;
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
+		std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
+		int nElements = chipDimensions.first * chipDimensions.second * nImages;
+		assert(nElements == acquiredImages.size());
 
-	memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
+		char buf[128];
+		sprintf_s(buf, "have %d elements\r", nElements);
+		XOPNotice(buf);
+		waveHndl waveH;
+		CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+		dimensionSizes[0] = chipDimensions.first;
+		dimensionSizes[1] = chipDimensions.second;
+		dimensionSizes[2] = nImages;
+		dimensionSizes[3] = 0;
+		err = MDMakeWave(&waveH, "M_AcquiredImages", NULL, dimensionSizes, NT_I16 | NT_UNSIGNED, 1);
+		if (err)
+			return err;
+
+		memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+		return NOMEM;
+	}
+	catch (...) {
+		XOPNotice("Unknown exception\r");
+		return NOMEM;
+	}
 
 	return err;
 }
@@ -151,16 +194,10 @@ static void XOPEntry(void) {
 
 	switch (GetXOPMessage()) {
 		case INIT:
-			if (gCameraManager == nullptr) {
-				gCameraManager = new CameraManager();
-				gCameraManager->discoverCameras();
-			}
+			StartCameraManager();
 			break;
 		case CLEANUP:
-			if (gCameraManager != nullptr) {
-				delete gCameraManager;
-				gCameraManager = nullptr;
-			}
+			StopCameraManager();
 			break;
 	}
 	SetXOPResult(result);

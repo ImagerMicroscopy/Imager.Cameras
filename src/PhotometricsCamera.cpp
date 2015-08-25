@@ -9,7 +9,7 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 {
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
-		throw std::runtime_error("failed to open photometrics camere");
+		throw std::runtime_error(_getPVCAMErrorMessage());
 }
 
 PhotometricsCamera::~PhotometricsCamera() {
@@ -108,7 +108,7 @@ double PhotometricsCamera::getTemperature() const {
 
 std::pair<int, int> PhotometricsCamera::getSensorSize() const {
 	int err;
-	int nRows, nCols;
+	std::uint16_t nRows, nCols;
 	err = pl_get_param(_pvcamHandle, PARAM_PAR_SIZE, ATTR_CURRENT, &nRows);
 	err = pl_get_param(_pvcamHandle, PARAM_SER_SIZE, ATTR_CURRENT, &nCols);
 	return std::pair<int, int>(nRows, nCols);
@@ -123,18 +123,20 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	// check that the camera is ready to go
 	err = pl_cam_get_diags(_pvcamHandle);
 	if (err == 0) {
-		// handle me
+		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
+
+	err = pl_exp_init_seq();
+	if (err == 0)
+		throw std::runtime_error(_getPVCAMErrorMessage());
 
 	std::uint32_t requiredMemorySpace;
 	err = pl_exp_setup_seq(_pvcamHandle, nImages, 1, &region, TIMED_MODE, scaledExposureTime, reinterpret_cast<uns32_ptr>(&requiredMemorySpace));
 	if (err == 0) {
-		// handle me
+		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
-	if (requiredMemorySpace != (chipSize.first * chipSize.second * nImages * 2)) {
-		// something is wrong with the requested amount of storage
-		// possibly the camera is not set up to use uint16
-		// handle me
+	if (requiredMemorySpace != (chipSize.first * chipSize.second * nImages * sizeof(uint16_t))) {
+		throw std::runtime_error("Memory size doesn't match");
 	}
 
 	std::vector<uint16_t> images(chipSize.first * chipSize.second * nImages);
@@ -142,7 +144,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	// start the acquisition
 	err = pl_exp_start_seq(_pvcamHandle, reinterpret_cast<void*>(images.data()));
 	if (err == 0) {
-		// handle me
+		throw std::runtime_error(_getPVCAMErrorMessage());
 	}
 
 	// wait until the camera has finished recording
@@ -151,7 +153,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 		std::uint32_t nBytesRecorded;
 		err = pl_exp_check_status(_pvcamHandle, &status, reinterpret_cast<uns32_ptr>(&nBytesRecorded));
 		if (err == 0) {
-			// handle me
+			throw std::runtime_error(_getPVCAMErrorMessage());
 		}
 
 		if (status == READOUT_COMPLETE) {
@@ -163,11 +165,17 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 		if (userAbort == -1) {
 			err = pl_exp_abort(_pvcamHandle, CCS_NO_CHANGE);
 			if (err == 0) {
-				// handle me
+				throw std::runtime_error(_getPVCAMErrorMessage());
 			}
 			break;
 		}
 	}
 
 	return images;
+}
+
+std::string PhotometricsCamera::_getPVCAMErrorMessage() const {
+	char buf[ERROR_MSG_LEN];
+	pl_error_message(pl_error_code(), buf);
+	return std::string(buf);
 }

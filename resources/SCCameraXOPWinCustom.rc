@@ -22,10 +22,10 @@ END
 1100 XOPC							// Describes operations that the XOP adds to IGOR.
 BEGIN
 	"SCListAvailableCameras\0",
-	XOPOp | utilOp | compilableOp | threadSafeOp,
+	XOPOp | utilOp | compilableOp,
 	
 	"SCAcquireCameraImages\0"
-	XOPOp | utilOp | compilableOp | threadSafeOp,
+	XOPOp | utilOp | compilableOp,
 
 	"\0"							// NOTE: NULL required to terminate the resource.
 END
