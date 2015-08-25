@@ -4,7 +4,9 @@
 #include "PVCAM/pvcam.h"
 #include "XOPStandardHeaders.h"
 
-PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) {
+PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
+	_identifier(cameraName)
+{
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
 		throw std::runtime_error("failed to open photometrics camere");
@@ -12,6 +14,10 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) {
 
 PhotometricsCamera::~PhotometricsCamera() {
 	pl_cam_close(_pvcamHandle);
+}
+
+std::string PhotometricsCamera::getIdentifierStr() const {
+	return _identifier;
 }
 
 bool PhotometricsCamera::setExposureTime(const double exposureTime) {

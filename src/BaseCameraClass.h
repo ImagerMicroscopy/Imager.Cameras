@@ -1,3 +1,5 @@
+#ifndef BASECAMERACLASS_H
+#define BASECAMERACLASS_H
 
 #include <string>
 #include <vector>
@@ -22,3 +24,5 @@ public:
 
 	virtual std::vector<uint16_t> acquireImages(const int nImages) = 0;
 };
+
+#endif

@@ -4,8 +4,9 @@
 #include <cstdint>
 
 #include "XOPStandardHeaders.h"
-#include "PVCAM/master.h"
-#include "PVCAM/pvcam.h"
+#include "CameraManager.h"
+
+CameraManager* gCameraManager = nullptr;
 
 // Runtime param structure for SCListAvailableCameras operation.
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
@@ -50,22 +51,14 @@ typedef struct SCAcquireCameraImagesRuntimeParams* SCAcquireCameraImagesRuntimeP
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
-	std::vector<std::string> cameraNames;
+	std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
+	std::string identifierList;
 
-	std::int16_t nCameras;
-	int err = pl_cam_get_total(&nCameras);
-	for (std::int16_t i = 0; i < nCameras; i++) {
-		char camName[CAM_NAME_LEN + 1];
-		pl_cam_get_name(i, camName);
-		cameraNames.push_back(std::string(camName));
+	for (const std::string& id : cameraIdentifiers) {
+		identifierList += id + ";";
 	}
 
-	for (const std::string& str : cameraNames) {
-		XOPNotice(str.c_str());
-		XOPNotice("\r");
-	}
-
-	return 0;
+	return SetOperationStrVar("S_CameraIdentifiers", identifierList.c_str());
 }
 
 extern "C" int
@@ -96,7 +89,7 @@ RegisterSCListAvailableCameras(void)
 	// NOTE: If you change this template, you must change the SCListAvailableCamerasRuntimeParams structure as well.
 	cmdTemplate = "SCListAvailableCameras ";
 	runtimeNumVarList = "";
-	runtimeStrVarList = "";
+	runtimeStrVarList = "S_CameraIdentifiers";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCListAvailableCamerasRuntimeParams), (void*)ExecuteSCListAvailableCameras, 0);
 }
 
@@ -124,10 +117,16 @@ static void XOPEntry(void) {
 
 	switch (GetXOPMessage()) {
 		case INIT:
-			pl_pvcam_init();
+			if (gCameraManager == nullptr) {
+				gCameraManager = new CameraManager();
+				gCameraManager->discoverCameras();
+			}
 			break;
 		case CLEANUP:
-			pl_pvcam_uninit();
+			if (gCameraManager != nullptr) {
+				delete gCameraManager;
+				gCameraManager = nullptr;
+			}
 			break;
 	}
 	SetXOPResult(result);

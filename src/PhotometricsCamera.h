@@ -1,3 +1,5 @@
+#ifndef PHOTOMETRICSCAMERA_H
+#define PHOTOMETRICSCAMERA_H
 
 #include "BaseCameraClass.h"
 
@@ -5,6 +7,8 @@ class PhotometricsCamera : public BaseCameraClass {
 public:
 	PhotometricsCamera(const std::string& cameraName);
 	~PhotometricsCamera();
+
+	std::string getIdentifierStr() const override;
 
 	bool setExposureTime(const double exposureTime) override;
 	bool setEMGain(const double emGain) override;
@@ -18,6 +22,9 @@ public:
 	std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) override;
 
 private:
+	std::string _identifier;
 	std::int16_t _pvcamHandle;
 	double _requestedExposureTime;
 };
+
+#endif
