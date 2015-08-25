@@ -8,11 +8,13 @@ public:
 
 	bool setExposureTime(const double exposureTime) override;
 	bool setEMGain(const double emGain) override;
+	bool setTemperature(const double temperature) override;
 
+	std::pair<int, int> getSensorSize() const;
 
 	std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) override;
 
 private:
-	int _pvcamHandle;
+	std::int16_t _pvcamHandle;
 	double _requestedExposureTime;
 };

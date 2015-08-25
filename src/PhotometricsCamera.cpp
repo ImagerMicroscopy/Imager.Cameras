@@ -1,25 +1,29 @@
 
 #include "PhotometricsCamera.h"
+#include "PVCAM/master.h"
+#include "PVCAM/pvcam.h"
+#include "XOPStandardHeaders.h"
 
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) {
-	int err = pl_cam_open(cameraName.c_str(), &_pvcamHandle, OPEN_EXCLUSIVE);
+	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
 		throw std::runtime_error("failed to open photometrics camere");
 }
 
 PhotometricsCamera::~PhotometricsCamera() {
+	pl_cam_close(_pvcamHandle);
 }
 
 bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 	// ensure camera is set to accept exposure time in milliseconds
 	int exposureTimeResolution = EXP_RES_ONE_MILLISEC;
-	int err = pl_set_param(camHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
+	int err = pl_set_param(_pvcamHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
 	if (err == 0) {
 		return false;
 	}
 
 	double minExposureTime;
-	err = pl_get_param(camHandle, PARAM_EXP_MIN_TIME, ATTR_CURRENT, &minExposureTime);
+	err = pl_get_param(_pvcamHandle, PARAM_EXP_MIN_TIME, ATTR_CURRENT, &minExposureTime);
 	if (err == 0) {
 		return false;
 	}
@@ -40,7 +44,7 @@ bool PhotometricsCamera::setEMGain(const double emGain) {
 		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
 		if (!result)
 			return false;
-		result = pl_set_param(camHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
+		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
 		if (!result)
 			return false;
 	} else {
@@ -54,7 +58,7 @@ bool PhotometricsCamera::setEMGain(const double emGain) {
 
 bool PhotometricsCamera::setTemperature(const double temperature) {
 	int scaledSetPoint = temperature * 1000.0;
-	err = pl_set_param(camHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
+	int err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
 	if (err == 0) {
 		return false;
 	}
@@ -78,13 +82,13 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	int scaledExposureTime = _requestedExposureTime * 1.0e3;
 
 	// check that the camera is ready to go
-	err = pl_cam_get_diags(camHandle);
+	err = pl_cam_get_diags(_pvcamHandle);
 	if (err == 0) {
 		// handle me
 	}
 
-	std::uint64_t requiredMemorySpace;
-	err = pl_exp_setup_seq(_pvcamHandle, nImages, 1, &region, TIMED_MODE, scaledExposureTime, &requiredMemorySpace);
+	std::uint32_t requiredMemorySpace;
+	err = pl_exp_setup_seq(_pvcamHandle, nImages, 1, &region, TIMED_MODE, scaledExposureTime, reinterpret_cast<uns32_ptr>(&requiredMemorySpace));
 	if (err == 0) {
 		// handle me
 	}
@@ -97,7 +101,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	std::vector<uint16_t> images(chipSize.first * chipSize.second * nImages);
 
 	// start the acquisition
-	err = pl_exp_start_seq(_pvcamHandle, reinterpret_cast<void*>(images->data()));
+	err = pl_exp_start_seq(_pvcamHandle, reinterpret_cast<void*>(images.data()));
 	if (err == 0) {
 		// handle me
 	}
@@ -106,7 +110,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	for ( ; ; ) {
 		std::int16_t status;
 		std::uint32_t nBytesRecorded;
-		err = pl_exp_check_status(camHandle, &status, &nBytesRecorded);
+		err = pl_exp_check_status(_pvcamHandle, &status, reinterpret_cast<uns32_ptr>(&nBytesRecorded));
 		if (err == 0) {
 			// handle me
 		}
@@ -116,9 +120,9 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 		}
 
 		// does the user wish to abort the exposure?
-		userAbort = CheckAbort(0);
+		int userAbort = CheckAbort(0);
 		if (userAbort == -1) {
-			err = pl_exp_abort(camHandle, CCS_NO_CHANGE);
+			err = pl_exp_abort(_pvcamHandle, CCS_NO_CHANGE);
 			if (err == 0) {
 				// handle me
 			}
@@ -127,7 +131,4 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	}
 
 	return images;
-}
-
-	return err;
 }
