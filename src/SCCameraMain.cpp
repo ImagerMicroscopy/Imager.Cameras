@@ -2,9 +2,11 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <cassert>
 
 #include "XOPStandardHeaders.h"
 #include "CameraManager.h"
+#include "BaseCameraClass.h"
 
 CameraManager* gCameraManager = nullptr;
 
@@ -32,12 +34,12 @@ struct SCAcquireCameraImagesRuntimeParams {
 
 	// Parameters for nImages keyword group.
 	int nImagesEncountered;
-	double nImages_exposureTime;
+	double nImages_nImages;
 	int nImagesParamsSet[1];
 
 	// Parameters for cameraID keyword group.
 	int cameraIDEncountered;
-	double cameraID_cameraID;
+	Handle cameraID_cameraID;
 	int cameraIDParamsSet[1];
 
 	// These are postamble fields that Igor sets.
@@ -68,13 +70,45 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 
 	// Main parameters.
 
+	int nImages = 1;
 	if (p->nImagesEncountered) {
-		// Parameter: p->nImages_exposureTime
+		// Parameter: p->nImages_nImages
+		nImages = p->nImages_nImages;
+		if (nImages <= 0)
+			return EXPECT_POS_NUM;
 	}
 
+	std::string identifier;
 	if (p->cameraIDEncountered) {
-		// Parameter: p->cameraID_cameraID
+		// Parameter: p->cameraID_cameraID (test for NULL handle before using)
+		if (p->cameraID_cameraID == nullptr)
+			return EXPECTED_STRING;
+		char buf[128];
+		err = GetCStringFromHandle(p->cameraID_cameraID, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	} else {
+		return EXPECTED_STRING;
 	}
+
+	std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+	std::pair<int, int> chipDimensions = camPtr->getSensorSize();
+	std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
+	int nElements = chipDimensions.first * chipDimensions.second * nImages;
+	assert(nElements == acquiredImages.size());
+	
+	waveHndl waveH;
+	CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+	dimensionSizes[0] = chipDimensions.first;
+	dimensionSizes[1] = chipDimensions.second;
+	dimensionSizes[2] = nImages;
+	dimensionSizes[3] = 0;
+	err = MDMakeWave(&waveH, "M_AcquiredImages", NULL, dimensionSizes, NT_I16 | NT_UNSIGNED, 1);
+	if (err)
+		return err;
+
+	memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
 
 	return err;
 }
@@ -101,7 +135,7 @@ RegisterSCAcquireCameraImages(void)
 	const char* runtimeStrVarList;
 
 	// NOTE: If you change this template, you must change the SCAcquireCameraImagesRuntimeParams structure as well.
-	cmdTemplate = "SCAcquireCameraImages nImages=number:exposureTime, cameraID=number:cameraID ";
+	cmdTemplate = "SCAcquireCameraImages nImages=number:nImages, cameraID=string:cameraID ";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAcquireCameraImagesRuntimeParams), (void*)ExecuteSCAcquireCameraImages, 0);
