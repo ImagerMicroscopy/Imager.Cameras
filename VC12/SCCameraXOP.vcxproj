@@ -95,6 +95,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
       <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
@@ -114,6 +115,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>IGOR64.lib;version.lib;XOPSupport64.lib;pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
@@ -137,6 +139,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
       <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
@@ -160,6 +163,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>IGOR64.lib;version.lib;XOPSupport64.lib;pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
