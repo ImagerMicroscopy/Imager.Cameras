@@ -88,7 +88,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;WITH_DUMMYCAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -108,7 +108,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;WITH_DUMMYCAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -130,7 +130,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;WITH_DUMMYCAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -154,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;WITH_PHOTOMETRICS;WITH_ANDOR;WITH_DUMMYCAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -181,6 +181,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\AndorCamera.cpp" />
     <ClCompile Include="..\src\CameraManager.cpp" />
+    <ClCompile Include="..\src\DummyCamera.cpp" />
     <ClCompile Include="..\src\PhotometricsCamera.cpp" />
     <ClCompile Include="..\src\SCCameraMain.cpp" />
   </ItemGroup>
@@ -188,6 +189,7 @@
     <ClInclude Include="..\src\AndorCamera.h" />
     <ClInclude Include="..\src\BaseCameraClass.h" />
     <ClInclude Include="..\src\CameraManager.h" />
+    <ClInclude Include="..\src\DummyCamera.h" />
     <ClInclude Include="..\src\PhotometricsCamera.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

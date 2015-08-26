@@ -12,6 +12,10 @@
 #include "AndorCamera.h"
 #endif
 
+#ifdef WITH_DUMMYCAM
+#include "DummyCamera.h"
+#endif
+
 CameraManager::CameraManager() {
 #ifdef WITH_PHOTOMETRICS
 	pl_pvcam_init();
@@ -52,6 +56,11 @@ void CameraManager::discoverCameras() {
 	catch (std::runtime_error e) {
 		// no Andor camera available
 	}
+#endif
+
+#ifdef WITH_DUMMYCAM
+	std::shared_ptr<BaseCameraClass> dummyCam(new DummyCamera());
+	_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(dummyCam->getIdentifierStr(), dummyCam));
 #endif
 }
 
