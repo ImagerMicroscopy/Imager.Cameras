@@ -93,7 +93,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ResourceCompile>
@@ -112,7 +112,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IGOR64.lib;version.lib;XOPSupport64.lib;pvcam64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>IGOR64.lib;version.lib;XOPSupport64.lib;pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ResourceCompile>
@@ -135,7 +135,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ResourceCompile>
@@ -158,7 +158,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IGOR64.lib;version.lib;XOPSupport64.lib;pvcam64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>IGOR64.lib;version.lib;XOPSupport64.lib;pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ResourceCompile>
