@@ -65,6 +65,14 @@ std::vector<std::string> CameraManager::getCameraIdentifiers() const {
 	return identifiers;
 }
 
-std::shared_ptr<BaseCameraClass> CameraManager::getCamera(const std::string& identifier) {
+std::shared_ptr<BaseCameraClass> CameraManager::getCamera(const std::string& identifier) const {
+	if (_availableCameras.count(identifier) == 0)
+		throw std::runtime_error("Camera not found");
 	return _availableCameras.at(identifier);
+}
+
+std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
+	if (_availableCameras.size() == 0)
+		throw std::runtime_error("No cameras found");
+	return _availableCameras.begin()->second;
 }

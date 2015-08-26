@@ -17,8 +17,8 @@ public:
 	
 	std::vector<std::string> getCameraIdentifiers() const;
 	
-	std::shared_ptr<BaseCameraClass> getCamera(const std::string& identifier);
-	
+	std::shared_ptr<BaseCameraClass> getCamera(const std::string& identifier) const;
+	std::shared_ptr<BaseCameraClass> getFirstCamera() const;
 
 private:
 	std::map<std::string, std::shared_ptr<BaseCameraClass>> _availableCameras;

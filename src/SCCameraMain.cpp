@@ -191,12 +191,15 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		if (err)
 			return err;
 		identifier = buf;
-	} else {
-		return EXPECTED_STRING;
 	}
 
 	try {
-		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		} else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
 		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
 		std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
 		int nElements = chipDimensions.first * chipDimensions.second * nImages;
@@ -285,13 +288,17 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 			return err;
 		identifier = buf;
 	}
-	else {
-		return EXPECTED_STRING;
-	}
 
 	bool success, atLeastOneFailure = false;
 	try {
-		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
+
 		if (haveExposureTime) {
 			success = camPtr->setExposureTime(exposureTime);
 			if (!success)
@@ -348,7 +355,13 @@ int ExecuteSCGetCameraEMGain(SCGetCameraEMGainParams* p) {
 	}
 
 	try {
-		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
 		double emGain = camPtr->getEMGain();
 		p->result = emGain;
 	}
@@ -384,7 +397,13 @@ int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
 	}
 
 	try {
-		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
 		double exposureTime = camPtr->getExposureTime();
 		p->result = exposureTime;
 	}
@@ -420,7 +439,13 @@ int ExecuteSCGetCameraTemperature(SCGetCameraTemperatureParams* p) {
 	}
 
 	try {
-		std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(identifier);
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
 		double temperature = camPtr->getTemperature();
 		p->result = temperature;
 	}
