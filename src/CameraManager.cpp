@@ -1,25 +1,33 @@
 
 #include "CameraManager.h"
 
+#ifdef WITH_PHOTOMETRICS
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
-#include "Andor/ATMCD32D.H"
-
 #include "PhotometricsCamera.h"
+#endif
+
+#ifdef WITH_ANDOR
+#include "Andor/ATMCD32D.H"
 #include "AndorCamera.h"
+#endif
 
 CameraManager::CameraManager() {
+#ifdef WITH_PHOTOMETRICS
 	pl_pvcam_init();
+#endif
 }
 
 CameraManager::~CameraManager() {
+#ifdef WITH_PHOTOMETRICS
 	pl_pvcam_uninit();
+#endif
 }
 
 void CameraManager::discoverCameras() {
 	_availableCameras.clear();
 
-	// Roper cameras
+#ifdef WITH_PHOTOMETRICS
 	std::vector<std::string> cameraNames;
 	std::int16_t nCameras;
 	int err = pl_cam_get_total(&nCameras);
@@ -33,8 +41,9 @@ void CameraManager::discoverCameras() {
 		std::shared_ptr<BaseCameraClass> newCamera(new PhotometricsCamera(name));
 		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(name, newCamera));
 	}
+#endif
 
-	// Andor camera
+#ifdef WITH_ANDOR
 	try {
 		std::shared_ptr<BaseCameraClass> andorCamera(new AndorCamera());
 		std::string identifier = andorCamera->getIdentifierStr();
@@ -43,6 +52,7 @@ void CameraManager::discoverCameras() {
 	catch (std::runtime_error e) {
 		// no Andor camera available
 	}
+#endif
 }
 
 std::vector<std::string> CameraManager::getCameraIdentifiers() const {

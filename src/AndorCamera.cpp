@@ -1,4 +1,6 @@
 
+#ifdef WITH_ANDOR
+
 #include "AndorCamera.h"
 #include "Andor/ATMCD32D.H"
 
@@ -286,3 +288,5 @@ std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 
 	return message;
 }
+
+#endif

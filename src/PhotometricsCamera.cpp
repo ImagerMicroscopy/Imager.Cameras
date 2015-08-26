@@ -1,4 +1,6 @@
 
+#ifdef WITH_PHOTOMETRICS
+
 #include "PhotometricsCamera.h"
 
 #include <algorithm>
@@ -237,3 +239,5 @@ std::string PhotometricsCamera::_getPVCAMErrorMessage() const {
 	pl_error_message(pl_error_code(), buf);
 	return std::string(buf);
 }
+
+#endif
