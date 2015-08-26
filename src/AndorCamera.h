@@ -21,6 +21,7 @@ public:
 	std::vector<uint16_t> acquireImages(const int nImages) override;
 
 private:
+	void _setDefaults();
 	void _selectFastestRecommendedReadoutSpeed();
 	std::string _andorErrorCodeToMessage(int errorCode) const;
 

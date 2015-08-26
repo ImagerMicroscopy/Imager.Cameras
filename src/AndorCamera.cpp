@@ -9,9 +9,7 @@ AndorCamera::AndorCamera() {
 	if (err != DRV_SUCCESS)
 		throw std::runtime_error("No Andor camera");
 
-	setCoolerOnOff(false);
-	setExposureTime(50.0e-3);
-	setEMGain(5.0);
+	_setDefaults();
 }
 
 AndorCamera::~AndorCamera() {
@@ -166,6 +164,49 @@ std::vector<uint16_t> AndorCamera::acquireImages(const int nImages) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	return images;
+}
+
+void AndorCamera::_setDefaults() {
+	int result;
+
+	result = SetReadMode(4);					// set image mode
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	std::pair<int, int> sensorSize = getSensorSize();	// use the full chip, no binning
+	result = SetImage(1, 1, 1, sensorSize.second, 1, sensorSize.first);
+
+	result = SetAcquisitionMode(3);				// set kinetics mode
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	result = SetFrameTransferMode(1);			// enable frame transfer
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	result = SetTriggerMode(0);					// internal trigger mode
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	result = SetEMGainMode(0);					// EM Gain is controlled by DAC settings in the range 0-255
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	result = SetOutputAmplifier(0);				// use EMCCD gain register
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	setCoolerOnOff(false);
+
+	result = SetShutter(1, 1, 100, 100);		// open shutter
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	setExposureTime(50.0e-3);
 }
 
 void AndorCamera::_selectFastestRecommendedReadoutSpeed() {
