@@ -3,8 +3,10 @@
 
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
+#include "Andor/ATMCD32D.H"
 
 #include "PhotometricsCamera.h"
+#include "AndorCamera.h"
 
 CameraManager::CameraManager() {
 	pl_pvcam_init();
@@ -30,6 +32,16 @@ void CameraManager::discoverCameras() {
 	for (const std::string& name : cameraNames) {
 		std::shared_ptr<BaseCameraClass> newCamera(new PhotometricsCamera(name));
 		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(name, newCamera));
+	}
+
+	// Andor camera
+	try {
+		std::shared_ptr<BaseCameraClass> andorCamera(new AndorCamera());
+		std::string identifier = andorCamera->getIdentifierStr();
+		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(identifier, andorCamera));
+	}
+	catch (std::runtime_error e) {
+		// no Andor camera available
 	}
 }
 
