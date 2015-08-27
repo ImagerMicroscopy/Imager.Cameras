@@ -1,4 +1,6 @@
 
+#include "SCConfigure.h"
+
 #ifdef WITH_ANDOR
 
 #include "AndorCamera.h"

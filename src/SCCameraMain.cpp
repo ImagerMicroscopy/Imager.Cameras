@@ -1,4 +1,6 @@
 
+#include "SCConfigure.h"
+
 #include <vector>
 #include <string>
 #include <cstdint>

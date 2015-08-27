@@ -1,4 +1,5 @@
 
+#include "SCConfigure.h"
 #include "CameraManager.h"
 
 #ifdef WITH_PHOTOMETRICS
