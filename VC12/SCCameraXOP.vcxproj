@@ -68,18 +68,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>SCCamera</TargetName>
     <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>SCCamera</TargetName>
     <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>SCCamera-64</TargetName>
     <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>SCCamera-64</TargetName>
     <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
