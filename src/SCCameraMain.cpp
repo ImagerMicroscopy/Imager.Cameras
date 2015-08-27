@@ -504,6 +504,29 @@ RegisterSCSetCameraSettings(void)
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCSetCameraSettingsRuntimeParams), (void*)ExecuteSCSetCameraSettings, 0);
 }
 
+static int
+DoFunction()
+{
+	int funcIndex;
+	void *p;				/* pointer to structure containing function parameters and result */
+	int err;
+
+	funcIndex = (int)GetXOPItem(0);	/* which function invoked ? */
+	p = (void*)GetXOPItem(1);		/* get pointer to params/result */
+	switch (funcIndex) {
+	case 0:						/* XFUNC1Add(p1, p2) */
+		err = ExecuteSCGetCameraEMGain((SCGetCameraEMGainParams*)p);
+		break;
+	case 1:						/* XFUNC1Div(p1, p2) */
+		err = ExecuteSCGetCameraExposureTime((SCGetCameraExposureTimeParams*)p);
+		break;
+	case 2:						/* XFUNC1ComplexConjugate(p1) */
+		err = ExecuteSCGetCameraTemperature((SCGetCameraTemperatureParams*)p);
+		break;
+	}
+	return(err);
+}
+
 XOPIORecResult RegisterFunction(int funcIndex) {
 	switch (funcIndex) {
 		case 0:
@@ -533,7 +556,10 @@ static void XOPEntry(void) {
 			StopCameraManager();
 			break;
 		case FUNCADDRS:
-			result = RegisterFunction(GetXOPItem(0));
+			//result = RegisterFunction(GetXOPItem(0));
+			break;
+		case FUNCTION:
+			result = DoFunction();
 			break;
 	}
 	SetXOPResult(result);
