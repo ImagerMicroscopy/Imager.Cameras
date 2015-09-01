@@ -16,10 +16,10 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 {
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	err = pl_cam_get_diags(_pvcamHandle);
 	if (!err)
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 
 	// default values
 
@@ -40,7 +40,7 @@ bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 	std::uint16_t exposureTimeResolution = EXP_RES_ONE_MILLISEC;
 	int err = pl_set_param(_pvcamHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
 	if (!err) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 
 	_requestedExposureTime = exposureTime;
@@ -56,7 +56,7 @@ bool PhotometricsCamera::setEMGain(const double emGain) {
 		std::uint16_t multFactor = emGain;
 		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
 		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 	}
 	return true;
 }
@@ -65,7 +65,7 @@ bool PhotometricsCamera::setTemperature(const double temperature) {
 	std::int16_t scaledSetPoint = temperature * 1000.0;
 	int err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
 	if (err == 0) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 	return true;
 }
@@ -120,18 +120,18 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	// check that the camera is ready to go
 	err = pl_cam_get_diags(_pvcamHandle);
 	if (err == 0) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 
 	// init exposure functionality
 	err = pl_exp_init_seq();
 	if (err == 0)
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 
 	std::uint32_t requiredMemorySpace;
 	err = pl_exp_setup_seq(_pvcamHandle, nImages, 1, &region, TIMED_MODE, scaledExposureTime, reinterpret_cast<uns32_ptr>(&requiredMemorySpace));
 	if (err == 0) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 	if (requiredMemorySpace != (chipSize.first * chipSize.second * nImages * sizeof(uint16_t))) {
 		throw std::runtime_error("Memory size doesn't match");
@@ -142,7 +142,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	// start the acquisition
 	err = pl_exp_start_seq(_pvcamHandle, reinterpret_cast<void*>(images.data()));
 	if (err == 0) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 
 	// wait until the camera has finished recording
@@ -151,7 +151,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 		std::uint32_t nBytesRecorded;
 		err = pl_exp_check_status(_pvcamHandle, &status, reinterpret_cast<uns32_ptr>(&nBytesRecorded));
 		if (err == 0) {
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 		}
 
 		if (status == READOUT_COMPLETE) {
@@ -163,7 +163,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 		if (userAbort == -1) {
 			err = pl_exp_abort(_pvcamHandle, CCS_NO_CHANGE);
 			if (err == 0) {
-				throw std::runtime_error(_getPVCAMErrorMessage());
+				throw std::runtime_error(getPVCAMErrorMessage());
 			}
 			break;
 		}
@@ -178,36 +178,36 @@ void PhotometricsCamera::_selectFastestReadoutPort(bool useEMGain) {
 		int readoutPort = READOUT_PORT_MULT_GAIN;
 		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
 		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 	} else {
 		int readoutPort = READOUT_PORT_NORMAL;
 		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
 		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 	}
 
 	std::int16_t nSpeedTableEntries;
 	result = pl_get_param(_pvcamHandle, PARAM_SPDTAB_INDEX, ATTR_MAX, &nSpeedTableEntries);
 	if (!result)
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 
 	std::int16_t fastestIndex = 0;
 	std::uint16_t pixelTime, shortestPixelTime = -1;
 	for (std::int16_t i = 0; i < nSpeedTableEntries; i++) {
 		result = pl_set_param(_pvcamHandle, PARAM_SPDTAB_INDEX, &i);
 		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 
 		std::int16_t bitDepth;
 		result = pl_get_param(_pvcamHandle, PARAM_BIT_DEPTH, ATTR_CURRENT, &bitDepth);
 		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 		if (bitDepth < 12)
 			continue;
 
 		result = pl_get_param(_pvcamHandle, PARAM_PIX_TIME, ATTR_CURRENT, &pixelTime);
 		if (!result)
-			throw std::runtime_error(_getPVCAMErrorMessage());
+			throw std::runtime_error(getPVCAMErrorMessage());
 
 		if (pixelTime < shortestPixelTime) {
 			shortestPixelTime = pixelTime;
@@ -217,14 +217,14 @@ void PhotometricsCamera::_selectFastestReadoutPort(bool useEMGain) {
 
 	result = pl_set_param(_pvcamHandle, PARAM_SPDTAB_INDEX, &fastestIndex);
 	if (!result)
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 }
 
 void PhotometricsCamera::_validateExposureTime() {
 	double minExposureTime;
 	int err = pl_get_param(_pvcamHandle, PARAM_EXP_MIN_TIME, ATTR_MIN, &minExposureTime);
 	if (!err) {
-		throw std::runtime_error(_getPVCAMErrorMessage());
+		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 
 	// according to the PVCAM manual, the minimal exposure time should be reported in seconds,
@@ -236,7 +236,7 @@ void PhotometricsCamera::_validateExposureTime() {
 	_requestedExposureTime = std::min(_requestedExposureTime, 10.0);
 }
 
-std::string PhotometricsCamera::_getPVCAMErrorMessage() const {
+std::string PhotometricsCamera::getPVCAMErrorMessage() {
 	char buf[ERROR_MSG_LEN];
 	pl_error_message(pl_error_code(), buf);
 	return std::string(buf);

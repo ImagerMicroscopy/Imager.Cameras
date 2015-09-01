@@ -22,10 +22,11 @@ public:
 
 	std::vector<uint16_t> acquireImages(const int nImages) override;
 
+	static std::string getPVCAMErrorMessage();
+
 private:
 	void _selectFastestReadoutPort(bool useEMGain);
 	void _validateExposureTime();
-	std::string _getPVCAMErrorMessage() const;
 
 	std::string _identifier;
 	std::int16_t _pvcamHandle;
