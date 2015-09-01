@@ -19,7 +19,9 @@
 
 CameraManager::CameraManager() {
 #ifdef WITH_PHOTOMETRICS
-	pl_pvcam_init();
+	int err = pl_pvcam_init();
+	if (!err)
+		throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 #endif
 }
 
@@ -36,12 +38,17 @@ void CameraManager::discoverCameras() {
 	std::vector<std::string> cameraNames;
 	std::int16_t nCameras;
 	int err = pl_cam_get_total(&nCameras);
+	if (!err)
+		throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
+
 	for (std::int16_t i = 0; i < nCameras; i++) {
 		char camName[CAM_NAME_LEN + 1];
-		pl_cam_get_name(i, camName);
+		err = pl_cam_get_name(i, camName);
+		if (!err)
+			throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 		cameraNames.push_back(std::string(camName));
 	}
-
+	
 	for (const std::string& name : cameraNames) {
 		std::shared_ptr<BaseCameraClass> newCamera(new PhotometricsCamera(name));
 		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(name, newCamera));
