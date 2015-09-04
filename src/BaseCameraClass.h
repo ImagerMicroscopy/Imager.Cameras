@@ -23,7 +23,7 @@ public:
 	virtual double getTemperature() const = 0;
 	virtual std::pair<int, int> getSensorSize() const = 0;
 
-	virtual std::vector<uint16_t> acquireImages(const int nImages) = 0;
+	virtual std::vector<std::uint16_t> acquireImages(const int nImages) = 0;
 };
 
 #endif

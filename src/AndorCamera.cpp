@@ -17,6 +17,8 @@ AndorCamera::AndorCamera() {
 }
 
 AndorCamera::~AndorCamera() {
+	SetShutter(1, 2, 100, 100);		// close shutter
+
 	ShutDown();
 }
 
