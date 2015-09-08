@@ -1,0 +1,4 @@
+Cascade 512B:
+- latest supported OS is Windows 7 32-bit.
+- Additional driver for the PCI card needs to be installed separately (see PDF document).
+- Igor needs to be compiled without UAC.
