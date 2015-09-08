@@ -51,8 +51,8 @@ bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 bool PhotometricsCamera::setEMGain(const double emGain) {
 	int result;
 
-	_selectFastestReadoutPort(emGain != 0.0);
-	if (emGain > 0) {
+	_selectFastestReadoutPort(emGain > 0.0);
+	if (emGain > 0.0) {
 		std::uint16_t multFactor = emGain;
 		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
 		if (!result)
