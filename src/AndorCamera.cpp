@@ -156,8 +156,12 @@ std::vector<uint16_t> AndorCamera::acquireImages(const int nImages) {
 		if (status != DRV_ACQUIRING)	// error
 			throw std::runtime_error(_andorErrorCodeToMessage(status));
 
-		if (SpinProcess())
+		if (SpinProcess()) {
+			result = AbortAcquisition();
+			if (result != DRV_SUCCESS)
+				throw std::runtime_error(_andorErrorCodeToMessage(status));
 			throw int(USER_ABORT);
+		}
 	}
 
 	// allocate storage to hold the image
