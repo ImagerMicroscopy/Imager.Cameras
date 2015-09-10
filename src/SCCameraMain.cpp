@@ -223,6 +223,9 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		XOPNotice("\r");
 		return NOMEM;
 	}
+	catch (int e) {
+		err = e;
+	}
 	catch (...) {
 		XOPNotice("Unknown exception\r");
 		return NOMEM;
@@ -324,6 +327,10 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 	catch (std::runtime_error e) {
 		XOPNotice(e.what());
 		XOPNotice("\r");
+		atLeastOneFailure = true;
+	}
+	catch (int e) {
+		err = e;
 		atLeastOneFailure = true;
 	}
 	catch (...) {
