@@ -3,6 +3,10 @@
 
 #ifdef WITH_ANDOR
 
+#include <chrono>
+#include <algorithm>
+#include <thread>
+
 #include "AndorCamera.h"
 #include "Andor/ATMCD32D.H"
 
@@ -147,6 +151,9 @@ std::vector<uint16_t> AndorCamera::acquireImages(const int nImages) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	// Wait until all images have been acquired
+	std::chrono::duration<double> permissibleAcquisitionDuration(this->getExposureTime() + std::min(5.0 * this->getExposureTime(), 0.5));
+	std::chrono::time_point<std::chrono::high_resolution_clock> terminateAt = std::chrono::high_resolution_clock::now() + std::chrono::duration_cast<std::chrono::seconds>(permissibleAcquisitionDuration);
+	std::chrono::duration<std::int64_t, std::milli> sleepDuration(static_cast<std::int64_t>(std::min(25.0e-3, this->getExposureTime() / 3.0) * 1000.0));
 	for (;;) {
 		result = GetStatus(&status);
 		if (result != DRV_SUCCESS)
@@ -162,6 +169,13 @@ std::vector<uint16_t> AndorCamera::acquireImages(const int nImages) {
 				throw std::runtime_error(_andorErrorCodeToMessage(status));
 			throw int(USER_ABORT);
 		}
+
+		if (std::chrono::high_resolution_clock::now() > terminateAt) {
+			AbortAcquisition();
+			throw std::string("camera acquisition is stuck");
+		}
+
+		std::this_thread::sleep_for(sleepDuration);
 	}
 
 	// allocate storage to hold the image
