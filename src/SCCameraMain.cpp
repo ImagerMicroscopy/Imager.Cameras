@@ -9,6 +9,7 @@
 #include "XOPStandardHeaders.h"
 #include "CameraManager.h"
 #include "BaseCameraClass.h"
+#include "Exceptions.h"
 
 CameraManager* gCameraManager = nullptr;
 
@@ -61,6 +62,10 @@ typedef struct SCListAvailableCamerasRuntimeParams* SCListAvailableCamerasRuntim
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
 struct SCAcquireCameraImagesRuntimeParams {
 	// Flag parameters.
+
+	// Parameters for /Z flag group.
+	int ZFlagEncountered;
+	// There are no fields for this group because it has no parameters.
 
 	// Main parameters.
 
@@ -169,7 +174,13 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 	int err = 0;
 
 	if (!CameraManagerIsAvailable()) {
+		XOPNotice("unable to initialize the camera manager\r");
 		return NOMEM;	// todo: better message
+	}
+
+	bool quiet = false;
+	if (p->ZFlagEncountered) {
+		quiet = true;
 	}
 
 	// Main parameters.
@@ -218,20 +229,30 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 
 		memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
 	}
+	catch (AcquisitionTimeOutError e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+		err = TIME_OUT_READ;
+	}
 	catch (std::runtime_error e) {
 		XOPNotice(e.what());
 		XOPNotice("\r");
-		return NOMEM;
+		err = NOMEM;
 	}
 	catch (int e) {
 		err = e;
 	}
 	catch (...) {
 		XOPNotice("Unknown exception\r");
-		return NOMEM;
+		err = NOMEM;
 	}
 
-	return err;
+	SetOperationNumVar("V_flag", static_cast<double>(err));
+	if (quiet && (err == TIME_OUT_READ)) {
+		return 0;
+	} else {
+		return err;
+	}
 }
 
 extern "C" int
@@ -490,8 +511,8 @@ RegisterSCAcquireCameraImages(void)
 	const char* runtimeStrVarList;
 
 	// NOTE: If you change this template, you must change the SCAcquireCameraImagesRuntimeParams structure as well.
-	cmdTemplate = "SCAcquireCameraImages nImages=number:nImages, cameraID=string:cameraID ";
-	runtimeNumVarList = "";
+	cmdTemplate = "SCAcquireCameraImages /Z nImages=number:nImages, cameraID=string:cameraID ";
+	runtimeNumVarList = "V_flag";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAcquireCameraImagesRuntimeParams), (void*)ExecuteSCAcquireCameraImages, 0);
 }

@@ -196,6 +196,7 @@
     <ClInclude Include="..\src\BaseCameraClass.h" />
     <ClInclude Include="..\src\CameraManager.h" />
     <ClInclude Include="..\src\DummyCamera.h" />
+    <ClInclude Include="..\src\Exceptions.h" />
     <ClInclude Include="..\src\PhotometricsCamera.h" />
     <ClInclude Include="..\src\SCConfigure.h" />
   </ItemGroup>
