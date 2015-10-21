@@ -15,7 +15,7 @@ public:
 
 	virtual bool setExposureTime(const double exposureTime) = 0;
 	virtual bool setEMGain(const double emGain) = 0;
-	virtual bool setCoolerOnOff(const bool on) = 0;
+	virtual bool setCoolerOn(const bool on) = 0;
 	virtual bool setTemperature(const double temperature) = 0;
 
 	virtual double getExposureTime() const = 0;

@@ -335,7 +335,7 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 				atLeastOneFailure = true;
 		}
 		if (haveCoolerOn) {
-			success = camPtr->setCoolerOnOff(coolerOn);
+			success = camPtr->setCoolerOn(coolerOn);
 			if (!success)
 				atLeastOneFailure = true;
 		}

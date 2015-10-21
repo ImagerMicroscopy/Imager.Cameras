@@ -26,7 +26,7 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	// default values
 
 	this->setExposureTime(50e-3);
-	this->setCoolerOnOff(false);
+	this->setCoolerOn(false);
 }
 
 PhotometricsCamera::~PhotometricsCamera() {

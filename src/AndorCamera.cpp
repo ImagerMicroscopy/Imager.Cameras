@@ -60,7 +60,7 @@ bool AndorCamera::setEMGain(const double emGain) {
 	return true;
 }
 
-bool AndorCamera::setCoolerOnOff(const bool on) {
+bool AndorCamera::setCoolerOn(const bool on) {
 	int result;
 	if (on) {
 		result = CoolerON();
@@ -225,7 +225,7 @@ void AndorCamera::_setDefaults() {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	setCoolerOnOff(false);
+	setCoolerOn(false);
 
 	result = SetShutter(1, 1, 100, 100);		// open shutter
 	if (result != DRV_SUCCESS)
