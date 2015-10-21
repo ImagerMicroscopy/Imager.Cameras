@@ -18,6 +18,7 @@ public:
 	double getExposureTime() const override;
 	double getEMGain() const override;
 	double getTemperature() const override;
+	double getTemperatureSetpoint() const override { return _temperatureSetpoint; };
 	std::pair<int, int> getSensorSize() const override;
 
 	std::vector<std::uint16_t> acquireImages(const int nImages) override;
@@ -28,6 +29,7 @@ private:
 	std::string _andorErrorCodeToMessage(int errorCode) const;
 
 	bool _coolerOn;
+	double _temperatureSetpoint;
 };
 
 #endif

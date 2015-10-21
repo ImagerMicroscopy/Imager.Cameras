@@ -18,6 +18,7 @@ public:
 	double getExposureTime() const override;
 	double getEMGain() const override;
 	double getTemperature() const override;
+	double getTemperatureSetpoint() const override;
 	std::pair<int, int> getSensorSize() const override;
 
 	std::vector<std::uint16_t> acquireImages(const int nImages) override;

@@ -105,6 +105,16 @@ double PhotometricsCamera::getTemperature() const {
 	return (static_cast<double>(temperature) / 100.0);
 }
 
+double PhotometricsCamera::getTemperatureSetpoint() const {
+	std::int16_t setpoint;
+
+	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_CURRENT, &setpoint);
+	if (err)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	return (static_cast<double>(setpoint) / 100.0);
+}
+
 std::pair<int, int> PhotometricsCamera::getSensorSize() const {
 	int err;
 	std::uint16_t nRows, nCols;

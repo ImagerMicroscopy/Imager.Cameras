@@ -13,7 +13,9 @@
 
 #include "XOPStandardHeaders.h"
 
-AndorCamera::AndorCamera() {
+AndorCamera::AndorCamera() :
+	_temperatureSetpoint(0)
+{
 	int err = Initialize(nullptr);
 	if (err != DRV_SUCCESS)
 		throw std::runtime_error("No Andor camera");
@@ -89,6 +91,8 @@ bool AndorCamera::setTemperature(const double temperature) {
 	result = SetTemperature(std::round(temperature));
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	_temperatureSetpoint = std::round(temperature);
 
 	return true;
 }

@@ -21,6 +21,7 @@ public:
 	virtual double getExposureTime() const = 0;
 	virtual double getEMGain() const = 0;
 	virtual double getTemperature() const = 0;
+	virtual double getTemperatureSetpoint() const = 0;
 	virtual std::pair<int, int> getSensorSize() const = 0;
 
 	virtual std::vector<std::uint16_t> acquireImages(const int nImages) = 0;

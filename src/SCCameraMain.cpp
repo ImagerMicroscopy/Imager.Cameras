@@ -151,6 +151,14 @@ struct SCGetCameraTemperatureParams {
 typedef struct SCGetCameraTemperatureParams SCGetCameraTemperatureParams;
 #pragma pack() // Reset structure alignment.
 
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetCameraTemperatureSetpointParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetCameraTemperatureParams SCGetCameraTemperatureParams;
+#pragma pack() // Reset structure alignment.
+
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
@@ -489,6 +497,48 @@ int ExecuteSCGetCameraTemperature(SCGetCameraTemperatureParams* p) {
 	return err;
 }
 
+extern "C"
+int ExecuteSCGetCameraTemperatureSetpoint(SCGetCameraTemperatureSetpointParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	}
+	else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		double temperature = camPtr->getTemperatureSetpoint();
+		p->result = temperature;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
 static int
 RegisterSCListAvailableCameras(void)
 {
@@ -550,6 +600,9 @@ DoFunction()
 	case 2:						/* XFUNC1ComplexConjugate(p1) */
 		err = ExecuteSCGetCameraTemperature((SCGetCameraTemperatureParams*)p);
 		break;
+	case 3:						/* XFUNC1ComplexConjugate(p1) */
+		err = ExecuteSCGetCameraTemperatureSetpoint((SCGetCameraTemperatureSetpointParams*)p);
+		break;
 	}
 	return(err);
 }
@@ -562,6 +615,8 @@ XOPIORecResult RegisterFunction(int funcIndex) {
 			return (XOPIORecResult)ExecuteSCGetCameraExposureTime;
 		case 2:
 			return (XOPIORecResult)ExecuteSCGetCameraTemperature;
+		case 3:
+			return (XOPIORecResult)ExecuteSCGetCameraTemperatureSetpoint;
 		default:
 			return (XOPIORecResult)0;
 	}
