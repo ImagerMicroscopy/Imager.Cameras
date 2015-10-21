@@ -1,4 +1,3 @@
-
 #ifndef SCCONFIGURE_H
 #define SCCONFIGURE_H
 

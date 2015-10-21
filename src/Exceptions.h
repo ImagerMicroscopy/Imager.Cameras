@@ -1,3 +1,5 @@
+#ifndef EXCEPTIONS_H
+#define EXCEPTIONS_H
 
 #include <string>
 #include <exception>
@@ -8,3 +10,5 @@ public:
 		std::runtime_error(str)
 	{}
 };
+
+#endif

@@ -1,4 +1,3 @@
-
 #ifndef DUMMYCAMERA_H
 #define DUMMYCAMERA_H
 

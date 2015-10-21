@@ -1,3 +1,5 @@
+#ifndef ANDORCAMERA_H
+#define ANDORCAMERA_H
 
 #include "BaseCameraClass.h"
 
@@ -27,3 +29,5 @@ private:
 
 	bool _coolerOn;
 };
+
+#endif
