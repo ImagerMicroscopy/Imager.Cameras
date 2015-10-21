@@ -5,7 +5,9 @@
 
 #include "PhotometricsCamera.h"
 
+#include <chrono>
 #include <algorithm>
+#include <thread>
 
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
@@ -146,6 +148,7 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 	}
 
 	// wait until the camera has finished recording
+	std::chrono::duration<std::int64_t, std::milli> sleepDuration(static_cast<std::int64_t>(std::min(25.0e-3, this->getExposureTime() / 3.0) * 1000.0));
 	for ( ; ; ) {
 		std::int16_t status;
 		std::uint32_t nBytesRecorded;
@@ -167,6 +170,8 @@ std::vector<uint16_t> PhotometricsCamera::acquireImages(const int nImages) {
 			}
 			break;
 		}
+
+		std::this_thread::sleep_for(sleepDuration);
 	}
 
 	return images;
