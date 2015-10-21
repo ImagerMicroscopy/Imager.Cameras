@@ -83,14 +83,15 @@ bool AndorCamera::setCoolerOn(const bool on) {
 
 bool AndorCamera::setTemperature(const double temperature) {
 	int minTemp, maxTemp;
+	int tempSetpoint = std::round(temperature);
+
 	int result = GetTemperatureRange(&minTemp, &maxTemp);
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	if ((temperature < minTemp) || (temperature > maxTemp))
-		return false;
+	tempSetpoint = std::min(std::max(tempSetpoint, minTemp), maxTemp);
 
-	result = SetTemperature(std::round(temperature));
+	result = SetTemperature(tempSetpoint);
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 

@@ -65,7 +65,18 @@ bool PhotometricsCamera::setEMGain(const double emGain) {
 
 bool PhotometricsCamera::setTemperature(const double temperature) {
 	std::int16_t scaledSetPoint = temperature * 100.0;
-	int err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
+	std::int16_t minTemp, maxTemp;
+
+	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MIN, &minTemp);
+	if (!err)
+		return false;
+	err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MAX, &maxTemp);
+	if (!err)
+		return false;
+
+	scaledSetPoint = std::max(std::min(scaledSetPoint, maxTemp), minTemp);
+
+	err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
 	if (err == 0) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
@@ -99,7 +110,7 @@ double PhotometricsCamera::getTemperature() const {
 	int16_t temperature;
 
 	int err = pl_get_param(_pvcamHandle, PARAM_TEMP, ATTR_CURRENT, &temperature);
-	if (err)
+	if (!err)
 		return std::numeric_limits<double>::quiet_NaN();
 
 	return (static_cast<double>(temperature) / 100.0);
@@ -109,7 +120,7 @@ double PhotometricsCamera::getTemperatureSetpoint() const {
 	std::int16_t setpoint;
 
 	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_CURRENT, &setpoint);
-	if (err)
+	if (!err)
 		return std::numeric_limits<double>::quiet_NaN();
 
 	return (static_cast<double>(setpoint) / 100.0);
