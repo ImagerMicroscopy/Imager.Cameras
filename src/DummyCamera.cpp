@@ -16,6 +16,13 @@ DummyCamera::DummyCamera() :
 
 }
 
+double DummyCamera::getTemperature() const {
+	std::random_device rd;;
+	std::default_random_engine randEngine(rd());
+	std::uniform_real_distribution<double> uniformDist(-25.0, 25.0);
+	return uniformDist(rd);
+}
+
 std::vector<uint16_t> DummyCamera::acquireImages(const int nImages) {
 	std::pair<int, int> sensorSize = getSensorSize();
 
