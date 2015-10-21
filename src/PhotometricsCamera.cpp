@@ -62,7 +62,7 @@ bool PhotometricsCamera::setEMGain(const double emGain) {
 }
 
 bool PhotometricsCamera::setTemperature(const double temperature) {
-	std::int16_t scaledSetPoint = temperature * 1000.0;
+	std::int16_t scaledSetPoint = temperature * 100.0;
 	int err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
 	if (err == 0) {
 		throw std::runtime_error(getPVCAMErrorMessage());
