@@ -95,7 +95,7 @@ bool AndorCamera::setTemperature(const double temperature) {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	_temperatureSetpoint = std::round(temperature);
+	_temperatureSetpoint = tempSetpoint;
 
 	return true;
 }
@@ -121,7 +121,8 @@ double AndorCamera::getEMGain() const {
 double AndorCamera::getTemperature() const {
 	int temperature;
 	int result = GetTemperature(&temperature);
-	if (result != DRV_SUCCESS)
+	if ((result != DRV_SUCCESS) && (result != DRV_TEMP_STABILIZED) && (result != DRV_TEMP_NOT_REACHED)
+		&& (result != DRV_TEMP_DRIFT) && (result != DRV_TEMP_NOT_STABILIZED))
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	return static_cast<double>(temperature);
@@ -306,6 +307,12 @@ std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 			break;
 		case DRV_SPOOLSETUPERROR:
 			message = "error with spool settings";
+			break;
+		case DRV_TEMPERATURE_NOT_STABILIZED:
+			message = "temperature not stabilized";
+			break;
+		case DRV_TEMP_OFF:
+			message = "temperature is OFF";
 			break;
 		default:
 		{
