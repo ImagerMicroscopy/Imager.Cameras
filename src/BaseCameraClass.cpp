@@ -40,6 +40,7 @@ std::vector<std::uint16_t> BaseCameraClass::acquireImages(const int nImages) {
 	while (_asyncIsRunning) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+	return images;
 }
 
 int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {
