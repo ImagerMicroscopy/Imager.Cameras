@@ -21,8 +21,6 @@ public:
 	double getTemperatureSetpoint() const override { return _temperatureSetpoint; };
 	std::pair<int, int> getSensorSize() const override;
 
-	std::vector<std::uint16_t> acquireImages(const int nImages) override;
-
 private:
 	void _setDefaults();
 	void _selectFastestRecommendedReadoutSpeed();

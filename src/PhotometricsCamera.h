@@ -21,8 +21,6 @@ public:
 	double getTemperatureSetpoint() const override;
 	std::pair<int, int> getSensorSize() const override;
 
-	std::vector<std::uint16_t> acquireImages(const int nImages) override;
-
 	static std::string getPVCAMErrorMessage();
 
 private:
