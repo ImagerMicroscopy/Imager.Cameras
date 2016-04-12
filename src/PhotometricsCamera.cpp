@@ -268,4 +268,66 @@ std::string PhotometricsCamera::getPVCAMErrorMessage() {
 	return std::string(buf);
 }
 
+void PhotometricsCamera::_derivedStartAsyncAcquisition() {
+	int err = 0;
+	std::pair<int, int> chipSize = this->getSensorSize();
+	rgn_type region = { 0, chipSize.second - 1, 1, 0, chipSize.first - 1, 1 };
+	int scaledExposureTime = _requestedExposureTime * 1.0e3;
+	std::uint32_t nBytesInImage;
+	int nImagesInBuffer = 10;
+
+	// check that the camera is ready to go
+	err = pl_cam_get_diags(_pvcamHandle);
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
+
+	// init exposure functionality
+	err = pl_exp_init_seq();
+	if (err == 0)
+		throw std::runtime_error(getPVCAMErrorMessage());
+
+	err = pl_exp_setup_cont(_pvcamHandle, 1, &region, TIMED_MODE, scaledExposureTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
+
+	_asyncBuffer.resize(nBytesInImage * nImagesInBuffer);
+	pl_exp_start_cont(_pvcamHandle, _asyncBuffer.data(), _asyncBuffer.size() * sizeof(std::uint16_t));
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
+}
+
+void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
+	int err = pl_exp_stop_cont(_pvcamHandle, CCS_HALT);
+	if (err == 0) {
+		err = pl_exp_uninit_seq();
+	}
+}
+
+bool PhotometricsCamera::_derivedNewAsyncAcquisitionImageAvailable() {
+	int err = 0;
+	std::int16_t status;
+	std::uint32_t unused;
+	err = pl_exp_check_cont_status(_pvcamHandle, &status, reinterpret_cast<uns32_ptr>(&unused), reinterpret_cast<uns32_ptr>(&unused));
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
+	if (status == READOUT_FAILED) {
+		throw std::runtime_error("readout failed");
+	}
+	return (status == READOUT_COMPLETE);
+}
+
+void PhotometricsCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+	uint16_t* address;
+	int err = pl_exp_get_latest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
+
+	memcpy(bufferForThisImage, address, nBytes);
+}
+
 #endif

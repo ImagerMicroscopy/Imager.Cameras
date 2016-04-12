@@ -9,8 +9,8 @@
 
 class BaseCameraClass {
 public:
-	BaseCameraClass() { ; }
-	~BaseCameraClass() { ; }
+	BaseCameraClass();
+	~BaseCameraClass();
 
 	virtual std::string getIdentifierStr() const = 0;
 
@@ -27,7 +27,7 @@ public:
 
 	virtual std::vector<std::uint16_t> acquireImages(const int nImages) = 0;
 
-	int startAsynAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+	int startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
 	bool isAsyncAcquisitionRunning();
 	void abortAsyncAquisition();
 	int getNImagesAsyncAcquired();
@@ -37,11 +37,11 @@ private:
 	void _asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
 
 	virtual void _derivedStartAsyncAcquisition() = 0;
-	virtual bool _derivedIsAsyncAcquisitionRunning() = 0;
-	virtual bool _derivedAbortAsyncAcquisition() = 0;
+	virtual void _derivedAbortAsyncAcquisition() = 0;
 	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
-	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage) = 0;
+	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
 
+	bool _asyncIsRunning;
 	int _asyncErrorCode;
 	int _asyncWantAbort;
 	int _asyncNImagesStored;
