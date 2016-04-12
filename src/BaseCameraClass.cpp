@@ -38,7 +38,7 @@ int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBu
 	if (_asyncWorkerThread.joinable()) {
 		_asyncWorkerThread.join();
 	}
-	_asyncErrorCode = 0;
+	_asyncErrorStr.clear();
 	_asyncWantAbort = false;
 	_asyncNImagesStored = 0;
 	_asyncIndexOfLastAcquisition = -1;
@@ -67,35 +67,47 @@ int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {
-	ScopedSetter<bool> runningResetter (&_asyncIsRunning, false);
+	ScopedSetter<bool> runningResetter(&_asyncIsRunning, false);
 	auto sensorSize = this->getSensorSize();
 	int nPixelsInImage = sensorSize.first * sensorSize.second;
 
-	_derivedStartAsyncAcquisition();
+	try {
+		_derivedStartAsyncAcquisition();
 
-	int indexOfNextImage = 0;
+		int indexOfNextImage = 0;
 
-	for ( ; ; ) {
-		if (this->_asyncWantAbort) {
-			_derivedAbortAsyncAcquisition();
-			return;
-		}
-
-		while (!_derivedNewAsyncAcquisitionImageAvailable()) {
+		for (;;) {
 			if (this->_asyncWantAbort) {
 				_derivedAbortAsyncAcquisition();
 				return;
 			}
-		}
 
-		_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
-		_asyncNImagesStored += 1;
-		_asyncIndexOfLastAcquisition = indexOfNextImage;
-		if (!freeRun && (_asyncNImagesStored == nImagesInBuffer)) {
-			_derivedAbortAsyncAcquisition();
-			return;
-		}
+			while (!_derivedNewAsyncAcquisitionImageAvailable()) {
+				if (this->_asyncWantAbort) {
+					_derivedAbortAsyncAcquisition();
+					return;
+				}
+			}
 
-		indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
+			_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
+			_asyncNImagesStored += 1;
+			_asyncIndexOfLastAcquisition = indexOfNextImage;
+			if (!freeRun && (_asyncNImagesStored == nImagesInBuffer)) {
+				_derivedAbortAsyncAcquisition();
+				return;
+			}
+
+			indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
+		}
+	}
+	catch (std::runtime_error& e) {
+		_derivedAbortAsyncAcquisition();
+		_asyncErrorStr = e.what();
+		return;
+	}
+	catch (...) {
+		_derivedAbortAsyncAcquisition();
+		_asyncErrorStr = "unknown exception in async";
+		return;
 	}
 }

@@ -42,7 +42,7 @@ private:
 	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
 
 	bool _asyncIsRunning;
-	int _asyncErrorCode;
+	std::string _asyncErrorStr;
 	int _asyncWantAbort;
 	int _asyncNImagesStored;
 	int _asyncIndexOfLastAcquisition;
