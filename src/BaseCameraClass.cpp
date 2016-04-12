@@ -31,6 +31,17 @@ BaseCameraClass::~BaseCameraClass() {
 	}
 }
 
+std::vector<std::uint16_t> BaseCameraClass::acquireImages(const int nImages) {
+	std::pair<int, int> sensorSize = getSensorSize();
+	int nPixels = sensorSize.first * sensorSize.second * nImages;
+	std::vector<uint16_t> images(nPixels);
+
+	startAsyncAcquisition(false, images.data(), nImages);
+	while (_asyncIsRunning) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+}
+
 int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {
 	if (_asyncIsRunning) {
 		throw std::runtime_error("already running async");
@@ -82,22 +93,18 @@ void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outpu
 				return;
 			}
 
-			while (!_derivedNewAsyncAcquisitionImageAvailable()) {
-				if (this->_asyncWantAbort) {
+			while (_derivedNewAsyncAcquisitionImageAvailable()) {
+				_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
+				_asyncNImagesStored += 1;
+				_asyncIndexOfLastAcquisition = indexOfNextImage;
+				if (!freeRun && (_asyncNImagesStored == nImagesInBuffer)) {
 					_derivedAbortAsyncAcquisition();
 					return;
 				}
-			}
 
-			_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
-			_asyncNImagesStored += 1;
-			_asyncIndexOfLastAcquisition = indexOfNextImage;
-			if (!freeRun && (_asyncNImagesStored == nImagesInBuffer)) {
-				_derivedAbortAsyncAcquisition();
-				return;
+				indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
 			}
-
-			indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 	}
 	catch (std::runtime_error& e) {
