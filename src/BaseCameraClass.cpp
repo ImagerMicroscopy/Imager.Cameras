@@ -43,6 +43,17 @@ std::vector<std::uint16_t> BaseCameraClass::acquireImages(const int nImages) {
 	return images;
 }
 
+int BaseCameraClass::getAsyncStatus() {
+	if (!_asyncErrorStr.empty()) {
+		return -1;
+	}
+	if (!_asyncIsRunning) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
 int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {
 	if (_asyncIsRunning) {
 		throw std::runtime_error("already running async");

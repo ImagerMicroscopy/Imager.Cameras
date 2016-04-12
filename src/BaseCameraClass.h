@@ -27,6 +27,7 @@ public:
 
 	std::vector<std::uint16_t> acquireImages(const int nImages);
 
+	int getAsyncStatus();
 	int startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
 	bool isAsyncAcquisitionRunning();
 	void abortAsyncAquisition();

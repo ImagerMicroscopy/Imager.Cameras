@@ -159,6 +159,22 @@ struct SCGetCameraTemperatureSetpointParams {
 typedef struct SCGetCameraTemperatureParams SCGetCameraTemperatureParams;
 #pragma pack() // Reset structure alignment.
 
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetAsyncAcquisitionStatusParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetAsyncAcquisitionStatusParams SCGetAsyncAcquisitionStatusParams;
+#pragma pack() // Reset structure alignment.
+
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetAsyncLastImageIndexStoredParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetAsyncLastImageIndexStoredParams SCGetAsyncLastImageIndexStoredParams;
+#pragma pack() // Reset structure alignment.
+
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
@@ -428,8 +444,7 @@ int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
 		if (err)
 			return err;
 		identifier = buf;
-	}
-	else {
+	} else {
 		return EXPECTED_STRING;
 	}
 
@@ -437,8 +452,7 @@ int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
-		}
-		else {
+		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
 		double exposureTime = camPtr->getExposureTime();
@@ -479,8 +493,7 @@ int ExecuteSCGetCameraTemperature(SCGetCameraTemperatureParams* p) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
-		}
-		else {
+		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
 		double temperature = camPtr->getTemperature();
@@ -521,12 +534,92 @@ int ExecuteSCGetCameraTemperatureSetpoint(SCGetCameraTemperatureSetpointParams* 
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
-		}
-		else {
+		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
 		double temperature = camPtr->getTemperatureSetpoint();
 		p->result = temperature;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
+extern "C"
+int ExecuteSCGetAsyncAcquisitionStatus(SCGetAsyncAcquisitionStatusParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	} else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		} else { 
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		double status = camPtr->getAsyncStatus();
+		p->result = status;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
+extern "C"
+int ExecuteSCGetAsyncLastImageIndexStored(SCGetAsyncLastImageIndexStoredParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	} else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		double nImagesAcquired = camPtr->getNImagesAsyncAcquired();
+		p->result = nImagesAcquired;
 	}
 	catch (std::runtime_error e) {
 		XOPNotice(e.what());
@@ -602,6 +695,12 @@ DoFunction()
 		break;
 	case 3:						/* XFUNC1ComplexConjugate(p1) */
 		err = ExecuteSCGetCameraTemperatureSetpoint((SCGetCameraTemperatureSetpointParams*)p);
+		break;
+	case 4:
+		err = ExecuteSCGetAsyncAcquisitionStatus((SCGetAsyncAcquisitionStatusParams*)p);
+		break;
+	case 5:
+		err = ExecuteSCGetAsyncLastImageIndexStored((SCGetAsyncLastImageIndexStoredParams*)p);
 		break;
 	}
 	return(err);
