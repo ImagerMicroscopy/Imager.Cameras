@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
+#include <thread>
 
 class BaseCameraClass {
 public:
@@ -25,6 +26,27 @@ public:
 	virtual std::pair<int, int> getSensorSize() const = 0;
 
 	virtual std::vector<std::uint16_t> acquireImages(const int nImages) = 0;
+
+	int startAsynAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+	bool isAsyncAcquisitionRunning();
+	void abortAsyncAquisition();
+	int getNImagesAsyncAcquired();
+	int getIndexOfLastImageAsyncAcquired();
+
+private:
+	void _asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+
+	virtual void _derivedStartAsyncAcquisition() = 0;
+	virtual bool _derivedIsAsyncAcquisitionRunning() = 0;
+	virtual bool _derivedAbortAsyncAcquisition() = 0;
+	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
+	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage) = 0;
+
+	int _asyncErrorCode;
+	int _asyncWantAbort;
+	int _asyncNImagesStored;
+	int _asyncIndexOfLastAcquisition;
+	std::thread _asyncWorkerThread;
 };
 
 #endif

@@ -186,6 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\AndorCamera.cpp" />
+    <ClCompile Include="..\src\BaseCameraClass.cpp" />
     <ClCompile Include="..\src\CameraManager.cpp" />
     <ClCompile Include="..\src\DummyCamera.cpp" />
     <ClCompile Include="..\src\PhotometricsCamera.cpp" />
