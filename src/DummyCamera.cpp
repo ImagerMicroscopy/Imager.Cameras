@@ -39,4 +39,21 @@ std::vector<uint16_t> DummyCamera::acquireImages(const int nImages) {
 	return images;
 }
 
+void DummyCamera::_derivedStartAsyncAcquisition() {
+}
+void DummyCamera::_derivedAbortAsyncAcquisition() {
+}
+bool DummyCamera::_derivedNewAsyncAcquisitionImageAvailable() {
+	return true;
+}
+void DummyCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+	int nPixels = nBytes / sizeof(std::uint16_t);
+	std::random_device rd;
+	std::default_random_engine randEngine(rd());
+	std::uniform_int_distribution<std::uint16_t> uniformDist(0, 65535);
+	for (int i = 0; i < nPixels; i++) {
+		bufferForThisImage[i] = uniformDist(randEngine);
+	}
+}
+
 #endif

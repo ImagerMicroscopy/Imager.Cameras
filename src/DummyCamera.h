@@ -23,6 +23,11 @@ public:
 
 	std::vector<uint16_t> acquireImages(const int nImages) override;
 
+	void _derivedStartAsyncAcquisition() override;
+	void _derivedAbortAsyncAcquisition() override;
+	bool _derivedNewAsyncAcquisitionImageAvailable() override;
+	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+
 private:
 	double _exposureTime;
 	double _emGain;
