@@ -28,8 +28,14 @@ private:
 	void _selectFastestRecommendedReadoutSpeed();
 	std::string _andorErrorCodeToMessage(int errorCode) const;
 
+	void _derivedStartAsyncAcquisition() override;
+	void _derivedAbortAsyncAcquisition() override;
+	bool _derivedNewAsyncAcquisitionImageAvailable() override;
+	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+
 	bool _coolerOn;
 	double _temperatureSetpoint;
+	int _numberOfImagesAcquired;
 };
 
 #endif
