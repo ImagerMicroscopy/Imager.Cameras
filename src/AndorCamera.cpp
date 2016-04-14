@@ -122,7 +122,7 @@ double AndorCamera::getTemperature() const {
 	int temperature;
 	int result = GetTemperature(&temperature);
 	if ((result != DRV_SUCCESS) && (result != DRV_TEMP_STABILIZED) && (result != DRV_TEMP_NOT_REACHED)
-		&& (result != DRV_TEMP_DRIFT) && (result != DRV_TEMP_NOT_STABILIZED))
+		&& (result != DRV_TEMP_DRIFT) && (result != DRV_TEMP_NOT_STABILIZED) && (result != DRV_ACQUIRING))
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	return static_cast<double>(temperature);
