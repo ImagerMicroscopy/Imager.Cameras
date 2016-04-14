@@ -720,8 +720,12 @@ int ExecuteSCGetAsyncLastImageIndexStored(SCGetAsyncLastImageIndexStoredParams* 
 		else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
-		double nImagesAcquired = camPtr->getNImagesAsyncAcquired();
-		p->result = nImagesAcquired;
+		if (!camPtr->isAsyncAcquisitionRunning()) {
+			p->result = -1.0;
+		} else {
+			double indexOfLastImage = camPtr->getIndexOfLastImageAsyncAcquired();
+			p->result = indexOfLastImage;
+		}
 	}
 	catch (std::runtime_error e) {
 		XOPNotice(e.what());
@@ -851,6 +855,9 @@ static void XOPEntry(void) {
 			break;
 		case CLEANUP:
 			StopCameraManager();
+			break;
+		case NEW:
+			gCameraManager->abortRunningAcquisitions();
 			break;
 		case FUNCADDRS:
 			//result = RegisterFunction(GetXOPItem(0));

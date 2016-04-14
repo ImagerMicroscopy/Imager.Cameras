@@ -26,6 +26,7 @@ CameraManager::CameraManager() {
 }
 
 CameraManager::~CameraManager() {
+	abortRunningAcquisitions();
 #ifdef WITH_PHOTOMETRICS
 	pl_pvcam_uninit();
 #endif
@@ -92,4 +93,10 @@ std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
 	if (_availableCameras.size() == 0)
 		throw std::runtime_error("No cameras found");
 	return _availableCameras.begin()->second;
+}
+
+void CameraManager::abortRunningAcquisitions() {
+	for (auto it : _availableCameras) {
+		it.second->abortAsyncAquisition();
+	}
 }
