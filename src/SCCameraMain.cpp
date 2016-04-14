@@ -5,6 +5,7 @@
 #include <string>
 #include <cassert>
 #include <cmath>
+#include <map>
 
 #include "XOPStandardHeaders.h"
 #include "CameraManager.h"
@@ -12,6 +13,7 @@
 #include "Exceptions.h"
 
 CameraManager* gCameraManager = nullptr;
+std::map<std::shared_ptr<BaseCameraClass>, waveHndl> gWavesPossiblyInUseForAsyncAcquisition;
 
 bool StartCameraManager() {
 	try {
@@ -302,6 +304,7 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		if (!wantAsync) {
 			camPtr->acquireImages(nImages, reinterpret_cast<std::uint16_t*>(WaveData(waveH)));
 		} else {
+			gWavesPossiblyInUseForAsyncAcquisition[camPtr] = waveH;
 			camPtr->startAsyncAcquisition(freeRun, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
 		}
 	}
@@ -857,8 +860,27 @@ static void XOPEntry(void) {
 			StopCameraManager();
 			break;
 		case NEW:
-			gCameraManager->abortRunningAcquisitions();
+			if (gCameraManager != nullptr) {
+				gCameraManager->abortRunningAcquisitions();
+			}
 			break;
+		case OBJINUSE:
+		{
+			waveHndl maybeWave = (waveHndl)(GetXOPItem(0));
+			int objectType = GetXOPItem(1);
+			if (objectType == WAVE_OBJECT) {
+				for (auto it : gWavesPossiblyInUseForAsyncAcquisition) {
+					if ((it.second == maybeWave) && it.first->isAsyncAcquisitionRunning()) {
+						SetXOPResult(1);
+						break;
+					}
+					SetXOPResult(0);
+				}
+			} else {
+				SetXOPResult(0);
+			}
+			break;
+		}
 		case FUNCADDRS:
 			//result = RegisterFunction(GetXOPItem(0));
 			break;
