@@ -25,7 +25,7 @@ public:
 	virtual double getTemperatureSetpoint() const = 0;
 	virtual std::pair<int, int> getSensorSize() const = 0;
 
-	std::vector<std::uint16_t> acquireImages(const int nImages);
+	void acquireImages(const int nImages, std::uint16_t* outputBuffer);
 
 	int getAsyncStatus();
 	int startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);

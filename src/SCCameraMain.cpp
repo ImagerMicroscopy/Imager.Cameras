@@ -300,10 +300,7 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 
 		// async or synchronous aquisition?
 		if (!wantAsync) {
-			std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
-			int nElements = chipDimensions.first * chipDimensions.second * nImages;
-			assert(nElements == acquiredImages.size());
-			memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
+			camPtr->acquireImages(nImages, reinterpret_cast<std::uint16_t*>(WaveData(waveH)));
 		} else {
 			camPtr->startAsyncAcquisition(freeRun, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
 		}

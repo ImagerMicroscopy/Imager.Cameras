@@ -31,16 +31,11 @@ BaseCameraClass::~BaseCameraClass() {
 	}
 }
 
-std::vector<std::uint16_t> BaseCameraClass::acquireImages(const int nImages) {
-	std::pair<int, int> sensorSize = getSensorSize();
-	int nPixels = sensorSize.first * sensorSize.second * nImages;
-	std::vector<uint16_t> images(nPixels);
-
-	startAsyncAcquisition(false, images.data(), nImages);
+void BaseCameraClass::acquireImages(const int nImages, std::uint16_t* outputBuffer) {
+	startAsyncAcquisition(false, outputBuffer, nImages);
 	while (_asyncIsRunning) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-	return images;
 }
 
 int BaseCameraClass::getAsyncStatus() {
