@@ -106,6 +106,10 @@ void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outpu
 			}
 
 			while (_derivedNewAsyncAcquisitionImageAvailable()) {
+				if (this->_asyncWantAbort) {
+					_derivedAbortAsyncAcquisition();
+					return;
+				}
 				_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
 				_asyncNImagesStored += 1;
 				_asyncIndexOfLastAcquisition = indexOfNextImage;

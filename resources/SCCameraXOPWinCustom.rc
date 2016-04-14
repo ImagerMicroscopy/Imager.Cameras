@@ -27,6 +27,9 @@ BEGIN
 	"SCAcquireCameraImages\0"
 	XOPOp | utilOp | compilableOp,
 
+	"SCAbortAcquisition\0"
+	XOPOp | utilOp | compilableOp,
+
 	"SCSetCameraSettings\0"
 	XOPOp | utilOp | compilableOp,
 

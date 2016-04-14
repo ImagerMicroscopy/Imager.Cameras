@@ -92,6 +92,26 @@ typedef struct SCAcquireCameraImagesRuntimeParams SCAcquireCameraImagesRuntimePa
 typedef struct SCAcquireCameraImagesRuntimeParams* SCAcquireCameraImagesRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
+// Runtime param structure for SCAbortAcquisition operation.
+#pragma pack(2)	// All structures passed to Igor are two-byte aligned.
+struct SCAbortAcquisitionRuntimeParams {
+	// Flag parameters.
+
+	// Main parameters.
+
+	// Parameters for cameraID keyword group.
+	int cameraIDEncountered;
+	Handle cameraID_cameraID;
+	int cameraIDParamsSet[1];
+
+	// These are postamble fields that Igor sets.
+	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
+	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+};
+typedef struct SCAbortAcquisitionRuntimeParams SCAbortAcquisitionRuntimeParams;
+typedef struct SCAbortAcquisitionRuntimeParams* SCAbortAcquisitionRuntimeParamsPtr;
+#pragma pack()	// Reset structure alignment to default.
+
 // Runtime param structure for SCSetCameraSettings operation.
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
 struct SCSetCameraSettingsRuntimeParams {
@@ -312,6 +332,52 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 	} else {
 		return err;
 	}
+}
+
+extern "C" int
+ExecuteSCAbortAcquisition(SCAbortAcquisitionRuntimeParamsPtr p)
+{
+	int err = 0;
+
+	// Main parameters.
+
+	std::string identifier;
+	if (p->cameraIDEncountered) {
+		// Parameter: p->cameraID_cameraID (test for NULL handle before using)
+		if (p->cameraID_cameraID == nullptr)
+			return EXPECTED_STRING;
+		char buf[128];
+		err = GetCStringFromHandle(p->cameraID_cameraID, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	}
+
+	try {
+		// find the requested camera
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		camPtr->abortAsyncAquisition();
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+		err = NOMEM;
+	}
+	catch (int e) {
+		err = e;
+	}
+	catch (...) {
+		XOPNotice("Unknown exception\r");
+		err = NOMEM;
+	}
+
+	return err;
 }
 
 extern "C" int
@@ -700,6 +766,20 @@ RegisterSCAcquireCameraImages(void)
 }
 
 static int
+RegisterSCAbortAcquisition(void)
+{
+	const char* cmdTemplate;
+	const char* runtimeNumVarList;
+	const char* runtimeStrVarList;
+
+	// NOTE: If you change this template, you must change the SCAbortAcquisitionRuntimeParams structure as well.
+	cmdTemplate = "SCAbortAcquisition cameraID=string:cameraID ";
+	runtimeNumVarList = "";
+	runtimeStrVarList = "";
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAbortAcquisitionRuntimeParams), (void*)ExecuteSCAbortAcquisition, 0);
+}
+
+static int
 RegisterSCSetCameraSettings(void)
 {
 	const char* cmdTemplate;
@@ -792,6 +872,8 @@ static int RegisterOperations(void)		// Register any operations with Igor.
 	if ((result = RegisterSCListAvailableCameras()))
 		return result;
 	if ((result = RegisterSCAcquireCameraImages()))
+		return result;
+	if ((result = RegisterSCAbortAcquisition()))
 		return result;
 	if ((result = RegisterSCSetCameraSettings()))
 		return result;
