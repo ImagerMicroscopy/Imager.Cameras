@@ -26,7 +26,6 @@ CameraManager::CameraManager() {
 }
 
 CameraManager::~CameraManager() {
-	abortRunningAcquisitions();
 #ifdef WITH_PHOTOMETRICS
 	pl_pvcam_uninit();
 #endif
