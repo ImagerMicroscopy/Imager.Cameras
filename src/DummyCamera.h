@@ -21,7 +21,10 @@ public:
 	double getTemperatureSetpoint() const override { return _temperature; };
 	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(512, 512); };
 
-	std::vector<uint16_t> acquireImages(const int nImages) override;
+	void _derivedStartAsyncAcquisition() override;
+	void _derivedAbortAsyncAcquisition() override;
+	bool _derivedNewAsyncAcquisitionImageAvailable() override;
+	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
 private:
 	double _exposureTime;

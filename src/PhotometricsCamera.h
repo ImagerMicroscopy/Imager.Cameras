@@ -21,17 +21,21 @@ public:
 	double getTemperatureSetpoint() const override;
 	std::pair<int, int> getSensorSize() const override;
 
-	std::vector<std::uint16_t> acquireImages(const int nImages) override;
-
 	static std::string getPVCAMErrorMessage();
 
 private:
 	void _selectFastestReadoutPort(bool useEMGain);
 	void _validateExposureTime();
 
+	void _derivedStartAsyncAcquisition() override;
+	void _derivedAbortAsyncAcquisition() override;
+	bool _derivedNewAsyncAcquisitionImageAvailable() override;
+	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+
 	std::string _identifier;
 	std::int16_t _pvcamHandle;
 	double _requestedExposureTime;
+	std::vector<std::uint16_t> _asyncBuffer;
 };
 
 #endif

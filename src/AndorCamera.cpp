@@ -137,68 +137,6 @@ std::pair<int, int> AndorCamera::getSensorSize() const {
 	return std::pair<int, int>(nRows, nCols);
 }
 
-std::vector<uint16_t> AndorCamera::acquireImages(const int nImages) {
-	int result = SetNumberKinetics(nImages);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	// Check if the camera is ready to measure
-	int status;
-	result = GetStatus(&status);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	if (status != DRV_IDLE)
-		throw std::runtime_error(_andorErrorCodeToMessage(status));
-
-	// Start acquiring images
-	result = StartAcquisition();
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	// Wait until all images have been acquired
-	std::chrono::duration<double> permissibleAcquisitionDuration(std::max(1.0, 3.0 * this->getExposureTime()));
-	std::chrono::time_point<std::chrono::high_resolution_clock> terminateAt = std::chrono::high_resolution_clock::now() + std::chrono::duration_cast<std::chrono::seconds>(permissibleAcquisitionDuration);
-	std::chrono::duration<std::int64_t, std::milli> sleepDuration(static_cast<std::int64_t>(std::min(25.0e-3, this->getExposureTime() / 3.0) * 1000.0));
-	for (;;) {
-		result = GetStatus(&status);
-		if (result != DRV_SUCCESS)
-			throw std::runtime_error(_andorErrorCodeToMessage(result));
-		if (status == DRV_IDLE)			// acquisition finished
-			break;
-		if (status != DRV_ACQUIRING)	// error
-			throw std::runtime_error(_andorErrorCodeToMessage(status));
-
-		if (SpinProcess()) {
-			result = AbortAcquisition();
-			if (result != DRV_SUCCESS)
-				throw std::runtime_error(_andorErrorCodeToMessage(status));
-			throw int(USER_ABORT);
-		}
-
-		if (std::chrono::high_resolution_clock::now() > terminateAt) {
-			AbortAcquisition();
-			throw AcquisitionTimeOutError("camera acquisition is stuck");
-		}
-
-		std::this_thread::sleep_for(sleepDuration);
-	}
-
-	// allocate storage to hold the image
-	std::pair<int, int> sensorSize = getSensorSize();
-	int nElements = sensorSize.first * sensorSize.second * nImages;
-	std::vector<std::uint16_t> images(nElements);
-
-	result = GetAcquiredData16(images.data(), nElements);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	return images;
-}
-
 void AndorCamera::_setDefaults() {
 	int result;
 
@@ -324,6 +262,55 @@ std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 	}
 
 	return message;
+}
+
+void AndorCamera::_derivedStartAsyncAcquisition() {
+	int result;
+	_numberOfImagesAcquired = 0;
+
+	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	// Check if the camera is ready to measure
+	int status;
+	result = GetStatus(&status);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	if (status != DRV_IDLE)
+		throw std::runtime_error(_andorErrorCodeToMessage(status));
+
+	// set run till abort
+	result = SetAcquisitionMode(5);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+}
+void AndorCamera::_derivedAbortAsyncAcquisition() {
+	AbortAcquisition();
+}
+bool AndorCamera::_derivedNewAsyncAcquisitionImageAvailable() {
+	long nImagesAcquired;
+	int result = GetTotalNumberImagesAcquired(&nImagesAcquired);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	return (nImagesAcquired != _numberOfImagesAcquired);
+}
+void AndorCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+	int result;
+	long firstImageIndex, lastImageIndex;
+	long validFirstIndex, validLastIndex;
+	result = GetNumberNewImages(&firstImageIndex, &lastImageIndex);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	result = GetImages16(firstImageIndex, firstImageIndex, bufferForThisImage, nBytes / sizeof(std::uint16_t), &validFirstIndex, &validLastIndex);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	if ((validFirstIndex != firstImageIndex) || (validLastIndex != firstImageIndex)) {
+		throw std::runtime_error("valid index different from requested index");
+	}
+	_numberOfImagesAcquired += 1;
 }
 
 #endif

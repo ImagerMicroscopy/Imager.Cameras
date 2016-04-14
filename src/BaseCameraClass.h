@@ -5,11 +5,12 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
+#include <thread>
 
 class BaseCameraClass {
 public:
-	BaseCameraClass() { ; }
-	~BaseCameraClass() { ; }
+	BaseCameraClass();
+	~BaseCameraClass();
 
 	virtual std::string getIdentifierStr() const = 0;
 
@@ -24,7 +25,29 @@ public:
 	virtual double getTemperatureSetpoint() const = 0;
 	virtual std::pair<int, int> getSensorSize() const = 0;
 
-	virtual std::vector<std::uint16_t> acquireImages(const int nImages) = 0;
+	void acquireImages(const int nImages, std::uint16_t* outputBuffer);
+
+	int getAsyncStatus();
+	int startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+	bool isAsyncAcquisitionRunning();
+	void abortAsyncAquisition();
+	int getNImagesAsyncAcquired();
+	int getIndexOfLastImageAsyncAcquired();
+
+private:
+	void _asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+
+	virtual void _derivedStartAsyncAcquisition() = 0;
+	virtual void _derivedAbortAsyncAcquisition() = 0;
+	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
+	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
+
+	bool _asyncIsRunning;
+	std::string _asyncErrorStr;
+	int _asyncWantAbort;
+	int _asyncNImagesStored;
+	int _asyncIndexOfLastAcquisition;
+	std::thread _asyncWorkerThread;
 };
 
 #endif

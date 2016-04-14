@@ -5,6 +5,7 @@
 #include <string>
 #include <cassert>
 #include <cmath>
+#include <map>
 
 #include "XOPStandardHeaders.h"
 #include "CameraManager.h"
@@ -12,6 +13,7 @@
 #include "Exceptions.h"
 
 CameraManager* gCameraManager = nullptr;
+std::map<std::shared_ptr<BaseCameraClass>, waveHndl> gWavesPossiblyInUseForAsyncAcquisition;
 
 bool StartCameraManager() {
 	try {
@@ -67,6 +69,11 @@ struct SCAcquireCameraImagesRuntimeParams {
 	int ZFlagEncountered;
 	// There are no fields for this group because it has no parameters.
 
+	// Parameters for /ASYN flag group.
+	int ASYNFlagEncountered;
+	double ASYNFlag_wantAsync;				// Optional parameter.
+	int ASYNFlagParamsSet[1];
+
 	// Main parameters.
 
 	// Parameters for nImages keyword group.
@@ -85,6 +92,26 @@ struct SCAcquireCameraImagesRuntimeParams {
 };
 typedef struct SCAcquireCameraImagesRuntimeParams SCAcquireCameraImagesRuntimeParams;
 typedef struct SCAcquireCameraImagesRuntimeParams* SCAcquireCameraImagesRuntimeParamsPtr;
+#pragma pack()	// Reset structure alignment to default.
+
+// Runtime param structure for SCAbortAcquisition operation.
+#pragma pack(2)	// All structures passed to Igor are two-byte aligned.
+struct SCAbortAcquisitionRuntimeParams {
+	// Flag parameters.
+
+	// Main parameters.
+
+	// Parameters for cameraID keyword group.
+	int cameraIDEncountered;
+	Handle cameraID_cameraID;
+	int cameraIDParamsSet[1];
+
+	// These are postamble fields that Igor sets.
+	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
+	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+};
+typedef struct SCAbortAcquisitionRuntimeParams SCAbortAcquisitionRuntimeParams;
+typedef struct SCAbortAcquisitionRuntimeParams* SCAbortAcquisitionRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
 // Runtime param structure for SCSetCameraSettings operation.
@@ -159,6 +186,22 @@ struct SCGetCameraTemperatureSetpointParams {
 typedef struct SCGetCameraTemperatureParams SCGetCameraTemperatureParams;
 #pragma pack() // Reset structure alignment.
 
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetAsyncAcquisitionStatusParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetAsyncAcquisitionStatusParams SCGetAsyncAcquisitionStatusParams;
+#pragma pack() // Reset structure alignment.
+
+#pragma pack(2) // All Igor structures are two-byte-aligned. 
+struct SCGetAsyncLastImageIndexStoredParams {
+	Handle identifier; // parameter: camera identifier.
+	double result;
+};
+typedef struct SCGetAsyncLastImageIndexStoredParams SCGetAsyncLastImageIndexStoredParams;
+#pragma pack() // Reset structure alignment.
+
 extern "C" int
 ExecuteSCListAvailableCameras(SCListAvailableCamerasRuntimeParamsPtr p)
 {
@@ -191,14 +234,29 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		quiet = true;
 	}
 
+	bool wantAsync = false;
+	if (p->ASYNFlagEncountered) {
+		wantAsync = true;
+		if (p->ASYNFlagParamsSet[0]) {
+			// Optional parameter: p->ASYNFlag_wantAsync
+			wantAsync = (p->ASYNFlag_wantAsync != 0.0);
+		}
+	}
+
 	// Main parameters.
 
 	int nImages = 1;
 	if (p->nImagesEncountered) {
 		// Parameter: p->nImages_nImages
 		nImages = std::round(p->nImages_nImages);
+	}
+	bool freeRun = false;
+	if (!wantAsync) {
 		if (nImages <= 0)
 			return EXPECT_POS_NUM;
+	} else {
+		if (nImages <= 0)
+			freeRun = true;
 	}
 
 	std::string identifier;
@@ -214,17 +272,24 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 	}
 
 	try {
+		// find the requested camera
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
 		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
-		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
-		std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
-		int nElements = chipDimensions.first * chipDimensions.second * nImages;
-		assert(nElements == acquiredImages.size());
+		if (camPtr->isAsyncAcquisitionRunning()) {
+			XOPNotice("camera already running async acquisition");
+			return NOMEM;
+		}
 
+		// decide how many images to acquire
+		nImages = std::abs(nImages);
+		if (nImages == 0)
+			nImages = 25;	// arbitrary default
+		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
+		// allocate image storage
 		waveHndl waveH;
 		CountInt dimensionSizes[MAX_DIMENSIONS + 1];
 		dimensionSizes[0] = chipDimensions.first;
@@ -235,7 +300,13 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		if (err)
 			return err;
 
-		memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
+		// async or synchronous aquisition?
+		if (!wantAsync) {
+			camPtr->acquireImages(nImages, reinterpret_cast<std::uint16_t*>(WaveData(waveH)));
+		} else {
+			gWavesPossiblyInUseForAsyncAcquisition[camPtr] = waveH;
+			camPtr->startAsyncAcquisition(freeRun, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
+		}
 	}
 	catch (AcquisitionTimeOutError e) {
 		XOPNotice(e.what());
@@ -261,6 +332,52 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 	} else {
 		return err;
 	}
+}
+
+extern "C" int
+ExecuteSCAbortAcquisition(SCAbortAcquisitionRuntimeParamsPtr p)
+{
+	int err = 0;
+
+	// Main parameters.
+
+	std::string identifier;
+	if (p->cameraIDEncountered) {
+		// Parameter: p->cameraID_cameraID (test for NULL handle before using)
+		if (p->cameraID_cameraID == nullptr)
+			return EXPECTED_STRING;
+		char buf[128];
+		err = GetCStringFromHandle(p->cameraID_cameraID, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	}
+
+	try {
+		// find the requested camera
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		camPtr->abortAsyncAquisition();
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+		err = NOMEM;
+	}
+	catch (int e) {
+		err = e;
+	}
+	catch (...) {
+		XOPNotice("Unknown exception\r");
+		err = NOMEM;
+	}
+
+	return err;
 }
 
 extern "C" int
@@ -330,6 +447,10 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 		}
 		else {
 			camPtr = gCameraManager->getFirstCamera();
+		}
+		if (camPtr->isAsyncAcquisitionRunning()) {
+			XOPNotice("camera already running async acquisition");
+			return NOMEM;
 		}
 
 		if (haveExposureTime) {
@@ -428,8 +549,7 @@ int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
 		if (err)
 			return err;
 		identifier = buf;
-	}
-	else {
+	} else {
 		return EXPECTED_STRING;
 	}
 
@@ -437,8 +557,7 @@ int ExecuteSCGetCameraExposureTime(SCGetCameraExposureTimeParams* p) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
-		}
-		else {
+		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
 		double exposureTime = camPtr->getExposureTime();
@@ -479,8 +598,7 @@ int ExecuteSCGetCameraTemperature(SCGetCameraTemperatureParams* p) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
-		}
-		else {
+		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
 		double temperature = camPtr->getTemperature();
@@ -521,12 +639,96 @@ int ExecuteSCGetCameraTemperatureSetpoint(SCGetCameraTemperatureSetpointParams* 
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
-		}
-		else {
+		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
 		double temperature = camPtr->getTemperatureSetpoint();
 		p->result = temperature;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
+extern "C"
+int ExecuteSCGetAsyncAcquisitionStatus(SCGetAsyncAcquisitionStatusParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	} else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		} else { 
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		double status = camPtr->getAsyncStatus();
+		p->result = status;
+	}
+	catch (std::runtime_error e) {
+		XOPNotice(e.what());
+		XOPNotice("\r");
+	}
+	catch (...) {
+		XOPNotice("Unknown error\r");
+	}
+
+	return err;
+}
+
+extern "C"
+int ExecuteSCGetAsyncLastImageIndexStored(SCGetAsyncLastImageIndexStoredParams* p) {
+	int err = 0;
+
+	if (!CameraManagerIsAvailable()) {
+		return NOMEM;	// todo: better message
+	}
+
+	std::string identifier;
+	if (p->identifier != nullptr) {
+		char buf[128];
+		err = GetCStringFromHandle(p->identifier, buf, 128 - 1);
+		if (err)
+			return err;
+		identifier = buf;
+	} else {
+		return EXPECTED_STRING;
+	}
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		if (!identifier.empty()) {
+			camPtr = gCameraManager->getCamera(identifier);
+		}
+		else {
+			camPtr = gCameraManager->getFirstCamera();
+		}
+		if (!camPtr->isAsyncAcquisitionRunning()) {
+			p->result = -1.0;
+		} else {
+			double indexOfLastImage = camPtr->getIndexOfLastImageAsyncAcquired();
+			p->result = indexOfLastImage;
+		}
 	}
 	catch (std::runtime_error e) {
 		XOPNotice(e.what());
@@ -561,10 +763,24 @@ RegisterSCAcquireCameraImages(void)
 	const char* runtimeStrVarList;
 
 	// NOTE: If you change this template, you must change the SCAcquireCameraImagesRuntimeParams structure as well.
-	cmdTemplate = "SCAcquireCameraImages /Z nImages=number:nImages, cameraID=string:cameraID ";
+	cmdTemplate = "SCAcquireCameraImages /Z /ASYN[=number:wantAsync] nImages=number:nImages, cameraID=string:cameraID ";
 	runtimeNumVarList = "V_flag";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAcquireCameraImagesRuntimeParams), (void*)ExecuteSCAcquireCameraImages, 0);
+}
+
+static int
+RegisterSCAbortAcquisition(void)
+{
+	const char* cmdTemplate;
+	const char* runtimeNumVarList;
+	const char* runtimeStrVarList;
+
+	// NOTE: If you change this template, you must change the SCAbortAcquisitionRuntimeParams structure as well.
+	cmdTemplate = "SCAbortAcquisition cameraID=string:cameraID ";
+	runtimeNumVarList = "";
+	runtimeStrVarList = "";
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAbortAcquisitionRuntimeParams), (void*)ExecuteSCAbortAcquisition, 0);
 }
 
 static int
@@ -603,6 +819,12 @@ DoFunction()
 	case 3:						/* XFUNC1ComplexConjugate(p1) */
 		err = ExecuteSCGetCameraTemperatureSetpoint((SCGetCameraTemperatureSetpointParams*)p);
 		break;
+	case 4:
+		err = ExecuteSCGetAsyncAcquisitionStatus((SCGetAsyncAcquisitionStatusParams*)p);
+		break;
+	case 5:
+		err = ExecuteSCGetAsyncLastImageIndexStored((SCGetAsyncLastImageIndexStoredParams*)p);
+		break;
 	}
 	return(err);
 }
@@ -637,6 +859,28 @@ static void XOPEntry(void) {
 		case CLEANUP:
 			StopCameraManager();
 			break;
+		case NEW:
+			if (gCameraManager != nullptr) {
+				gCameraManager->abortRunningAcquisitions();
+			}
+			break;
+		case OBJINUSE:
+		{
+			waveHndl maybeWave = (waveHndl)(GetXOPItem(0));
+			int objectType = GetXOPItem(1);
+			if (objectType == WAVE_OBJECT) {
+				for (auto it : gWavesPossiblyInUseForAsyncAcquisition) {
+					if ((it.second == maybeWave) && it.first->isAsyncAcquisitionRunning()) {
+						SetXOPResult(1);
+						break;
+					}
+					SetXOPResult(0);
+				}
+			} else {
+				SetXOPResult(0);
+			}
+			break;
+		}
 		case FUNCADDRS:
 			//result = RegisterFunction(GetXOPItem(0));
 			break;
@@ -654,6 +898,8 @@ static int RegisterOperations(void)		// Register any operations with Igor.
 	if ((result = RegisterSCListAvailableCameras()))
 		return result;
 	if ((result = RegisterSCAcquireCameraImages()))
+		return result;
+	if ((result = RegisterSCAbortAcquisition()))
 		return result;
 	if ((result = RegisterSCSetCameraSettings()))
 		return result;

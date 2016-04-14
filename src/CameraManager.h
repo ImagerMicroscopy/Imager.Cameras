@@ -21,6 +21,8 @@ public:
 	std::shared_ptr<BaseCameraClass> getCamera(const std::string& identifier) const;
 	std::shared_ptr<BaseCameraClass> getFirstCamera() const;
 
+	void abortRunningAcquisitions();
+
 private:
 	std::map<std::string, std::shared_ptr<BaseCameraClass>> _availableCameras;
 };
