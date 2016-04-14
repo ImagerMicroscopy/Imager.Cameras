@@ -285,6 +285,9 @@ void AndorCamera::_derivedStartAsyncAcquisition() {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
+	result = StartAcquisition();
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
 }
 void AndorCamera::_derivedAbortAsyncAcquisition() {
 	AbortAcquisition();
