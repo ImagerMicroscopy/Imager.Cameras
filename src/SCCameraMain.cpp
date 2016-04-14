@@ -67,6 +67,11 @@ struct SCAcquireCameraImagesRuntimeParams {
 	int ZFlagEncountered;
 	// There are no fields for this group because it has no parameters.
 
+	// Parameters for /ASYN flag group.
+	int ASYNFlagEncountered;
+	double ASYNFlag_wantAsync;				// Optional parameter.
+	int ASYNFlagParamsSet[1];
+
 	// Main parameters.
 
 	// Parameters for nImages keyword group.
@@ -207,14 +212,29 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		quiet = true;
 	}
 
+	bool wantAsync = false;
+	if (p->ASYNFlagEncountered) {
+		wantAsync = true;
+		if (p->ASYNFlagParamsSet[0]) {
+			// Optional parameter: p->ASYNFlag_wantAsync
+			wantAsync = (p->ASYNFlag_wantAsync != 0.0);
+		}
+	}
+
 	// Main parameters.
 
 	int nImages = 1;
 	if (p->nImagesEncountered) {
 		// Parameter: p->nImages_nImages
 		nImages = std::round(p->nImages_nImages);
+	}
+	bool freeRun = false;
+	if (!wantAsync) {
 		if (nImages <= 0)
 			return EXPECT_POS_NUM;
+	} else {
+		if (nImages <= 0)
+			freeRun = true;
 	}
 
 	std::string identifier;
@@ -230,6 +250,7 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 	}
 
 	try {
+		// find the requested camera
 		std::shared_ptr<BaseCameraClass> camPtr;
 		if (!identifier.empty()) {
 			camPtr = gCameraManager->getCamera(identifier);
@@ -240,11 +261,13 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 			XOPNotice("camera already running async acquisition");
 			return NOMEM;
 		}
-		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
-		std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
-		int nElements = chipDimensions.first * chipDimensions.second * nImages;
-		assert(nElements == acquiredImages.size());
 
+		// decide how many images to acquire
+		nImages = std::abs(nImages);
+		if (nImages == 0)
+			nImages = 25;	// arbitrary default
+		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
+		// allocate image storage
 		waveHndl waveH;
 		CountInt dimensionSizes[MAX_DIMENSIONS + 1];
 		dimensionSizes[0] = chipDimensions.first;
@@ -255,7 +278,15 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		if (err)
 			return err;
 
-		memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
+		// async or synchronous aquisition?
+		if (!wantAsync) {
+			std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
+			int nElements = chipDimensions.first * chipDimensions.second * nImages;
+			assert(nElements == acquiredImages.size());
+			memcpy(WaveData(waveH), acquiredImages.data(), nElements * sizeof(std::uint16_t));
+		} else {
+			camPtr->startAsyncAcquisition(freeRun, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
+		}
 	}
 	catch (AcquisitionTimeOutError e) {
 		XOPNotice(e.what());
@@ -662,7 +693,7 @@ RegisterSCAcquireCameraImages(void)
 	const char* runtimeStrVarList;
 
 	// NOTE: If you change this template, you must change the SCAcquireCameraImagesRuntimeParams structure as well.
-	cmdTemplate = "SCAcquireCameraImages /Z nImages=number:nImages, cameraID=string:cameraID ";
+	cmdTemplate = "SCAcquireCameraImages /Z /ASYN[=number:wantAsync] nImages=number:nImages, cameraID=string:cameraID ";
 	runtimeNumVarList = "V_flag";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(SCAcquireCameraImagesRuntimeParams), (void*)ExecuteSCAcquireCameraImages, 0);
