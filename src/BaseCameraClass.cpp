@@ -1,6 +1,8 @@
 
 #include "BaseCameraClass.h"
 
+#include "XOPStandardHeaders.h"
+
 template <typename T> 
 class ScopedSetter{
 public:
@@ -34,7 +36,11 @@ BaseCameraClass::~BaseCameraClass() {
 void BaseCameraClass::acquireImages(const int nImages, std::uint16_t* outputBuffer) {
 	startAsyncAcquisition(false, outputBuffer, nImages);
 	while (_asyncIsRunning) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		if (SpinProcess()) {
+			abortAsyncAquisition();
+			return;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 }
 
@@ -65,6 +71,8 @@ int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBu
 	_asyncWorkerThread = std::thread([&]() {
 		_asyncAcquisitionWorker(freeRun, outputBuffer, nImagesInBuffer);
 	});
+
+	return 0;
 }
 
 bool BaseCameraClass::isAsyncAcquisitionRunning() {
