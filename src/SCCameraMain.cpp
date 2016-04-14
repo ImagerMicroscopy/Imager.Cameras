@@ -236,6 +236,10 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		} else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
+		if (camPtr->isAsyncAcquisitionRunning()) {
+			XOPNotice("camera already running async acquisition");
+			return NOMEM;
+		}
 		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
 		std::vector<std::uint16_t> acquiredImages = camPtr->acquireImages(nImages);
 		int nElements = chipDimensions.first * chipDimensions.second * nImages;
@@ -346,6 +350,10 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 		}
 		else {
 			camPtr = gCameraManager->getFirstCamera();
+		}
+		if (camPtr->isAsyncAcquisitionRunning()) {
+			XOPNotice("camera already running async acquisition");
+			return NOMEM;
 		}
 
 		if (haveExposureTime) {
