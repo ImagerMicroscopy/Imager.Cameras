@@ -1,10 +1,14 @@
+#define COMPILING_SCCameraDLL_H
 #include "SCCameraDLL.h"
 
 #include "CameraManager.h"
 #include "BaseCameraClass.h"
 #include <memory>
 #include <string>
+#include <algorithm>
 
+CameraManager* gCameraManager = nullptr;
+void StopCameraManager();
 bool StartCameraManager() {
 	try {
 		if (gCameraManager == nullptr) {
@@ -31,7 +35,6 @@ bool CameraManagerIsAvailable() {
 }
 
 bool gHaveInit = false;
-CameraManager* gCameraManager = nullptr;
 
 int InitCameraDLL() {
 	StartCameraManager();
@@ -43,7 +46,7 @@ int InitCameraDLL() {
 	}
 }
 
-int ShutdownCameraDLL() {
+void ShutdownCameraDLL() {
 	StopCameraManager();
 	gHaveInit = false;
 }
@@ -53,13 +56,14 @@ int ListConnectedCameraNames(char** namesPtr) {
 		return NO_INIT;
 	
 	std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
-	for (size_t i = 0; i < std::min(cameraIdentifiers.size(), MAX_CAMERAS_10); ++i) {
-		strcpy(namesPtr[i], cameraIdentifiers[i].c_str());
+	for (size_t i = 0; i < std::min(cameraIdentifiers.size(), (size_t)MAX_CAMERAS); ++i) {
+		strncpy(namesPtr[i], cameraIdentifiers[i].c_str(), MAX_CAMERA_NAME_LENGTH);
+		namesPtr[MAX_CAMERA_NAME_LENGTH] = 0;
 	}
 	return 0;
 }
 
-int GetImageDimensions(char *cameraName, int* rows, int* cols) {
+int GetSensorDimensions(char *cameraName, int* rows, int* cols) {
 	if (!gHaveInit)
 		return NO_INIT;
 
