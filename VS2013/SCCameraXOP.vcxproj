@@ -9,6 +9,22 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="DLLDebug|Win32">
+      <Configuration>DLLDebug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DLLDebug|x64">
+      <Configuration>DLLDebug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DLLRelease|Win32">
+      <Configuration>DLLRelease</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DLLRelease|x64">
+      <Configuration>DLLRelease</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -29,13 +45,32 @@
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
@@ -49,23 +84,47 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>SCCamera</TargetName>
+    <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'">
     <TargetName>SCCamera</TargetName>
     <TargetExt>.xop</TargetExt>
     <OutDir>$(SolutionDir)\Products\</OutDir>
@@ -75,9 +134,19 @@
     <TargetExt>.xop</TargetExt>
     <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'">
+    <TargetName>SCCamera</TargetName>
+    <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>SCCamera-64</TargetName>
     <TargetExt>.xop</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'">
+    <TargetName>SCCamera</TargetName>
+    <TargetExt>.dll</TargetExt>
     <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -85,7 +154,33 @@
     <TargetExt>.xop</TargetExt>
     <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'">
+    <TargetName>SCCamera</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <OutDir>$(SolutionDir)\Products\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -127,7 +222,52 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -175,13 +315,41 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\resources;$(SolutionDir)\..\..\XOPSupport</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ResourceCompile Include="..\resources\SCCameraXOP.rc" />
     <ResourceCompile Include="..\resources\SCCameraXOPWinCustom.rc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'">true</ExcludedFromBuild>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
@@ -190,7 +358,14 @@
     <ClCompile Include="..\src\CameraManager.cpp" />
     <ClCompile Include="..\src\DummyCamera.cpp" />
     <ClCompile Include="..\src\PhotometricsCamera.cpp" />
-    <ClCompile Include="..\src\SCCameraMain.cpp" />
+    <ClCompile Include="..\src\SCCameraDLL.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\SCCameraMain.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\AndorCamera.h" />
@@ -199,6 +374,7 @@
     <ClInclude Include="..\src\DummyCamera.h" />
     <ClInclude Include="..\src\Exceptions.h" />
     <ClInclude Include="..\src\PhotometricsCamera.h" />
+    <ClInclude Include="..\src\SCCameraDLL.h" />
     <ClInclude Include="..\src\SCConfigure.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
