@@ -113,6 +113,22 @@ int ReadEMGain(char* cameraName, double* emGain) {
 	return 0;
 }
 
+int ReadEMGainRange(char* cameraName, double* minGain, double* maxGain) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		camPtr->getAllowableEMGains(minGain, maxGain);
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
 int SetExposureTime(char* cameraName, double exposureTime) {
 	if (!gHaveInit)
 		return NO_INIT;
@@ -138,6 +154,22 @@ int ReadExposureTime(char* cameraName, double* exposureTime) {
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
 		*exposureTime = camPtr->getExposureTime();
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
+int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		camPtr->getAllowableExposureTimes(minExposureTime, maxExposureTime);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
