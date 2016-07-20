@@ -9,9 +9,13 @@
 #include <algorithm>
 #include <thread>
 
+#include "Utils.h"
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
-#include "XOPStandardHeaders.h"
+
+#ifdef WITH_IGOR
+	#include "XOPStandardHeaders.h"
+#endif
 
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	_identifier(cameraName)
@@ -37,7 +41,7 @@ std::string PhotometricsCamera::getIdentifierStr() const {
 	return _identifier;
 }
 
-bool PhotometricsCamera::setExposureTime(const double exposureTime) {
+void PhotometricsCamera::setExposureTime(const double exposureTime) {
 	// ensure camera is set to accept exposure time in milliseconds
 	std::uint16_t exposureTimeResolution = EXP_RES_ONE_MILLISEC;
 	int err = pl_set_param(_pvcamHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
@@ -47,20 +51,26 @@ bool PhotometricsCamera::setExposureTime(const double exposureTime) {
 
 	_requestedExposureTime = exposureTime;
 	_validateExposureTime();
-	return (exposureTime == _requestedExposureTime);
 }
 
-bool PhotometricsCamera::setEMGain(const double emGain) {
+void PhotometricsCamera::setEMGain(const double emGain) {
 	int result;
 
 	_selectFastestReadoutPort(emGain > 0.0);
 	if (emGain > 0.0) {
+		std::uint16_t minGain, maxGain;
 		std::uint16_t multFactor = emGain;
+		result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MIN, &minGain);
+		if (!result)
+			throw std::runtime_error(getPVCAMErrorMessage());
+		result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MAX, &maxGain);
+		if (!result)
+			throw std::runtime_error(getPVCAMErrorMessage());
+		multFactor = clamp(multFactor, minGain, maxGain);
 		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
 		if (!result)
 			throw std::runtime_error(getPVCAMErrorMessage());
 	}
-	return true;
 }
 
 bool PhotometricsCamera::setTemperature(const double temperature) {
@@ -193,9 +203,7 @@ void PhotometricsCamera::_validateExposureTime() {
 	// but I kept getting a value of 1.0. So now I'm thinking this value is in milliseconds instead
 	// (probably in units of PARAM_EXP_RES_INDEX).
 	minExposureTime /= 1.0e3;
-
-	_requestedExposureTime = std::max(_requestedExposureTime, minExposureTime);
-	_requestedExposureTime = std::min(_requestedExposureTime, 10.0);
+	_requestedExposureTime = clamp(_requestedExposureTime, minExposureTime, 1.0);
 }
 
 std::string PhotometricsCamera::getPVCAMErrorMessage() {

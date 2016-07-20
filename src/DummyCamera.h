@@ -10,8 +10,8 @@ public:
 
 	std::string getIdentifierStr() const override { return std::string("ZZ__DummyCam"); };
 
-	bool setExposureTime(const double exposureTime) override { _exposureTime = exposureTime; return true; };
-	bool setEMGain(const double emGain) override { _emGain = emGain; return true; };
+	void setExposureTime(const double exposureTime) override { _exposureTime = exposureTime; };
+	void setEMGain(const double emGain) override { _emGain = emGain; };
 	bool setCoolerOn(const bool on) override { _coolerOn = on; return true; }
 	bool setTemperature(const double temperature) override { _temperature = temperature; return true; };
 

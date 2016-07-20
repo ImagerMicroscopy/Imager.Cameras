@@ -9,9 +9,12 @@
 
 #include "AndorCamera.h"
 #include "Exceptions.h"
+#include "Utils.h"
 #include "Andor/ATMCD32D.H"
 
-#include "XOPStandardHeaders.h"
+#ifdef WITH_IGOR
+	#include "XOPStandardHeaders.h"
+#endif
 
 AndorCamera::AndorCamera() :
 	_temperatureSetpoint(0)
@@ -37,31 +40,23 @@ std::string AndorCamera::getIdentifierStr() const {
 	return std::string(buf);
 }
 
-bool AndorCamera::setExposureTime(const double exposureTime) {
+void AndorCamera::setExposureTime(const double exposureTime) {
 	int result = SetExposureTime(static_cast<float>(exposureTime));
-	if (result != DRV_SUCCESS) {
-		if (result != DRV_P1INVALID) {
+	if ((result != DRV_SUCCESS) && (result != DRV_P1INVALID)) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-		} else {
-			return false;
-		}
 	}
-	return true;
 }
 
-bool AndorCamera::setEMGain(const double emGain) {
+void AndorCamera::setEMGain(const double emGain) {
 	int minGain, maxGain;
+	int requestedGain = std::round(emGain);
 	int result = GetEMGainRange(&minGain, &maxGain);
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	if ((emGain < minGain) || (emGain > maxGain))
-		return false;
-
+	requestedGain = clamp(requestedGain, minGain, maxGain);
 	result = SetEMCCDGain(std::round(emGain));
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	return true;
 }
 
 bool AndorCamera::setCoolerOn(const bool on) {

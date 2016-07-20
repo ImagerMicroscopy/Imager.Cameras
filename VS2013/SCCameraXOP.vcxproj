@@ -374,6 +374,7 @@
     <ClInclude Include="..\src\PhotometricsCamera.h" />
     <ClInclude Include="..\src\SCCameraDLL.h" />
     <ClInclude Include="..\src\SCConfigure.h" />
+    <ClInclude Include="..\src\Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

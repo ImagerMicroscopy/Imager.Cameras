@@ -35,6 +35,22 @@ BaseCameraClass::~BaseCameraClass() {
 	}
 }
 
+void BaseCameraClass::getAllowableExposureTimes(double* minExposureTime, double* maxExposureTime) {
+	double currentExposureTime = getExposureTime();
+	setExposureTime(1.0e-6);
+	*minExposureTime = getExposureTime();
+	*maxExposureTime = 1.0;
+	setExposureTime(currentExposureTime);
+}
+
+void BaseCameraClass::getAllowableEMGains(double* minGain, double* maxGain) {
+	double currentGain = getEMGain();
+	*minGain = 0.0;
+	setEMGain(1.0e12);
+	*maxGain = getEMGain();
+	setEMGain(currentGain);
+}
+
 void BaseCameraClass::acquireImages(const int nImages, std::uint16_t* outputBuffer) {
 	startAsyncAcquisition(false, outputBuffer, nImages);
 	while (_asyncIsRunning) {

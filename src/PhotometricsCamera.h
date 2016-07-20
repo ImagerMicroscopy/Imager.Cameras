@@ -10,8 +10,8 @@ public:
 
 	std::string getIdentifierStr() const override;
 
-	bool setExposureTime(const double exposureTime) override;
-	bool setEMGain(const double emGain) override;
+	void setExposureTime(const double exposureTime) override;
+	void setEMGain(const double emGain) override;
 	bool setCoolerOn(const bool on) { return false; };
 	bool setTemperature(const double temperature) override;
 

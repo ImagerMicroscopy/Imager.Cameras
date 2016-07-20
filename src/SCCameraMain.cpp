@@ -454,14 +454,10 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 		}
 
 		if (haveExposureTime) {
-			success = camPtr->setExposureTime(exposureTime);
-			if (!success)
-				atLeastOneFailure = true;
+			camPtr->setExposureTime(exposureTime);
 		}
 		if (haveEMGain) {
-			success = camPtr->setEMGain(emGain);
-			if (!success)
-				atLeastOneFailure = true;
+			camPtr->setEMGain(emGain);
 		}
 		if (haveCoolerOn) {
 			success = camPtr->setCoolerOn(coolerOn);

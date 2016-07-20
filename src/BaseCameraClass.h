@@ -14,13 +14,15 @@ public:
 
 	virtual std::string getIdentifierStr() const = 0;
 
-	virtual bool setExposureTime(const double exposureTime) = 0;
-	virtual bool setEMGain(const double emGain) = 0;
+	virtual void setExposureTime(const double exposureTime) = 0;
+	virtual void setEMGain(const double emGain) = 0;
 	virtual bool setCoolerOn(const bool on) = 0;
 	virtual bool setTemperature(const double temperature) = 0;
 
 	virtual double getExposureTime() const = 0;
 	virtual double getEMGain() const = 0;
+	void getAllowableExposureTimes(double* minExposureTime, double* maxExposureTime);
+	void getAllowableEMGains(double* minGain, double* maxGain);
 	virtual double getTemperature() const = 0;
 	virtual double getTemperatureSetpoint() const = 0;
 	virtual std::pair<int, int> getSensorSize() const = 0;
