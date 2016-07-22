@@ -60,7 +60,7 @@ int ListConnectedCameraNames(char** namesPtr) {
 		strncpy(namesPtr[i], cameraIdentifiers[i].c_str(), MAX_CAMERA_NAME_LENGTH);
 		namesPtr[MAX_CAMERA_NAME_LENGTH] = 0;
 	}
-	return 0;
+	return cameraIdentifiers.size();
 }
 
 int GetSensorDimensions(char *cameraName, int* rows, int* cols) {
@@ -186,7 +186,7 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
 		std::pair<int, int> size = camPtr->getSensorSize();
-		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * bufferSize;
+		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if (bufferSize < requiredBufferSize)
 			return GENERIC_ERROR;
 		camPtr->acquireImages(nImages, buffer);
