@@ -39,11 +39,10 @@ extern "C" {
 	LIBSPEC int ReadExposureTime(char* cameraName, double* exposureTime);
 	LIBSPEC int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime);
 
-	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSize);
+	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes);
 
-	LIBSPEC int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSize);
+	LIBSPEC int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSizeinBytes);
 	LIBSPEC int GetIndexOfLastImageAsyncAcquired(char* cameraName, int* indexOfLastImageAcquired);
-	LIBSPEC int StopAsyncAcquisition(char* cameraName, uint16_t buffer);
 	LIBSPEC int AbortAsyncAcquisition(char* cameraName);
 #ifdef __cplusplus
 }

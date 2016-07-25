@@ -177,7 +177,7 @@ int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* max
 	return 0;
 }
 
-int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSize) {
+int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -187,7 +187,7 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 		camPtr = gCameraManager->getCamera(identifier);
 		std::pair<int, int> size = camPtr->getSensorSize();
 		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
-		if (bufferSize < requiredBufferSize)
+		if (bufferSizeinBytes < requiredBufferSize)
 			return GENERIC_ERROR;
 		camPtr->acquireImages(nImages, buffer);
 	}
@@ -197,7 +197,7 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 	return 0;
 }
 
-int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSize) {
+int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -206,10 +206,10 @@ int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSiz
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
 		std::pair<int, int> size = camPtr->getSensorSize();
-		uint64_t imageSize = (uint64_t)size.first * (uint64_t)size.second;
-		if ((bufferSize % imageSize) != 0)
+		uint64_t imageSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
+		if ((bufferSizeinBytes == 0) || ((bufferSizeinBytes % imageSize) != 0))
 			return BUFFER_SIZE_MUST_BE_MULTIPLE_OF_IMAGE_SIZE;
-		int nImagesInBuffer = bufferSize / imageSize;
+		int nImagesInBuffer = bufferSizeinBytes / imageSize;
 		if (nImagesInBuffer < 2)
 			return TOO_FEW_IMAGES_IN_BUFFER;
 		camPtr->startAsyncAcquisition(true, buffer, nImagesInBuffer);
