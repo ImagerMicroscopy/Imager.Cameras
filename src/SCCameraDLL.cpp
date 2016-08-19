@@ -177,6 +177,22 @@ int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* max
 	return 0;
 }
 
+int SetTemperature(char* cameraName, double temperature) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		camPtr->setTemperature(temperature);
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
 int ReadTemperature(char* cameraName, double* temperature) {
 	if (!gHaveInit)
 		return NO_INIT;
@@ -186,6 +202,22 @@ int ReadTemperature(char* cameraName, double* temperature) {
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
 		*temperature = camPtr->getTemperature();
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
+int ReadTemperatureSetpoint(char* cameraName, double* temperature) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		*temperature = camPtr->getTemperatureSetpoint();
 	}
 	catch (...) {
 		return GENERIC_ERROR;

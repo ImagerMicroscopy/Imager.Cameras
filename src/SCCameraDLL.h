@@ -39,7 +39,9 @@ extern "C" {
 	LIBSPEC int SetExposureTime(char* cameraName, double exposureTime);
 	LIBSPEC int ReadExposureTime(char* cameraName, double* exposureTime);
 	LIBSPEC int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime);
+	LIBSPEC int SetTemperature(char* cameraName, double temperature);
 	LIBSPEC int ReadTemperature(char* cameraName, double* temperature);
+	LIBSPEC int ReadTemperatureSetpoint(char* cameraName, double* temperature);
 
 	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes);
 
