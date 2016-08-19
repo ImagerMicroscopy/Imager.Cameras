@@ -12,7 +12,6 @@ public:
 
 	void setExposureTime(const double exposureTime) override;
 	void setEMGain(const double emGain) override;
-	bool setCoolerOn(const bool on);
 	bool setTemperature(const double temperature) override;
 
 	double getExposureTime() const override;
@@ -22,6 +21,7 @@ public:
 	std::pair<int, int> getSensorSize() const override;
 
 private:
+	void _setCoolerOn(const bool on) override;
 	void _setDefaults();
 	void _selectFastestRecommendedReadoutSpeed();
 	std::string _andorErrorCodeToMessage(int errorCode) const;

@@ -29,8 +29,6 @@ AndorCamera::AndorCamera() :
 AndorCamera::~AndorCamera() {
 	SetShutter(1, 2, 100, 100);		// close shutter
 
-	setCoolerOn(false);
-
 	ShutDown();
 }
 
@@ -57,23 +55,6 @@ void AndorCamera::setEMGain(const double emGain) {
 	result = SetEMCCDGain(std::round(emGain));
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-}
-
-bool AndorCamera::setCoolerOn(const bool on) {
-	int result;
-	if (on) {
-		result = CoolerON();
-		if (result != DRV_SUCCESS)
-			throw std::runtime_error(_andorErrorCodeToMessage(result));
-		_coolerOn = true;
-	} else {
-		result = CoolerOFF();
-		if (result != DRV_SUCCESS)
-			throw std::runtime_error(_andorErrorCodeToMessage(result));
-		_coolerOn = false;
-	}
-
-	return true;
 }
 
 bool AndorCamera::setTemperature(const double temperature) {
@@ -132,6 +113,21 @@ std::pair<int, int> AndorCamera::getSensorSize() const {
 	return std::pair<int, int>(nRows, nCols);
 }
 
+void AndorCamera::_setCoolerOn(const bool on) {
+	int result;
+	if (on) {
+		result = CoolerON();
+		if (result != DRV_SUCCESS)
+			throw std::runtime_error(_andorErrorCodeToMessage(result));
+		_coolerOn = true;
+	} else {
+		result = CoolerOFF();
+		if (result != DRV_SUCCESS)
+			throw std::runtime_error(_andorErrorCodeToMessage(result));
+		_coolerOn = false;
+	}
+}
+
 void AndorCamera::_setDefaults() {
 	int result;
 
@@ -165,8 +161,6 @@ void AndorCamera::_setDefaults() {
 	result = SetOutputAmplifier(0);				// use EMCCD gain register
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	setCoolerOn(false);
 
 	result = SetShutter(1, 1, 100, 100);		// open shutter
 	if (result != DRV_SUCCESS)

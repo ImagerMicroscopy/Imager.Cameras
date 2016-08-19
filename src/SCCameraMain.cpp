@@ -460,9 +460,7 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 			camPtr->setEMGain(emGain);
 		}
 		if (haveCoolerOn) {
-			success = camPtr->setCoolerOn(coolerOn);
-			if (!success)
-				atLeastOneFailure = true;
+			// no longer supported
 		}
 		if (haveCoolerTemperature) {
 			success = camPtr->setTemperature(coolerTemperature);

@@ -12,7 +12,6 @@ public:
 
 	void setExposureTime(const double exposureTime) override { _exposureTime = exposureTime; };
 	void setEMGain(const double emGain) override { _emGain = emGain; };
-	bool setCoolerOn(const bool on) override { _coolerOn = on; return true; }
 	bool setTemperature(const double temperature) override { _temperature = temperature; return true; };
 
 	double getExposureTime() const override { return _exposureTime; };
@@ -21,12 +20,14 @@ public:
 	double getTemperatureSetpoint() const override { return _temperature; };
 	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(512, 512); };
 
+private:
+	void _setCoolerOn(const bool on) override { _coolerOn = on; }
+
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	bool _derivedNewAsyncAcquisitionImageAvailable() override;
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
-private:
 	double _exposureTime;
 	double _emGain;
 	bool _coolerOn;

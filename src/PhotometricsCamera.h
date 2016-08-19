@@ -12,7 +12,6 @@ public:
 
 	void setExposureTime(const double exposureTime) override;
 	void setEMGain(const double emGain) override;
-	bool setCoolerOn(const bool on) { return false; };
 	bool setTemperature(const double temperature) override;
 
 	double getExposureTime() const override;
@@ -24,6 +23,7 @@ public:
 	static std::string getPVCAMErrorMessage();
 
 private:
+	void _setCoolerOn(const bool on) override { ; };
 	void _selectFastestReadoutPort(bool useEMGain);
 	void _validateExposureTime();
 
