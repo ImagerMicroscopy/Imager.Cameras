@@ -72,26 +72,6 @@ void PhotometricsCamera::setEMGain(const double emGain) {
 	}
 }
 
-bool PhotometricsCamera::setTemperature(const double temperature) {
-	std::int16_t scaledSetPoint = temperature * 100.0;
-	std::int16_t minTemp, maxTemp;
-
-	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MIN, &minTemp);
-	if (!err)
-		return false;
-	err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MAX, &maxTemp);
-	if (!err)
-		return false;
-
-	scaledSetPoint = std::max(std::min(scaledSetPoint, maxTemp), minTemp);
-
-	err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
-	if (err == 0) {
-		throw std::runtime_error(getPVCAMErrorMessage());
-	}
-	return true;
-}
-
 double PhotometricsCamera::getExposureTime() const {
 	return _requestedExposureTime;
 }
@@ -141,6 +121,25 @@ std::pair<int, int> PhotometricsCamera::getSensorSize() const {
 	err = pl_get_param(_pvcamHandle, PARAM_PAR_SIZE, ATTR_CURRENT, &nRows);
 	err = pl_get_param(_pvcamHandle, PARAM_SER_SIZE, ATTR_CURRENT, &nCols);
 	return std::pair<int, int>(nRows, nCols);
+}
+
+void PhotometricsCamera::_derivedSetTemperature(const double temperature) {
+	std::int16_t scaledSetPoint = temperature * 100.0;
+	std::int16_t minTemp, maxTemp;
+
+	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MIN, &minTemp);
+	if (!err)
+		throw std::runtime_error(getPVCAMErrorMessage());
+	err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MAX, &maxTemp);
+	if (!err)
+		throw std::runtime_error(getPVCAMErrorMessage());
+
+	scaledSetPoint = std::max(std::min(scaledSetPoint, maxTemp), minTemp);
+
+	err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
 }
 
 void PhotometricsCamera::_selectFastestReadoutPort(bool useEMGain) {

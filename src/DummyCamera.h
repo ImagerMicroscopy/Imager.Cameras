@@ -12,7 +12,6 @@ public:
 
 	void setExposureTime(const double exposureTime) override { _exposureTime = exposureTime; };
 	void setEMGain(const double emGain) override { _emGain = emGain; };
-	bool setTemperature(const double temperature) override { _temperature = temperature; return true; };
 
 	double getExposureTime() const override { return _exposureTime; };
 	double getEMGain() const override { return _emGain; };
@@ -21,6 +20,7 @@ public:
 	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(512, 512); };
 
 private:
+	void _derivedSetTemperature(const double temperature) override { _temperature = temperature; }
 	void _setCoolerOn(const bool on) override { _coolerOn = on; }
 
 	void _derivedStartAsyncAcquisition() override;

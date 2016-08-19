@@ -57,25 +57,6 @@ void AndorCamera::setEMGain(const double emGain) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 }
 
-bool AndorCamera::setTemperature(const double temperature) {
-	int minTemp, maxTemp;
-	int tempSetpoint = std::round(temperature);
-
-	int result = GetTemperatureRange(&minTemp, &maxTemp);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	tempSetpoint = std::min(std::max(tempSetpoint, minTemp), maxTemp);
-
-	result = SetTemperature(tempSetpoint);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	_temperatureSetpoint = tempSetpoint;
-
-	return true;
-}
-
 double AndorCamera::getExposureTime() const {
 	float exposureTime, accumulate, kinetic;
 	int result = GetAcquisitionTimings(&exposureTime, &accumulate, &kinetic);
@@ -111,6 +92,23 @@ std::pair<int, int> AndorCamera::getSensorSize() const {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	return std::pair<int, int>(nRows, nCols);
+}
+
+void AndorCamera::_derivedSetTemperature(const double temperature) {
+	int minTemp, maxTemp;
+	int tempSetpoint = std::round(temperature);
+
+	int result = GetTemperatureRange(&minTemp, &maxTemp);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	tempSetpoint = std::min(std::max(tempSetpoint, minTemp), maxTemp);
+
+	result = SetTemperature(tempSetpoint);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	_temperatureSetpoint = tempSetpoint;
 }
 
 void AndorCamera::_setCoolerOn(const bool on) {

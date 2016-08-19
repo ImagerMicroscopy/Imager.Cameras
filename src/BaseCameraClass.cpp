@@ -35,6 +35,12 @@ BaseCameraClass::~BaseCameraClass() {
 	}
 }
 
+void BaseCameraClass::setTemperature(const double temperature) {
+	_derivedSetTemperature(temperature);
+	if (temperature > 15.0)
+		_setCoolerOn(false);
+}
+
 void BaseCameraClass::getAllowableExposureTimes(double* minExposureTime, double* maxExposureTime) {
 	double currentExposureTime = getExposureTime();
 	setExposureTime(1.0e-6);

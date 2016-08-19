@@ -463,9 +463,7 @@ ExecuteSCSetCameraSettings(SCSetCameraSettingsRuntimeParamsPtr p)
 			// no longer supported
 		}
 		if (haveCoolerTemperature) {
-			success = camPtr->setTemperature(coolerTemperature);
-			if (!success)
-				atLeastOneFailure = true;
+			camPtr->setTemperature(coolerTemperature);
 		}
 	}
 	catch (std::runtime_error e) {

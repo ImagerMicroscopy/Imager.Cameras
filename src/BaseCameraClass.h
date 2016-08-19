@@ -16,7 +16,7 @@ public:
 
 	virtual void setExposureTime(const double exposureTime) = 0;
 	virtual void setEMGain(const double emGain) = 0;
-	virtual bool setTemperature(const double temperature) = 0;
+	void setTemperature(const double temperature);
 
 	virtual double getExposureTime() const = 0;
 	virtual double getEMGain() const = 0;
@@ -36,6 +36,7 @@ public:
 	int getIndexOfLastImageAsyncAcquired();
 
 private:
+	virtual void _derivedSetTemperature(const double temperature) = 0;
 	virtual void _setCoolerOn(const bool on) = 0;
 	void _asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
 
