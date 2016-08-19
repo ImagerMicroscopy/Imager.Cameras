@@ -177,6 +177,22 @@ int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* max
 	return 0;
 }
 
+int ReadTemperature(char* cameraName, double* temperature) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		*temperature = camPtr->getTemperature();
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
 int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;

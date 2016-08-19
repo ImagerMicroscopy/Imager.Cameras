@@ -16,6 +16,7 @@
 #define NO_INIT -2
 #define BUFFER_SIZE_MUST_BE_MULTIPLE_OF_IMAGE_SIZE -3
 #define TOO_FEW_IMAGES_IN_BUFFER -4
+#define BUFFER_SIZE_TOO_SMALL -5
 
 #ifdef COMPILING_SCCameraDLL_H
 	#define LIBSPEC __declspec(dllexport)
@@ -38,6 +39,7 @@ extern "C" {
 	LIBSPEC int SetExposureTime(char* cameraName, double exposureTime);
 	LIBSPEC int ReadExposureTime(char* cameraName, double* exposureTime);
 	LIBSPEC int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime);
+	LIBSPEC int ReadTemperature(char* cameraName, double* temperature);
 
 	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes);
 
