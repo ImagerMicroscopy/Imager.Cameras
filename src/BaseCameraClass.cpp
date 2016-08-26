@@ -91,7 +91,7 @@ int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBu
 	_asyncIndexOfLastAcquisition = -1;
 
 	_asyncIsRunning = true;
-	_asyncWorkerThread = std::thread([&]() {
+	_asyncWorkerThread = std::thread([=]() {
 		_asyncAcquisitionWorker(freeRun, outputBuffer, nImagesInBuffer);
 	});
 
