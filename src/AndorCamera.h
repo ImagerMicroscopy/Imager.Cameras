@@ -21,6 +21,7 @@ public:
 
 private:
 	void _derivedSetTemperature(const double temperature) override;
+	std::pair<double, double> _derivedGetEMGainRange() override;
 	void _setCoolerOn(const bool on) override;
 	void _setDefaults();
 	void _selectFastestRecommendedReadoutSpeed();

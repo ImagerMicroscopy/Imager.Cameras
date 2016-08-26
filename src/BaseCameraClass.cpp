@@ -37,8 +37,7 @@ BaseCameraClass::~BaseCameraClass() {
 
 void BaseCameraClass::setTemperature(const double temperature) {
 	_derivedSetTemperature(temperature);
-	if (temperature > 15.0)
-		_setCoolerOn(false);
+	_setCoolerOn(temperature < 15.0);
 }
 
 void BaseCameraClass::getAllowableExposureTimes(double* minExposureTime, double* maxExposureTime) {
@@ -50,11 +49,9 @@ void BaseCameraClass::getAllowableExposureTimes(double* minExposureTime, double*
 }
 
 void BaseCameraClass::getAllowableEMGains(double* minGain, double* maxGain) {
-	double currentGain = getEMGain();
-	*minGain = 0.0;
-	setEMGain(1.0e12);
-	*maxGain = getEMGain();
-	setEMGain(currentGain);
+	std::pair<double, double> range = _derivedGetEMGainRange();
+	*minGain = range.first;
+	*maxGain = range.second;
 }
 
 void BaseCameraClass::acquireImages(const int nImages, std::uint16_t* outputBuffer) {
@@ -116,6 +113,15 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
 
 int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
 	return _asyncIndexOfLastAcquisition;
+}
+
+std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
+	double currentGain = getEMGain();
+	double minGain = 0.0;
+	setEMGain(1.0e12);
+	double maxGain = getEMGain();
+	setEMGain(currentGain);
+	return std::pair<double, double>(minGain, maxGain);
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {

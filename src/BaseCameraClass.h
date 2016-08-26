@@ -37,6 +37,7 @@ public:
 
 private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;
+	virtual std::pair<double, double> _derivedGetEMGainRange();
 	virtual void _setCoolerOn(const bool on) = 0;
 	void _asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
 

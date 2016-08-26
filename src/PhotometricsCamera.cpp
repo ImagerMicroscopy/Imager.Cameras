@@ -82,10 +82,8 @@ double PhotometricsCamera::getEMGain() const {
 	if (!err) {
 		// handle me
 	}
-
 	if (readoutPort != READOUT_PORT_MULT_GAIN)
 		return 0.0;
-
 	uint16_t gain;
 	err = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_CURRENT, &gain);
 	if (!err) {
@@ -140,6 +138,17 @@ void PhotometricsCamera::_derivedSetTemperature(const double temperature) {
 	if (err == 0) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
+}
+
+std::pair<double, double> PhotometricsCamera::_derivedGetEMGainRange() {
+	std::uint16_t minGain, maxGain;
+	int result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MIN, &minGain);
+	if (!result)
+		throw std::runtime_error(getPVCAMErrorMessage());
+	result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MAX, &maxGain);
+	if (!result)
+		throw std::runtime_error(getPVCAMErrorMessage());
+	return std::pair<double, double>(minGain, maxGain);
 }
 
 void PhotometricsCamera::_selectFastestReadoutPort(bool useEMGain) {

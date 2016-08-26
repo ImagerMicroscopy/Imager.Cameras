@@ -36,11 +36,11 @@ extern "C" {
 	LIBSPEC int SetEMGain(char *cameraName, double emGain);
 	LIBSPEC int ReadEMGain(char* cameraName, double* emGain);
 	LIBSPEC int ReadEMGainRange(char* cameraName, double* minGain, double* maxGain);
-	LIBSPEC int SetExposureTime(char* cameraName, double exposureTime);
-	LIBSPEC int ReadExposureTime(char* cameraName, double* exposureTime);
-	LIBSPEC int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime);
-	LIBSPEC int SetTemperature(char* cameraName, double temperature);
-	LIBSPEC int ReadTemperature(char* cameraName, double* temperature);
+	LIBSPEC int SetIntegrationTime(char* cameraName, double exposureTime);
+	LIBSPEC int ReadIntegrationTime(char* cameraName, double* exposureTime);
+	LIBSPEC int ReadIntegrationTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime);
+	LIBSPEC int SetTemperatureSetpoint(char* cameraName, double temperature);
+	LIBSPEC int ReadCurrentTemperature(char* cameraName, double* temperature);
 	LIBSPEC int ReadTemperatureSetpoint(char* cameraName, double* temperature);
 
 	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes);

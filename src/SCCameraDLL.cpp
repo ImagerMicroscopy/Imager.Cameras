@@ -129,7 +129,7 @@ int ReadEMGainRange(char* cameraName, double* minGain, double* maxGain) {
 	return 0;
 }
 
-int SetExposureTime(char* cameraName, double exposureTime) {
+int SetIntegrationTime(char* cameraName, double exposureTime) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -145,7 +145,7 @@ int SetExposureTime(char* cameraName, double exposureTime) {
 	return 0;
 }
 
-int ReadExposureTime(char* cameraName, double* exposureTime) {
+int ReadIntegrationTime(char* cameraName, double* exposureTime) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -161,7 +161,7 @@ int ReadExposureTime(char* cameraName, double* exposureTime) {
 	return 0;
 }
 
-int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime) {
+int ReadIntegrationTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -177,7 +177,7 @@ int ReadExposureTimeRange(char* cameraName, double* minExposureTime, double* max
 	return 0;
 }
 
-int SetTemperature(char* cameraName, double temperature) {
+int SetTemperatureSetpoint(char* cameraName, double temperature) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -193,7 +193,7 @@ int SetTemperature(char* cameraName, double temperature) {
 	return 0;
 }
 
-int ReadTemperature(char* cameraName, double* temperature) {
+int ReadCurrentTemperature(char* cameraName, double* temperature) {
 	if (!gHaveInit)
 		return NO_INIT;
 

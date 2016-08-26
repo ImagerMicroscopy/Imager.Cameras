@@ -46,13 +46,11 @@ void AndorCamera::setExposureTime(const double exposureTime) {
 }
 
 void AndorCamera::setEMGain(const double emGain) {
-	int minGain, maxGain;
-	int requestedGain = std::round(emGain);
-	int result = GetEMGainRange(&minGain, &maxGain);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	requestedGain = clamp(requestedGain, minGain, maxGain);
-	result = SetEMCCDGain(std::round(emGain));
+	std::pair<double, double> gainRange = _derivedGetEMGainRange();
+	int minGain = gainRange.first;
+	int maxGain = gainRange.second;
+	int requestedGain = clamp((int)requestedGain, minGain, maxGain);
+	int result = SetEMCCDGain(std::round(emGain));
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 }
@@ -109,6 +107,14 @@ void AndorCamera::_derivedSetTemperature(const double temperature) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	_temperatureSetpoint = tempSetpoint;
+}
+
+std::pair<double, double> AndorCamera::_derivedGetEMGainRange() {
+	int minGain, maxGain;
+	int result = GetEMGainRange(&minGain, &maxGain);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	return std::pair<double, double>(minGain, maxGain);
 }
 
 void AndorCamera::_setCoolerOn(const bool on) {
