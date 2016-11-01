@@ -126,7 +126,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'">
     <TargetName>SCCamera</TargetName>
-    <TargetExt>.xop</TargetExt>
+    <TargetExt>.dll</TargetExt>
     <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -136,7 +136,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'">
     <TargetName>SCCamera</TargetName>
-    <TargetExt>.xop</TargetExt>
+    <TargetExt>.dll</TargetExt>
     <OutDir>$(SolutionDir)\Products\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -185,15 +185,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -233,7 +232,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
@@ -275,15 +274,14 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport;$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IGOR.lib;version.lib;XOPSupport.lib;pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/EXPORT:XOPMain %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\lib\win32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pvcam32.lib;ATMCD32M.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
     </Link>
     <ResourceCompile>
@@ -329,7 +327,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\..\..\XOPSupport\VC2012;$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>pvcam64.lib;atmcd64m.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
     </Link>
@@ -368,6 +366,8 @@
     <ClCompile Include="..\src\SCCameraMain.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLDebug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DLLRelease|Win32'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
