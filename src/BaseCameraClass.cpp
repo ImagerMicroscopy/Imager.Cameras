@@ -88,7 +88,6 @@ int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBu
 	_asyncErrorStr.clear();
 	_asyncWantAbort = false;
 	_asyncNImagesStored = 0;
-	_asyncIndexOfLastAcquisition = -1;
 
 	_asyncIsRunning = true;
 	_asyncWorkerThread = std::thread([=]() {
@@ -112,7 +111,14 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
 }
 
 int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
-	return _asyncIndexOfLastAcquisition;
+	std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
+	if (_imageIndicesWaitingToBeCopied.empty()) {
+		return -1;
+	} else {
+		int index = _imageIndicesWaitingToBeCopied.front();
+		_imageIndicesWaitingToBeCopied.erase(_imageIndicesWaitingToBeCopied.begin());
+		return index;
+	}
 }
 
 std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
@@ -147,7 +153,14 @@ void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outpu
 				}
 				_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
 				_asyncNImagesStored += 1;
-				_asyncIndexOfLastAcquisition = indexOfNextImage;
+				{
+					std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
+					if (_imageIndicesWaitingToBeCopied.size() == nImagesInBuffer) {
+						// buffer overflow
+						_imageIndicesWaitingToBeCopied.clear();
+					}
+					_imageIndicesWaitingToBeCopied.push_back(indexOfNextImage);
+				}
 				if (!freeRun && (_asyncNImagesStored == nImagesInBuffer)) {
 					_derivedAbortAsyncAcquisition();
 					return;
@@ -155,7 +168,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outpu
 
 				indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 	}
 	catch (std::runtime_error& e) {

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <limits>
 #include <thread>
+#include <mutex>
 
 class BaseCameraClass {
 public:
@@ -50,7 +51,8 @@ private:
 	std::string _asyncErrorStr;
 	int _asyncWantAbort;
 	int _asyncNImagesStored;
-	int _asyncIndexOfLastAcquisition;
+	std::vector<int> _imageIndicesWaitingToBeCopied;
+	std::mutex _imageIndicesMutex;
 	std::thread _asyncWorkerThread;
 };
 
