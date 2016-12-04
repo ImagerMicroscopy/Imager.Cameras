@@ -13,6 +13,11 @@
 #include "AndorCamera.h"
 #endif
 
+#ifdef WITH_HAMAMATSU
+#include "windows.h"
+#include "DCAM/dcamapi.h"
+#endif
+
 #ifdef WITH_DUMMYCAM
 #include "DummyCamera.h"
 #endif
@@ -28,6 +33,10 @@ CameraManager::CameraManager() {
 CameraManager::~CameraManager() {
 #ifdef WITH_PHOTOMETRICS
 	pl_pvcam_uninit();
+#endif
+
+#ifdef WITH_HAMAMATSU
+	dcamapi_uninit();
 #endif
 }
 
@@ -63,6 +72,28 @@ void CameraManager::discoverCameras() {
 	}
 	catch (std::runtime_error e) {
 		// no Andor camera available
+	}
+#endif
+
+#ifdef WITH_HAMAMATSU
+	DCAMAPI_INIT paraminit;
+	memset(&paraminit, 0, sizeof(paraminit));
+	paraminit.size = sizeof(paraminit);
+	DCAMERR	err;
+	err = dcamapi_init( &paraminit );
+	if (err != 0) {
+		throw std::runtime_error("can't initial DCAM api");
+	}
+	int nCameras = paraminit.iDeviceCount;
+	for (int i = 0; i < nCameras; ++i) {
+		DCAMDEV_OPEN devOpen = { 0 };
+		devOpen.index = i;
+		devOpen.size = sizeof(DCAMDEV_OPEN);
+		err = dcamdev_open(&devOpen);
+		if (err != 0) {
+			throw std::runtime_error("unable to open DCAM camera");
+		}
+		HDCAM hdCam = devOpen.hdcam;
 	}
 #endif
 
