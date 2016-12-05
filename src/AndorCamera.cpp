@@ -259,7 +259,7 @@ std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 
 void AndorCamera::_derivedStartAsyncAcquisition() {
 	int result;
-	_numberOfImagesAcquired = 0;
+	_numberOfImagesDelivered = 0;
 
 	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
 	if (result != DRV_SUCCESS)
@@ -290,23 +290,13 @@ bool AndorCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 	int result = GetTotalNumberImagesAcquired(&nImagesAcquired);
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	return (nImagesAcquired != _numberOfImagesAcquired);
+	return (nImagesAcquired != _numberOfImagesDelivered);
 }
 void AndorCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-	int result;
-	long firstImageIndex, lastImageIndex;
-	long validFirstIndex, validLastIndex;
-	result = GetNumberNewImages(&firstImageIndex, &lastImageIndex);
+	int result = GetOldestImage16(bufferForThisImage, nBytes / 2);
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	result = GetImages16(firstImageIndex, firstImageIndex, bufferForThisImage, nBytes / sizeof(std::uint16_t), &validFirstIndex, &validLastIndex);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	if ((validFirstIndex != firstImageIndex) || (validLastIndex != firstImageIndex)) {
-		throw std::runtime_error("valid index different from requested index");
-	}
-	_numberOfImagesAcquired += 1;
+	_numberOfImagesDelivered += 1;
 }
 
 #endif

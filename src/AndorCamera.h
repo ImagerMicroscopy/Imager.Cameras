@@ -34,7 +34,7 @@ private:
 
 	bool _coolerOn;
 	double _temperatureSetpoint;
-	int _numberOfImagesAcquired;
+	int _numberOfImagesDelivered;
 };
 
 #endif
