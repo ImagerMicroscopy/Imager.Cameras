@@ -168,7 +168,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outpu
 
 				indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 	}
 	catch (std::runtime_error& e) {
