@@ -1,3 +1,5 @@
+#include "SCConfigure.h"
+
 #ifdef WITH_HAMAMATSU
 
 #include "HamamatsuCamera.h"
@@ -8,6 +10,7 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) {
 	_camHandle = camHandle;
 	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
 	std::pair<int, int> sensorSize = getSensorSize();
+	_nBytesPerImage = sensorSize.first * sensorSize.second * sizeof(std::uint16_t);
 	_frameBuffer.resize(sensorSize.first * sensorSize.second * kHamamatsuImagesInBuffer);
 }
 
@@ -56,6 +59,11 @@ void HamamatsuCamera::_derivedSetTemperature(const double temperature) {
 
 std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
 	return std::pair<double, double>(0.0, 255.0);
+}
+
+void HamamatsuCamera::_setCoolerOn(const bool on) {
+	int action = on ? DCAMPROP_SENSORCOOLER__ON : DCAMPROP_SENSORCOOLER__OFF;
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, action);
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
@@ -107,9 +115,8 @@ bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 
 void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-	std::pair<int, int> sensorSize = getSensorSize();
-	int nPixelsInImage = sensorSize.first * sensorSize.second;
-	if (nBytes != nPixelsInImage * sizeof(std::uint16_t)) {
+	int nPixelsInImage  = _nBytesPerImage / 2;
+	if (nBytes != _nBytesPerImage) {
 		throw std::runtime_error("buffer of invalid size");
 	}
 
@@ -130,7 +137,7 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 	}
 	
 	std::uint16_t* startOfImage = _frameBuffer.data() + indexOfEarliestUnreadImage * nPixelsInImage;
-	memcpy(bufferForThisImage, startOfImage, nPixelsInImage * sizeof(std::uint16_t));
+	memcpy(bufferForThisImage, startOfImage, _nBytesPerImage);
 	_numberOfImagesDelivered += 1;
 }
 

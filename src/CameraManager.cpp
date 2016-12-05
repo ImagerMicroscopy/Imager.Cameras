@@ -16,6 +16,7 @@
 #ifdef WITH_HAMAMATSU
 #include "windows.h"
 #include "DCAM/dcamapi.h"
+#include "HamamatsuCamera.h"
 #endif
 
 #ifdef WITH_DUMMYCAM
@@ -94,6 +95,8 @@ void CameraManager::discoverCameras() {
 			throw std::runtime_error("unable to open DCAM camera");
 		}
 		HDCAM hdCam = devOpen.hdcam;
+		std::shared_ptr<BaseCameraClass> hamamatsuCamera(new HamamatsuCamera(hdCam));
+		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(hamamatsuCamera->getIdentifierStr(), hamamatsuCamera));
 	}
 #endif
 

@@ -30,6 +30,7 @@ public:
 private:
 	void _derivedSetTemperature(const double temperature) override;
 	std::pair<double, double> _derivedGetEMGainRange() override;
+	void _setCoolerOn(const bool on) override;
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
@@ -43,6 +44,7 @@ private:
 	HDCAM _camHandle;
 	std::string _camName;
 	std::vector<std::uint16_t> _frameBuffer;
+	int _nBytesPerImage;
 	int _numberOfImagesDelivered;
 };
 
