@@ -1,3 +1,5 @@
+#ifdef WITH_HAMAMATSU
+
 #include "HamamatsuCamera.h"
 
 #include "DCAM/dcamprop.h"
@@ -162,3 +164,5 @@ void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double 
 		throw std::runtime_error("error setting dcam property value");
 	}
 }
+
+#endif
