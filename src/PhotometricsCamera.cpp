@@ -268,17 +268,20 @@ bool PhotometricsCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 	if (status == READOUT_FAILED) {
 		throw std::runtime_error("readout failed");
 	}
-	return (status == READOUT_COMPLETE);
+	return (status == FRAME_AVAILABLE);
 }
 
 void PhotometricsCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
 	uint16_t* address;
-	int err = pl_exp_get_latest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
+	int err = pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
 	if (err == 0) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
-
 	memcpy(bufferForThisImage, address, nBytes);
+	err = pl_exp_unlock_oldest_frame(_pvcamHandle);
+	if (err == 0) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
 }
 
 #endif
