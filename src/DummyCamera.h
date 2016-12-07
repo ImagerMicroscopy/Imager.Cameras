@@ -1,7 +1,10 @@
 #ifndef DUMMYCAMERA_H
 #define DUMMYCAMERA_H
 
+#include <thread>
+
 #include "BaseCameraClass.h"
+#include "Utils.h"
 
 class DummyCamera : public BaseCameraClass {
 public:
@@ -10,7 +13,7 @@ public:
 
 	std::string getIdentifierStr() const override { return std::string("ZZ__DummyCam"); };
 
-	void setExposureTime(const double exposureTime) override { _exposureTime = exposureTime; };
+	void setExposureTime(const double exposureTime) override { _exposureTime = clamp(exposureTime, 5e-3, 500e-3); }
 	void setEMGain(const double emGain) override { _emGain = emGain; };
 
 	double getExposureTime() const override { return _exposureTime; };
@@ -32,6 +35,10 @@ private:
 	double _emGain;
 	bool _coolerOn;
 	double _temperature;
+	std::thread _timerThread;
+	bool _abortTimerThread;
+	bool _shouldOfferNewImage;
+	std::uint16_t _frameCounter;
 };
 
 #endif
