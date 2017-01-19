@@ -260,7 +260,7 @@ int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSiz
 		int nImagesInBuffer = bufferSizeinBytes / imageSize;
 		if (nImagesInBuffer < 2)
 			return TOO_FEW_IMAGES_IN_BUFFER;
-		camPtr->startAsyncAcquisition(true, buffer, nImagesInBuffer);
+		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, buffer, nImagesInBuffer);
 	}
 	catch (...) {
 		return GENERIC_ERROR;

@@ -250,13 +250,13 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		// Parameter: p->nImages_nImages
 		nImages = std::round(p->nImages_nImages);
 	}
-	bool freeRun = false;
+	BaseCameraClass::AcquisitionMode acqMode = BaseCameraClass::AcqFillAndStop;
 	if (!wantAsync) {
 		if (nImages <= 0)
 			return EXPECT_POS_NUM;
 	} else {
 		if (nImages <= 0)
-			freeRun = true;
+			acqMode = BaseCameraClass::AcqFreeRunMode;
 	}
 
 	std::string identifier;
@@ -305,7 +305,7 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 			camPtr->acquireImages(nImages, reinterpret_cast<std::uint16_t*>(WaveData(waveH)));
 		} else {
 			gWavesPossiblyInUseForAsyncAcquisition[camPtr] = waveH;
-			camPtr->startAsyncAcquisition(freeRun, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
+			camPtr->startAsyncAcquisition(acqMode, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
 		}
 	}
 	catch (AcquisitionTimeOutError e) {

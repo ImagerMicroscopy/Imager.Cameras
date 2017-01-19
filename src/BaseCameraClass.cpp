@@ -55,7 +55,7 @@ void BaseCameraClass::getAllowableEMGains(double* minGain, double* maxGain) {
 }
 
 void BaseCameraClass::acquireImages(const int nImages, std::uint16_t* outputBuffer) {
-	startAsyncAcquisition(false, outputBuffer, nImages);
+	startAsyncAcquisition(AcqFillAndStop, outputBuffer, nImages);
 	while (_asyncIsRunning) {
 		#ifdef WITH_IGOR
 			if (SpinProcess()) {
@@ -78,7 +78,7 @@ int BaseCameraClass::getAsyncStatus() {
 	}
 }
 
-int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {
+int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, std::uint16_t* outputBuffer, int nImagesInBuffer) {
 	if (_asyncIsRunning) {
 		throw std::runtime_error("already running async");
 	}
@@ -92,7 +92,7 @@ int BaseCameraClass::startAsyncAcquisition(bool freeRun, std::uint16_t* outputBu
 
 	_asyncIsRunning = true;
 	_asyncWorkerThread = std::thread([=]() {
-		_asyncAcquisitionWorker(freeRun, outputBuffer, nImagesInBuffer);
+		_asyncAcquisitionWorker(acqMode, outputBuffer, nImagesInBuffer);
 	});
 
 	return 0;
@@ -131,7 +131,7 @@ std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
 	return std::pair<double, double>(minGain, maxGain);
 }
 
-void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint16_t* outputBuffer, int nImagesInBuffer) {
 	ScopedSetter<bool> runningResetter(&_asyncIsRunning, false);
 	auto sensorSize = this->getSensorSize();
 	int nPixelsInImage = sensorSize.first * sensorSize.second;
@@ -162,7 +162,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(bool freeRun, std::uint16_t* outpu
 					}
 					_imageIndicesWaitingToBeCopied.push_back(indexOfNextImage);
 				}
-				if (!freeRun && (_asyncNImagesStored == nImagesInBuffer)) {
+				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesInBuffer)) {
 					_derivedAbortAsyncAcquisition();
 					return;
 				}

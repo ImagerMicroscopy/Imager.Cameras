@@ -10,6 +10,10 @@
 
 class BaseCameraClass {
 public:
+	enum AcquisitionMode {
+		AcqFreeRunMode,
+		AcqFillAndStop
+	};
 	BaseCameraClass();
 	~BaseCameraClass();
 
@@ -30,7 +34,7 @@ public:
 	void acquireImages(const int nImages, std::uint16_t* outputBuffer);
 
 	int getAsyncStatus();
-	int startAsyncAcquisition(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+	int startAsyncAcquisition(AcquisitionMode acqMode, std::uint16_t* outputBuffer, int nImagesInBuffer);
 	bool isAsyncAcquisitionRunning();
 	void abortAsyncAquisition();
 	int getNImagesAsyncAcquired();
@@ -40,7 +44,7 @@ private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;
 	virtual std::pair<double, double> _derivedGetEMGainRange();
 	virtual void _setCoolerOn(const bool on) = 0;
-	void _asyncAcquisitionWorker(bool freeRun, std::uint16_t* outputBuffer, int nImagesInBuffer);
+	void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint16_t* outputBuffer, int nImagesInBuffer);
 
 	virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
