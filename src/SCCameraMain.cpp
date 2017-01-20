@@ -302,10 +302,10 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 
 		// async or synchronous aquisition?
 		if (!wantAsync) {
-			camPtr->acquireImages(nImages, reinterpret_cast<std::uint16_t*>(WaveData(waveH)));
+			camPtr->acquireImages(nImages, 1, reinterpret_cast<std::uint16_t*>(WaveData(waveH)));
 		} else {
 			gWavesPossiblyInUseForAsyncAcquisition[camPtr] = waveH;
-			camPtr->startAsyncAcquisition(acqMode, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
+			camPtr->startAsyncAcquisition(acqMode, 1, reinterpret_cast<std::uint16_t*>(WaveData(waveH)), nImages);
 		}
 	}
 	catch (AcquisitionTimeOutError e) {

@@ -54,8 +54,8 @@ void BaseCameraClass::getAllowableEMGains(double* minGain, double* maxGain) {
 	*maxGain = range.second;
 }
 
-void BaseCameraClass::acquireImages(const int nImages, std::uint16_t* outputBuffer) {
-	startAsyncAcquisition(AcqFillAndStop, outputBuffer, nImages);
+void BaseCameraClass::acquireImages(const int nImages, const unsigned int nImagesToAverage, std::uint16_t* outputBuffer) {
+	startAsyncAcquisition(AcqFillAndStop, nImagesToAverage, outputBuffer, nImages);
 	while (_asyncIsRunning) {
 		#ifdef WITH_IGOR
 			if (SpinProcess()) {
@@ -78,7 +78,7 @@ int BaseCameraClass::getAsyncStatus() {
 	}
 }
 
-int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, std::uint16_t* outputBuffer, int nImagesInBuffer) {
+int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
 	if (_asyncIsRunning) {
 		throw std::runtime_error("already running async");
 	}
@@ -92,7 +92,7 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, std::uint16_
 
 	_asyncIsRunning = true;
 	_asyncWorkerThread = std::thread([=]() {
-		_asyncAcquisitionWorker(acqMode, outputBuffer, nImagesInBuffer);
+		_asyncAcquisitionWorker(acqMode, nImagesToAverage, outputBuffer, nImagesInBuffer);
 	});
 
 	return 0;
@@ -131,14 +131,23 @@ std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
 	return std::pair<double, double>(minGain, maxGain);
 }
 
-void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint16_t* outputBuffer, int nImagesInBuffer) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
 	ScopedSetter<bool> runningResetter(&_asyncIsRunning, false);
 	auto sensorSize = this->getSensorSize();
 	int nPixelsInImage = sensorSize.first * sensorSize.second;
 
 	try {
+		std::vector<std::uint16_t> singleImage;
+		std::vector<std::uint32_t> avgImage;
+		if (nImagesToAverage > 1) {
+			singleImage.resize(nPixelsInImage);
+			avgImage.resize(nPixelsInImage);
+			memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
+		}
+
 		_derivedStartAsyncAcquisition();
 
+		std::uint32_t nImagesAccumulatedInAvg = 0;
 		int indexOfNextImage = 0;
 
 		for (;;) {
@@ -152,7 +161,26 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint
 					_derivedAbortAsyncAcquisition();
 					return;
 				}
-				_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
+
+				if (nImagesToAverage <= 1) {
+					_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
+				} else {
+					_derivedStoreNewImageInBuffer(singleImage.data(), singleImage.size() * sizeof(singleImage[0]));
+					for (int i = 0; i < nPixelsInImage; i += 1) {
+						avgImage[i] += singleImage[i];
+					}
+					nImagesAccumulatedInAvg += 1;
+					if (nImagesAccumulatedInAvg == nImagesToAverage) {
+						for (int i = 0; i < nPixelsInImage; i += 1) {
+							outputBuffer[nPixelsInImage * indexOfNextImage + i] = avgImage[i] / nImagesAccumulatedInAvg;
+						}
+						nImagesAccumulatedInAvg = 0;
+						memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
+					} else {
+						continue;
+					}
+				}
+
 				_asyncNImagesStored += 1;
 				{
 					std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);

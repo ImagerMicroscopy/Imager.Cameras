@@ -225,7 +225,7 @@ int ReadTemperatureSetpoint(char* cameraName, double* temperature) {
 	return 0;
 }
 
-int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes) {
+int AcquireImages(char* cameraName, int nImages, int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -237,7 +237,7 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if (bufferSizeinBytes < requiredBufferSize)
 			return GENERIC_ERROR;
-		camPtr->acquireImages(nImages, buffer);
+		camPtr->acquireImages(nImages, nImagesToAverage, buffer);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
@@ -245,7 +245,7 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 	return 0;
 }
 
-int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSizeinBytes) {
+int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -260,7 +260,7 @@ int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSiz
 		int nImagesInBuffer = bufferSizeinBytes / imageSize;
 		if (nImagesInBuffer < 2)
 			return TOO_FEW_IMAGES_IN_BUFFER;
-		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, buffer, nImagesInBuffer);
+		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, nImagesToAverage, buffer, nImagesInBuffer);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
