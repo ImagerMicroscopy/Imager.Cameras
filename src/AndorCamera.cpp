@@ -166,6 +166,25 @@ void AndorCamera::_setDefaults() {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
+	int nGains;									// preamp gain
+	result = GetNumberPreAmpGains(&nGains);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	if (nGains > 1) {
+		float maxGain = -1.0; int maxGainIndex = 0;
+		float gain = -1.0;
+		for (int i = 0; i < nGains; i++) {
+			GetPreAmpGain(i, &gain);
+			if (gain > maxGain) {
+				maxGain = gain;
+				maxGainIndex = i;
+			}
+		}
+		result = SetPreAmpGain(maxGainIndex);
+		if (result != DRV_SUCCESS)
+			throw std::runtime_error(_andorErrorCodeToMessage(result));
+	}
+
 	result = SetShutter(1, 1, 100, 100);		// open shutter
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));

@@ -43,9 +43,9 @@ extern "C" {
 	LIBSPEC int ReadCurrentTemperature(char* cameraName, double* temperature);
 	LIBSPEC int ReadTemperatureSetpoint(char* cameraName, double* temperature);
 
-	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes);
+	LIBSPEC int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes);
 
-	LIBSPEC int StartAsyncAcquisition(char* cameraName, uint16_t* buffer, uint64_t bufferSizeinBytes);
+	LIBSPEC int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes);
 	LIBSPEC int GetIndexOfLastImageAsyncAcquired(char* cameraName, int* indexOfLastImageAcquired);
 	LIBSPEC int AbortAsyncAcquisition(char* cameraName);
 #ifdef __cplusplus

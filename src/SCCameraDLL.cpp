@@ -225,7 +225,7 @@ int ReadTemperatureSetpoint(char* cameraName, double* temperature) {
 	return 0;
 }
 
-int AcquireImages(char* cameraName, int nImages, int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes) {
+int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;
 
