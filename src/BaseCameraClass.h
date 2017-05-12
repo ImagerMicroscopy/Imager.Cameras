@@ -49,6 +49,7 @@ private:
 	virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
 	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
+    virtual bool _waitForNewImageWithTimeout(int timeoutMillis);
 	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
 
 	bool _asyncIsRunning;

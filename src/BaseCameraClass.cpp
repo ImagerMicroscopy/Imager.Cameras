@@ -1,6 +1,8 @@
 
 #include "BaseCameraClass.h"
 
+#include <chrono>
+
 #ifdef WITH_IGOR
 	#include "XOPStandardHeaders.h"
 #endif
@@ -150,18 +152,14 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 		std::uint32_t nImagesAccumulatedInAvg = 0;
 		int indexOfNextImage = 0;
 
-		for (;;) {
+		for ( ; ;) {
 			if (this->_asyncWantAbort) {
 				_derivedAbortAsyncAcquisition();
 				return;
 			}
 
-			while (_derivedNewAsyncAcquisitionImageAvailable()) {
-				if (this->_asyncWantAbort) {
-					_derivedAbortAsyncAcquisition();
-					return;
-				}
-
+            bool haveImage = _waitForNewImageWithTimeout(100);
+            if (haveImage) {
 				if (nImagesToAverage <= 1) {
 					_derivedStoreNewImageInBuffer(outputBuffer + nPixelsInImage * indexOfNextImage, nPixelsInImage * sizeof(std::uint16_t));
 				} else {
@@ -197,7 +195,6 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 
 				indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 	}
 	catch (std::runtime_error& e) {
@@ -210,4 +207,18 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 		_asyncErrorStr = "unknown exception in async";
 		return;
 	}
+}
+
+bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
+    auto start = std::chrono::high_resolution_clock::now();
+    for ( ; ; ) {
+        if (_derivedNewAsyncAcquisitionImageAvailable()) {
+            return true;
+        }
+        std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - start;
+        if (diff.count() > ((double)timeoutMillis / 1000.0)) {
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
 }
