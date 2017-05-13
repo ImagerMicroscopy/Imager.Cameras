@@ -362,7 +362,7 @@ ExecuteSCAbortAcquisition(SCAbortAcquisitionRuntimeParamsPtr p)
 		else {
 			camPtr = gCameraManager->getFirstCamera();
 		}
-		camPtr->abortAsyncAquisition();
+		camPtr->abortAsyncAquisitionIfRunning();
 	}
 	catch (std::runtime_error e) {
 		XOPNotice(e.what());

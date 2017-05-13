@@ -7,6 +7,7 @@
 #include <limits>
 #include <thread>
 #include <mutex>
+#include <future>
 
 class BaseCameraClass {
 public:
@@ -35,8 +36,10 @@ public:
 
 	int getAsyncStatus();
 	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
-	bool isAsyncAcquisitionRunning();
-	void abortAsyncAquisition();
+	bool wasAsyncAcquisitionStarted() const;
+    bool isAsyncAcquisitionRunning() const;
+    std::future_status waitForAsyncAcquisitionEnd(int timeoutMillis);
+	void abortAsyncAquisitionIfRunning();
 	int getNImagesAsyncAcquired();
 	int getIndexOfLastImageAsyncAcquired();
 
@@ -52,13 +55,12 @@ private:
     virtual bool _waitForNewImageWithTimeout(int timeoutMillis);
 	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
 
-	bool _asyncIsRunning;
 	std::string _asyncErrorStr;
-	int _asyncWantAbort;
+	volatile int _asyncWantAbort;
 	int _asyncNImagesStored;
 	std::vector<int> _imageIndicesWaitingToBeCopied;
 	std::mutex _imageIndicesMutex;
-	std::thread _asyncWorkerThread;
+    std::future<void> _asyncWorkerFuture;
 };
 
 #endif

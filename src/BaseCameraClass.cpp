@@ -22,19 +22,12 @@ private:
 	T _value;
 };
 
-BaseCameraClass::BaseCameraClass() :
-	_asyncIsRunning(false)
-{
+BaseCameraClass::BaseCameraClass() {
 
 }
 
 BaseCameraClass::~BaseCameraClass() {
-	if (_asyncIsRunning) {
-		_asyncWantAbort = true;
-	}
-	if (_asyncWorkerThread.joinable()) {
-		_asyncWorkerThread.join();
-	}
+    abortAsyncAquisitionIfRunning();
 }
 
 void BaseCameraClass::setTemperature(const double temperature) {
@@ -58,14 +51,22 @@ void BaseCameraClass::getAllowableEMGains(double* minGain, double* maxGain) {
 
 void BaseCameraClass::acquireImages(const int nImages, const unsigned int nImagesToAverage, std::uint16_t* outputBuffer) {
 	startAsyncAcquisition(AcqFillAndStop, nImagesToAverage, outputBuffer, nImages);
-	while (_asyncIsRunning) {
-		#ifdef WITH_IGOR
-			if (SpinProcess()) {
-				abortAsyncAquisition();
-				return;
-			}
-		#endif
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    for (;;) {
+        std::future_status status = waitForAsyncAcquisitionEnd(100);
+        if (status == std::future_status::ready) {
+            _asyncWorkerFuture.get();
+            if (!_asyncErrorStr.empty()) {
+                throw std::runtime_error(_asyncErrorStr);
+            } else {
+                return;
+            }
+        }
+        #ifdef WITH_IGOR
+        if (SpinProcess()) {
+            abortAsyncAquisitionIfRunning();
+            return;
+        }
+        #endif
 	}
 }
 
@@ -73,7 +74,7 @@ int BaseCameraClass::getAsyncStatus() {
 	if (!_asyncErrorStr.empty()) {
 		return -1;
 	}
-	if (!_asyncIsRunning) {
+    if (!isAsyncAcquisitionRunning()) {
 		return 0;
 	} else {
 		return 1;
@@ -81,32 +82,39 @@ int BaseCameraClass::getAsyncStatus() {
 }
 
 int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
-	if (_asyncIsRunning) {
-		throw std::runtime_error("already running async");
-	}
-	if (_asyncWorkerThread.joinable()) {
-		_asyncWorkerThread.join();
-	}
+    abortAsyncAquisitionIfRunning();
 	_asyncErrorStr.clear();
 	_asyncWantAbort = false;
 	_asyncNImagesStored = 0;
 	_imageIndicesWaitingToBeCopied.clear();
 
-	_asyncIsRunning = true;
-	_asyncWorkerThread = std::thread([=]() {
+    _asyncWorkerFuture = std::async(std::launch::async, [=]() {
 		_asyncAcquisitionWorker(acqMode, nImagesToAverage, outputBuffer, nImagesInBuffer);
 	});
 
 	return 0;
 }
 
-bool BaseCameraClass::isAsyncAcquisitionRunning() {
-	return _asyncIsRunning;
+bool BaseCameraClass::wasAsyncAcquisitionStarted() const {
+    return (_asyncWorkerFuture.valid());
 }
 
-void BaseCameraClass::abortAsyncAquisition() {
-	_asyncWantAbort = true;
-	_asyncWorkerThread.join();
+bool BaseCameraClass::isAsyncAcquisitionRunning() const {
+    return (wasAsyncAcquisitionStarted() && (_asyncWorkerFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout));
+}
+
+std::future_status BaseCameraClass::waitForAsyncAcquisitionEnd(int timeoutMillis) {
+    if (!wasAsyncAcquisitionStarted()) {
+        throw std::runtime_error("BaseCameraClass::waitForAsyncAcquisitionEnd() but no async acquisition has been started");
+    }
+    return _asyncWorkerFuture.wait_for(std::chrono::milliseconds(timeoutMillis));
+}
+
+void BaseCameraClass::abortAsyncAquisitionIfRunning() {
+    if (wasAsyncAcquisitionStarted()) {
+        _asyncWantAbort = true;
+        _asyncWorkerFuture.get();
+    }
 }
 
 int BaseCameraClass::getNImagesAsyncAcquired() {
@@ -134,7 +142,6 @@ std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
-	ScopedSetter<bool> runningResetter(&_asyncIsRunning, false);
 	auto sensorSize = this->getSensorSize();
 	int nPixelsInImage = sensorSize.first * sensorSize.second;
 

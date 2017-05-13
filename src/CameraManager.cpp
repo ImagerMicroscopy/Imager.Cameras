@@ -135,6 +135,6 @@ std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
 
 void CameraManager::abortRunningAcquisitions() {
 	for (auto it : _availableCameras) {
-		it.second->abortAsyncAquisition();
+        it.second->abortAsyncAquisitionIfRunning();
 	}
 }
