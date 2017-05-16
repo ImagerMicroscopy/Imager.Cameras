@@ -7,6 +7,8 @@
 	#include "XOPStandardHeaders.h"
 #endif
 
+#include "Utils.h"
+
 template <typename T> 
 class ScopedSetter{
 public:
@@ -155,13 +157,15 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 		}
 
 		_derivedStartAsyncAcquisition();
+        CleanupRunner runner([&]() {
+            this->_derivedAbortAsyncAcquisition();
+        });
 
 		std::uint32_t nImagesAccumulatedInAvg = 0;
 		int indexOfNextImage = 0;
 
 		for ( ; ;) {
 			if (this->_asyncWantAbort) {
-				_derivedAbortAsyncAcquisition();
 				return;
 			}
 
@@ -196,7 +200,6 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 					_imageIndicesWaitingToBeCopied.push_back(indexOfNextImage);
 				}
 				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesInBuffer)) {
-					_derivedAbortAsyncAcquisition();
 					return;
 				}
 
@@ -205,12 +208,10 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 		}
 	}
 	catch (std::runtime_error& e) {
-		_derivedAbortAsyncAcquisition();
 		_asyncErrorStr = e.what();
 		return;
 	}
 	catch (...) {
-		_derivedAbortAsyncAcquisition();
 		_asyncErrorStr = "unknown exception in async";
 		return;
 	}
