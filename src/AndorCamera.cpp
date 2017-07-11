@@ -317,9 +317,10 @@ bool AndorCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 bool AndorCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
     if (_derivedNewAsyncAcquisitionImageAvailable()) {
         return true;
+    } else {
+        WaitForAcquisitionTimeOut(timeoutMillis);
+        return _derivedNewAsyncAcquisitionImageAvailable();
     }
-    int result = WaitForAcquisitionTimeOut(timeoutMillis);
-    return (result == DRV_SUCCESS);
 }
 
 void AndorCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
