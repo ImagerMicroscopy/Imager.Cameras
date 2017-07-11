@@ -2,6 +2,8 @@
 #define DUMMYCAMERA_H
 
 #include <thread>
+#include <memory>
+#include <queue>
 
 #include "BaseCameraClass.h"
 #include "Utils.h"
@@ -23,6 +25,8 @@ public:
 	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(512, 512); };
 
 private:
+    std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
+
 	void _derivedSetTemperature(const double temperature) override { _temperature = temperature; }
 	void _setCoolerOn(const bool on) override { _coolerOn = on; }
 
@@ -37,7 +41,8 @@ private:
 	double _temperature;
 	std::thread _timerThread;
 	bool _abortTimerThread;
-	bool _shouldOfferNewImage;
+    std::mutex _imagesQueueMutex;
+    std::queue<std::shared_ptr<std::vector<uint16_t>>> _imagesQueue;
 	std::uint16_t _frameCounter;
 };
 

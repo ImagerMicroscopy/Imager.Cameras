@@ -108,7 +108,6 @@ bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 	transferInfo.size = sizeof(DCAMCAP_TRANSFERINFO);
 	err = dcamcap_transferinfo(_camHandle, &transferInfo);
 	if (err != 0) {
-		_derivedAbortAsyncAcquisition();
 		throw std::runtime_error("error in dcam transferinfo");
 	}
 	return (_numberOfImagesDelivered != transferInfo.nFrameCount);
@@ -125,7 +124,6 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 	transferInfo.size = sizeof(DCAMCAP_TRANSFERINFO);
 	err = dcamcap_transferinfo(_camHandle, &transferInfo);
 	if (err != 0) {
-		_derivedAbortAsyncAcquisition();
 		throw std::runtime_error("error in dcam transferinfo");
 	}
 
