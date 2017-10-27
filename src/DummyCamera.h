@@ -22,7 +22,7 @@ public:
 	double getEMGain() const override { return _emGain; };
 	double getTemperature() const override;
 	double getTemperatureSetpoint() const override { return _temperature; };
-	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(512, 512); };
+	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(1024, 512); };
 
 private:
     std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
