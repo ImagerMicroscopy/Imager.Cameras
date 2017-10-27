@@ -124,6 +124,9 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
 }
 
 int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
+    if (!_asyncErrorStr.empty()) {
+        throw std::runtime_error(_asyncErrorStr);
+    }
 	std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
 	if (_imageIndicesWaitingToBeCopied.empty()) {
 		return -1;
