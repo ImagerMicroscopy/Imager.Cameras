@@ -9,7 +9,7 @@
 
 #include "Utils.h"
 
-template <typename T> 
+template <typename T>
 class ScopedSetter{
 public:
 	ScopedSetter(T* valToModify, T value) :

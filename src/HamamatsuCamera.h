@@ -34,7 +34,7 @@ private:
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
-    bool _waitForNewImageWithTimeout(int timeoutMillis) override;
+ bool _waitForNewImageWithTimeout(int timeoutMillis) override;
 	bool _derivedNewAsyncAcquisitionImageAvailable() override;
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
@@ -46,6 +46,8 @@ private:
 	std::string _camName;
 	std::vector<std::uint16_t> _frameBuffer;
 	int _nBytesPerImage;
+	HDCAMWAIT _camWaitHandle;
+	bool _haveAttachedBuffers;
 	int _numberOfImagesDelivered;
 };
 
