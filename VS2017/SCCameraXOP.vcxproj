@@ -363,6 +363,7 @@
     <ClCompile Include="..\src\CameraManager.cpp" />
     <ClCompile Include="..\src\DummyCamera.cpp" />
     <ClCompile Include="..\src\HamamatsuCamera.cpp" />
+    <ClCompile Include="..\src\ImageProcessingUtils.cpp" />
     <ClCompile Include="..\src\PhotometricsCamera.cpp" />
     <ClCompile Include="..\src\SCCameraDLL.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -382,6 +383,7 @@
     <ClInclude Include="..\src\DummyCamera.h" />
     <ClInclude Include="..\src\Exceptions.h" />
     <ClInclude Include="..\src\HamamatsuCamera.h" />
+    <ClInclude Include="..\src\ImageProcessingUtils.h" />
     <ClInclude Include="..\src\PhotometricsCamera.h" />
     <ClInclude Include="..\src\SCCameraDLL.h" />
     <ClInclude Include="..\src\SCConfigure.h" />
