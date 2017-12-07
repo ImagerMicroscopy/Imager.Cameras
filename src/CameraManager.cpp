@@ -15,7 +15,7 @@
 
 #ifdef WITH_HAMAMATSU
 #include "windows.h"
-#include "DCAM/dcamapi.h"
+#include "Hamamatsu/dcamapi4.h"
 #include "HamamatsuCamera.h"
 #endif
 
@@ -83,7 +83,7 @@ void CameraManager::discoverCameras() {
 	paraminit.size = sizeof(paraminit);
 	DCAMERR	err;
 	err = dcamapi_init( &paraminit );
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("can't initial DCAM api");
 	}
 	int nCameras = paraminit.iDeviceCount;
@@ -92,7 +92,7 @@ void CameraManager::discoverCameras() {
 		devOpen.index = i;
 		devOpen.size = sizeof(DCAMDEV_OPEN);
 		err = dcamdev_open(&devOpen);
-		if (err != 0) {
+		if (err != DCAMERR_SUCCESS) {
 			throw std::runtime_error("unable to open DCAM camera");
 		}
 		HDCAM hdCam = devOpen.hdcam;

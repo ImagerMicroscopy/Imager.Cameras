@@ -4,14 +4,13 @@
 
 #include "HamamatsuCamera.h"
 
-#include "DCAM/dcamprop.h"
+#include "Hamamatsu/dcamprop.h"
 
 HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_camHandle(camHandle),
 	_camWaitHandle(nullptr),
 	_haveAttachedBuffers(false)
 {
-	_camHandle = camHandle;
 	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
 	std::pair<int, int> sensorSize = getSensorSize();
 	_nBytesPerImage = sensorSize.first * sensorSize.second * sizeof(std::uint16_t);
@@ -62,8 +61,8 @@ double HamamatsuCamera::getTemperatureSetpoint() const {
 
 std::pair<int, int> HamamatsuCamera::getSensorSize() const {
 	std::pair<int, int> size;
-	size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE);
-	size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE);
+	size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
+	size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
 	return size;
 }
 
@@ -100,7 +99,7 @@ void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 		attachParams.buffer = reinterpret_cast<void**>(&bufferPtrs);
 		attachParams.buffercount = kHamamatsuImagesInBuffer;
 		err = dcambuf_attach(_camHandle, &attachParams);
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("couldn't attach buffers");
 	}
     _haveAttachedBuffers = true;
@@ -111,14 +110,14 @@ void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 		waitParams.size = sizeof(DCAMWAIT_OPEN);
 		waitParams.hdcam = _camHandle;
 		err = dcamwait_open(&waitParams);
-		if (err != 0) {
+		if (err != DCAMERR_SUCCESS) {
 			throw std::runtime_error("couldn't get wait handle");
 		}
 		_camWaitHandle = waitParams.hwait;
 	}
 
 	err = dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("couldn't start async acq");
 	}
 	_numberOfImagesDelivered = 0;
@@ -126,7 +125,7 @@ void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 
 void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
 	DCAMERR err = dcamcap_stop(_camHandle);
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("couldn't abort async acq");
 	}
 }
@@ -134,10 +133,10 @@ void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
 bool HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
 	DCAMWAIT_START waitParams = { 0 };
 	waitParams.size = sizeof(DCAMWAIT_START);
-	waitParams.eventmask = DCAMCAP_EVENT_FRAMEREADY;
+	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
 	waitParams.timeout = timeoutMillis;
-	DCAMERR err = dcamwait_start(_camHandle, &waitParams);
-	return ((err == 0) && (waitParams.eventHappened == DCAMCAP_EVENT_FRAMEREADY));
+	DCAMERR err = dcamwait_start(_camWaitHandle, &waitParams);
+	return ((err == DCAMERR_SUCCESS) && (waitParams.eventhappened == DCAMWAIT_CAPEVENT_FRAMEREADY));
 }
 
 bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
@@ -145,7 +144,7 @@ bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 	DCAMCAP_TRANSFERINFO transferInfo = { 0 };
 	transferInfo.size = sizeof(DCAMCAP_TRANSFERINFO);
 	err = dcamcap_transferinfo(_camHandle, &transferInfo);
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("error in dcam transferinfo");
 	}
 	return (_numberOfImagesDelivered != transferInfo.nFrameCount);
@@ -161,7 +160,7 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 	DCAMCAP_TRANSFERINFO transferInfo = { 0 };
 	transferInfo.size = sizeof(DCAMCAP_TRANSFERINFO);
 	err = dcamcap_transferinfo(_camHandle, &transferInfo);
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("error in dcam transferinfo");
 	}
 
@@ -186,7 +185,7 @@ std::string HamamatsuCamera::_getDCAMString(HDCAM camHandle, int stringID) const
 	param.iString = stringID;
 
 	DCAMERR err = dcamdev_getstring(camHandle, &param);
-	if (err != 0) {
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("error getting dcam string");
 	}
 	return std::string(buf);
@@ -194,8 +193,8 @@ std::string HamamatsuCamera::_getDCAMString(HDCAM camHandle, int stringID) const
 
 double HamamatsuCamera::_getPropertyValue(HDCAM camHandle, int propertyID) const {
 	double value = 0.0;
-	DCAMERR err = dcamprop_queryvalue(camHandle, propertyID, &value, DCAMPROP_OPTION_NONE);
-	if (err != 0) {
+	DCAMERR err = dcamprop_getvalue(camHandle, propertyID, &value);
+	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("error getting dcam property value");
 	}
 	return value;
@@ -203,8 +202,8 @@ double HamamatsuCamera::_getPropertyValue(HDCAM camHandle, int propertyID) const
 
 void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double value) const {
 	DCAMERR err = dcamprop_setvalue(camHandle, propertyID, value);
-	if (err != 0) {
-		throw std::runtime_error("error setting dcam property value");
+	if (err != DCAMERR_SUCCESS) {
+		//throw std::runtime_error("error setting dcam property value");
 	}
 }
 

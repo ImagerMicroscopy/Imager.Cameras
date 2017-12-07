@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "windows.h"
-#include "DCAM/dcamapi.h"
+#include "Hamamatsu/dcamapi4.h"
 
 const int kHamamatsuImagesInBuffer = 50;
 
@@ -34,7 +34,7 @@ private:
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
- bool _waitForNewImageWithTimeout(int timeoutMillis) override;
+	bool _waitForNewImageWithTimeout(int timeoutMillis) override;
 	bool _derivedNewAsyncAcquisitionImageAvailable() override;
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
