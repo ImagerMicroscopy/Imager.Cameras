@@ -29,6 +29,7 @@ CameraManager::CameraManager() {
 	if (!err)
 		throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 #endif
+    // Hamamatsu api will be init'ed when discovering cameras
 }
 
 CameraManager::~CameraManager() {

@@ -15,7 +15,6 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
 	std::pair<int, int> sensorSize = getSensorSize();
 	_nBytesPerImage = sensorSize.first * sensorSize.second * sizeof(std::uint16_t);
-	_frameBuffer.resize(sensorSize.first * sensorSize.second * kHamamatsuImagesInBuffer);
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
@@ -84,6 +83,10 @@ void HamamatsuCamera::_setCoolerOn(const bool on) {
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 	std::pair<int, int> sensorSize = getSensorSize();
 	int nPixelsInImage = sensorSize.first * sensorSize.second;
+	
+	if (_frameBuffer.empty()) {
+	    _frameBuffer.resize(sensorSize.first * sensorSize.second * kHamamatsuImagesInBuffer);
+    }
 	std::uint16_t* bufferPtrs[kHamamatsuImagesInBuffer];
 	for (int i = 0; i < kHamamatsuImagesInBuffer; i++) {
 		bufferPtrs[i] = _frameBuffer.data() + i * nPixelsInImage;
@@ -100,6 +103,7 @@ void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 	if (err != 0) {
 		throw std::runtime_error("couldn't attach buffers");
 	}
+    _haveAttachedBuffers = true;
 }
 
 	if (_camWaitHandle == nullptr) {
@@ -163,9 +167,9 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 
 	int lastAcquiredImageIndex = transferInfo.nNewestFrameIndex;
 	int nUnreadImagesInBuffer = transferInfo.nFrameCount - _numberOfImagesDelivered;
-	int indexOfEarliestUnreadImage = lastAcquiredImageIndex - kHamamatsuImagesInBuffer + 1;
+    int indexOfEarliestUnreadImage = lastAcquiredImageIndex - nUnreadImagesInBuffer + 1;
 	if (indexOfEarliestUnreadImage < 0) {
-		indexOfEarliestUnreadImage = nUnreadImagesInBuffer - indexOfEarliestUnreadImage;
+		indexOfEarliestUnreadImage = kHamamatsuImagesInBuffer + indexOfEarliestUnreadImage;
 	}
 
 	std::uint16_t* startOfImage = _frameBuffer.data() + indexOfEarliestUnreadImage * nPixelsInImage;
