@@ -1,10 +1,10 @@
 /* **************************************************************** *
 
-	dcamapi.h:	Sep 10, 2015
+	dcamapi.h:	April 4, 2017
 
  * **************************************************************** */
 
-#ifndef _INCLUDE_DCAMAPI_H_
+#ifndef _INCLUDE_DCAMAPI4_H_
 
 #ifndef DCAMAPI_VER
 #define	DCAMAPI_VER		4000
@@ -103,6 +103,7 @@ DCAM_DECLARE_BEGIN( enum, DCAMERR )
 	DCAMERR_TIMEOUT				= 0x80000106,/*		timeout					*/
 	DCAMERR_LOSTFRAME			= 0x80000301,/*		frame data is lost		*/
 	DCAMERR_MISSINGFRAME_TROUBLE= 0x80000f06,/*		frame is lost but reason is low lever driver's bug */
+	DCAMERR_INVALIDIMAGE		= 0x80000321,/*		hpk format data is invalid data	*/
 
   /* initialization error */
 	DCAMERR_NORESOURCE			= 0x80000201,/*		not enough resource except memory	*/
@@ -144,7 +145,6 @@ DCAM_DECLARE_BEGIN( enum, DCAMERR )
 	DCAMERR_NOCORRECTIONDATA	= 0x80000838,/*		not take the dark and shading correction data yet.*/
 	DCAMERR_CHANNELDEPENDENTVALUE= 0x80000839,/*	each channel has own property value so can't return overall property value. */
 	DCAMERR_VIEWDEPENDENTVALUE	= 0x8000083a,/*		each view has own property value so can't return overall property value. */
-	DCAMERR_INVALIDOPTION		= 0x8000083d,/*		the option value of structure is invalid. */
 	DCAMERR_NOTSUPPORT			= 0x80000f03,/*		camera does not support the function or property with current settings */
 
   /* camera or bus trouble */
@@ -155,6 +155,7 @@ DCAM_DECLARE_BEGIN( enum, DCAMERR )
 	DCAMERR_FAILCALIBRATION		= 0x83001006,/*		fail calibration	*/
 
 	/* 0x84000100 - 0x840001FF, DCAMERR_INVALIDMEMBER_x */
+	DCAMERR_INVALIDMEMBER_3		= 0x84000103,/*		3th member variable is invalid value*/
 	DCAMERR_INVALIDMEMBER_5		= 0x84000105,/*		5th member variable is invalid value*/
 	DCAMERR_INVALIDMEMBER_7		= 0x84000107,/*		7th member variable is invalid value*/
 	DCAMERR_INVALIDMEMBER_8		= 0x84000108,/*		7th member variable is invalid value*/
@@ -168,6 +169,14 @@ DCAM_DECLARE_BEGIN( enum, DCAMERR )
 	DCAMERR_ALREADYOCCUPIED		= 0x84001007,/*		DCAMREC handle is already occupied by other HDCAM	*/
 	DCAMERR_TOOLARGEUSERDATASIZE= 0x84001008,/*		DCAMREC is set the large value to user data size	*/
 	DCAMERR_INVALIDWAITHANDLE	= 0x84002001,/*		DCAMWAIT is invalid handle	*/
+	DCAMERR_NEWRUNTIMEREQUIRED	= 0x84002002,/*		DCAM Module Version is older than the version that the camera requests	*/
+	DCAMERR_VERSIONMISMATCH		= 0x84002003,/*		Camre returns the error on setting parameter to limit version	*/
+	DCAMERR_RUNAS_FACTORYMODE	= 0x84002004,/*		Camera is running as a factory mode */
+	DCAMERR_IMAGE_UNKNOWNSIGNATURE	= 0x84003001,/*	sigunature of image header is unknown or corrupted	*/
+	DCAMERR_IMAGE_NEWRUNTIMEREQUIRED= 0x84003002,/* version of image header is newer than version that used DCAM supports	*/
+	DCAMERR_IMAGE_ERRORSTATUSEXIST	= 0x84003003,/*	image header stands error status	*/
+	DCAMERR_IMAGE_HEADERCORRUPTED	= 0x84004004,/*	image header value is strange	*/
+	DCAMERR_IMAGE_BROKENCONTENT		= 0x84004005,/*	image content is corrupted	*/
 
   /* calling error for DCAM-API 2.1.3 */
 	DCAMERR_UNKNOWNMSGID		= 0x80000801,/*		unknown message id		*/
@@ -208,8 +217,11 @@ DCAM_DECLARE_BEGIN( enum, DCAMBUF_FRAME_OPTION )
 	DCAMBUF_FRAME_OPTION__VIEW_3		= 0x00300000,
 	DCAMBUF_FRAME_OPTION__VIEW_4		= 0x00400000,
 
+	DCAMBUF_FRAME_OPTION__PROC_HIGHCONTRAST	= 0x00000010,
+
 	DCAMBUF_FRAME_OPTION__VIEW__STEP	= 0x00100000,
 	DCAMBUF_FRAME_OPTION__VIEW__MASK	= 0x00F00000,
+	DCAMBUF_FRAME_OPTION__PROC__MASK	= 0x00000FF0,
 
 	end_of_dcambuf_frame_option
 }
@@ -222,8 +234,14 @@ DCAM_DECLARE_BEGIN( enum, DCAMREC_FRAME_OPTION )
 	DCAMREC_FRAME_OPTION__VIEW_2		= 0x00200000,
 	DCAMREC_FRAME_OPTION__VIEW_3		= 0x00300000,
 	DCAMREC_FRAME_OPTION__VIEW_4		= 0x00400000,
+
+	DCAMREC_FRAME_OPTION__PROC_HIGHCONTRAST	= 0x00000010,
+
 	DCAMREC_FRAME_OPTION__VIEW__STEP	= 0x00100000,
-	DCAMREC_FRAME_OPTION__VIEW__MASK	= 0x00F00000
+	DCAMREC_FRAME_OPTION__VIEW__MASK	= 0x00F00000,
+	DCAMREC_FRAME_OPTION__PROC__MASK	= 0x00000FF0,
+
+	endof_dcamrec_frame_option
 }
 DCAM_DECLARE_END( DCAMREC_FRAME_OPTION )
 
@@ -253,6 +271,7 @@ DCAM_DECLARE_BEGIN( enum, DCAM_PIXELTYPE )
 
 	DCAM_PIXELTYPE_MONO8		= 0x00000001,
 	DCAM_PIXELTYPE_MONO16		= 0x00000002,
+	DCAM_PIXELTYPE_MONO12		= 0x00000003,
 
 	DCAM_PIXELTYPE_RGB24		= 0x00000021,
 	DCAM_PIXELTYPE_RGB48		= 0x00000022,
@@ -268,9 +287,18 @@ DCAM_DECLARE_BEGIN( enum, DCAMBUF_ATTACHKIND )
 	DCAMBUF_ATTACHKIND_TIMESTAMP	= 1,
 	DCAMBUF_ATTACHKIND_FRAMESTAMP	= 2,
 
+	DCAMBUF_ATTACHKIND_PRIMARY_TIMESTAMP	= 3,
+	DCAMBUF_ATTACHKIND_PRIMARY_FRAMESTAMP	= 4,
+
 	DCAMBUF_ATTACHKIND_FRAME		= 0
 }
 DCAM_DECLARE_END( DCAM_ATTACHKIND )
+
+DCAM_DECLARE_BEGIN( enum, DCAMCAP_TRANSFERKIND )
+{
+	DCAMCAP_TRANSFERKIND_FRAME		= 0
+}
+DCAM_DECLARE_END( DCAMCAP_TRANSFERKIND )
 
 /*** --- status --- ***/
 DCAM_DECLARE_BEGIN( enum, DCAMCAP_STATUS )
@@ -280,14 +308,6 @@ DCAM_DECLARE_BEGIN( enum, DCAMCAP_STATUS )
 	DCAMCAP_STATUS_READY				= 0x0002,
 	DCAMCAP_STATUS_STABLE				= 0x0003,
 	DCAMCAP_STATUS_UNSTABLE				= 0x0004,
-
-#if ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
-	DCAM_STATUS_ERROR					= DCAMCAP_STATUS_ERROR,
-	DCAM_STATUS_BUSY					= DCAMCAP_STATUS_BUSY,
-	DCAM_STATUS_READY					= DCAMCAP_STATUS_READY,
-	DCAM_STATUS_STABLE					= DCAMCAP_STATUS_STABLE,
-	DCAM_STATUS_UNSTABLE				= DCAMCAP_STATUS_UNSTABLE,
-#endif
 
 	end_of_dcamcap_status
 }
@@ -306,27 +326,7 @@ DCAM_DECLARE_BEGIN( enum, DCAMWAIT_EVENT )
 	DCAMWAIT_RECEVENT_MISSED			= 0x0400,
 	DCAMWAIT_RECEVENT_DISKFULL			= 0x1000,
 	DCAMWAIT_RECEVENT_WRITEFAULT		= 0x2000,
-
-	// backward compatibility
-	DCAMCAP_EVENT_TRANSFERRED			= DCAMWAIT_CAPEVENT_TRANSFERRED,
-	DCAMCAP_EVENT_FRAMEREADY			= DCAMWAIT_CAPEVENT_FRAMEREADY,
-	DCAMCAP_EVENT_CYCLEEND				= DCAMWAIT_CAPEVENT_CYCLEEND,
-	DCAMCAP_EVENT_EXPOSUREEND			= DCAMWAIT_CAPEVENT_EXPOSUREEND,
-	DCAMCAP_EVENT_STOPPED				= DCAMWAIT_CAPEVENT_STOPPED,
-
-	DCAMREC_EVENT_STOPPED				= DCAMWAIT_RECEVENT_STOPPED,
-	DCAMREC_EVENT_WARNING				= DCAMWAIT_RECEVENT_WARNING,
-	DCAMREC_EVENT_MISSED				= DCAMWAIT_RECEVENT_MISSED,
-	DCAMREC_EVENT_DISKFULL				= DCAMWAIT_RECEVENT_DISKFULL,
-	DCAMREC_EVENT_WRITEFAULT			= DCAMWAIT_RECEVENT_WRITEFAULT,
-
-#if ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
-	DCAM_EVENT_FRAMESTART				= DCAMWAIT_CAPEVENT_TRANSFERRED,
-	DCAM_EVENT_FRAMEEND					= DCAMWAIT_CAPEVENT_FRAMEREADY,
-	DCAM_EVENT_CYCLEEND					= DCAMWAIT_CAPEVENT_CYCLEEND,
-	DCAM_EVENT_EXPOSUREEND				= DCAMWAIT_CAPEVENT_EXPOSUREEND,	/* old name was VVALIDBEGIN */
-	DCAM_EVENT_CAPTUREEND				= DCAMWAIT_CAPEVENT_STOPPED,
-#endif
+	DCAMWAIT_RECEVENT_SKIPPED			= 0x4000,
 
 	end_of_dcamwait_event
 }
@@ -353,6 +353,8 @@ DCAM_DECLARE_BEGIN( enum, DCAM_IDSTR )
 	DCAM_IDSTR_MODULEVERSION			= 0x04000107,
 	DCAM_IDSTR_DCAMAPIVERSION			= 0x04000108,
 
+	DCAM_IDSTR_CAMERA_SERIESNAME		= 0x0400012c,
+
 	DCAM_IDSTR_OPTICALBLOCK_MODEL		= 0x04001101,
 	DCAM_IDSTR_OPTICALBLOCK_ID			= 0x04001102,
 	DCAM_IDSTR_OPTICALBLOCK_DESCRIPTION	= 0x04001103,
@@ -365,10 +367,6 @@ DCAM_DECLARE_END( DCAM_IDSTR )
 DCAM_DECLARE_BEGIN( enum, DCAMWAIT_TIMEOUT )
 {
 	DCAMWAIT_TIMEOUT_INFINITE			= 0x80000000,
-
-#if ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
-	DCAM_WAIT_INFINITE					= DCAMWAIT_TIMEOUT_INFINITE,
-#endif
 
 	end_of_dcamwait_timeout
 }
@@ -408,6 +406,85 @@ DCAM_DECLARE_BEGIN( enum, DCAMREC_METADATAKIND )
 }
 DCAM_DECLARE_END( DCAMREC_METADATAKIND )
 
+/*** --- DCAM data option --- ***/
+
+DCAM_DECLARE_BEGIN( enum, DCAMDATA_OPTION )
+{
+	DCAMDATA_OPTION__VIEW_ALL				= DCAMBUF_FRAME_OPTION__VIEW_ALL,
+	DCAMDATA_OPTION__VIEW_1					= DCAMBUF_FRAME_OPTION__VIEW_1,
+	DCAMDATA_OPTION__VIEW_2					= DCAMBUF_FRAME_OPTION__VIEW_2,
+	DCAMDATA_OPTION__VIEW_3					= DCAMBUF_FRAME_OPTION__VIEW_3,
+	DCAMDATA_OPTION__VIEW_4					= DCAMBUF_FRAME_OPTION__VIEW_4,
+
+	DCAMDATA_OPTION__VIEW__STEP				= DCAMBUF_FRAME_OPTION__VIEW__STEP,
+	DCAMDATA_OPTION__VIEW__MASK				= DCAMBUF_FRAME_OPTION__VIEW__MASK,
+}
+DCAM_DECLARE_END( DCAMDATA_OPTION )
+
+/*** --- DCAM data kind --- ***/
+
+DCAM_DECLARE_BEGIN( enum, DCAMDATA_KIND )
+{
+	DCAMDATA_KIND__REGION					= 0x00000001,
+	DCAMDATA_KIND__LUT						= 0x00000002,
+	DCAMDATA_KIND__NONE						= 0x00000000
+}
+DCAM_DECLARE_END( DCAMDATA_KIND )
+
+/*** --- DCAM data attribute --- ***/
+DCAM_DECLARE_BEGIN( enum, DCAMDATA_ATTRIBUTE )
+{
+	DCAMDATA_ATTRIBUTE__ACCESSREADY			= 0x01000000,	/* This value can get or set at READY status */
+	DCAMDATA_ATTRIBUTE__ACCESSBUSY			= 0x02000000,	/* This value can get or set at BUSY status */
+
+	DCAMDATA_ATTRIBUTE__HASVIEW				= 0x10000000,	/* value can set the value for each views	*/
+
+	DCAMDATA_ATTRIBUTE__MASK				= 0xFF000000,
+}
+DCAM_DECLARE_END( DCAMDATA_ATTRIBUTE )
+
+/*** --- DCAM data region type --- ***/
+DCAM_DECLARE_BEGIN( enum, DCAMDATA_REGIONTYPE )
+{
+	DCAMDATA_REGIONTYPE__BYTEMASK			= 0x00000001,
+	DCAMDATA_REGIONTYPE__RECT16ARRAY		= 0x00000002,
+
+	DCAMDATA_REGIONTYPE__ACCESSREADY		= DCAMDATA_ATTRIBUTE__ACCESSREADY,
+	DCAMDATA_REGIONTYPE__ACCESSBUSY			= DCAMDATA_ATTRIBUTE__ACCESSBUSY,
+	DCAMDATA_REGIONTYPE__HASVIEW			= DCAMDATA_ATTRIBUTE__HASVIEW,
+
+	DCAMDATA_REGIONTYPE__BODYMASK			= 0x00FFFFFF,
+	DCAMDATA_REGIONTYPE__ATTRIBUTEMASK		= DCAMDATA_ATTRIBUTE__MASK,
+
+	DCAMDATA_REGIONTYPE__NONE				= 0x00000000
+}
+DCAM_DECLARE_END( DCAMDATA_REGIONTYPE )
+
+/*** --- DCAM data lut type --- ***/
+DCAM_DECLARE_BEGIN( enum, DCAMDATA_LUTTYPE )
+{
+	DCAMDATA_LUTTYPE__SEGMENTED_LINEAR		= 0x00000001,
+	DCAMDATA_LUTTYPE__MONO16				= 0x00000002,	// reserved
+
+	DCAMDATA_LUTTYPE__ACCESSREADY			= DCAMDATA_ATTRIBUTE__ACCESSREADY,
+	DCAMDATA_LUTTYPE__ACCESSBUSY			= DCAMDATA_ATTRIBUTE__ACCESSBUSY,
+
+	DCAMDATA_LUTTYPE__BODYMASK				= 0x00FFFFFF,
+	DCAMDATA_LUTTYPE__ATTRIBUTEMASK			= DCAMDATA_ATTRIBUTE__MASK,
+
+	DCAMDATA_LUTTYPE__NONE					= 0x00000000
+}
+DCAM_DECLARE_END( DCAMDATA_LUTTYPE )
+
+/*** --- DCAMBUF proc type --- ***/
+DCAM_DECLARE_BEGIN( enum, DCAMBUF_PROCTYPE )
+{
+	DCAMBUF_PROCTYPE__HIGHCONTRASTMODE		= DCAMBUF_FRAME_OPTION__PROC_HIGHCONTRAST,
+
+	DCAMBUF_PROCTYPE__NONE					= 0x00000000
+}
+DCAM_DECLARE_END( DCAMBUF_PROCTYPE )
+
 /*** --- Code Page --- ***/
 
 DCAM_DECLARE_BEGIN( enum, DCAM_CODEPAGE )
@@ -427,7 +504,10 @@ DCAM_DECLARE_END( DCAM_CODEPAGE )
 /*** --- capability --- ***/
 DCAM_DECLARE_BEGIN( enum, DCAMDEV_CAPDOMAIN )
 {
-	DCAMDEV_CAPDOMAIN__FUNCTION				= 0x00000000,
+	DCAMDEV_CAPDOMAIN__DCAMDATA				= 0x00000001,
+	DCAMDEV_CAPDOMAIN__FRAMEOPTION			= 0x00000002,
+
+	DCAMDEV_CAPDOMAIN__FUNCTION				= 0x00000000
 }
 DCAM_DECLARE_END( DCAMDEV_CAPDOMAIN )
 
@@ -491,10 +571,43 @@ DCAM_DECLARE_BEGIN( struct, DCAMDEV_CAPABILITY )
 {
 	int32				size;					// [in]
 	int32				domain;					// [in] DCAMDEV_CAPDOMAIN__*
-	int32				capflag;				// [out] supported flag
+	int32				capflag;				// [out] available flags in current condition.
 	int32				kind;					// [in] data kind in domain
 }
 DCAM_DECLARE_END( DCAMDEV_CAPABILITY )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDEV_CAPABILITY_LUT )
+{
+	DCAMDEV_CAPABILITY	hdr;					// [in] size:		size of this structure
+												// [in] domain:		DCAMDEV_CAPDOMAIN__DCAMDATA
+												// [out]capflag:	DCAMDATA_LUTTYPE__*
+												// [in] kind:		DCAMDATA_KIND__LUT
+
+	int32				linearpointmax;			// [out] max of linear lut point
+}
+DCAM_DECLARE_END( DCAMDEV_CAPABILITY_LUT )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDEV_CAPABILITY_REGION )
+{
+	DCAMDEV_CAPABILITY	hdr;					// [in] size:		size of this structure
+												// [in]	domain:		DCAMDEV_CAPDOMAIN__DCAMDATA
+												// [out]capflag:	DCAMDATA_REGIONTYPE__*
+												// [in]	kind:		DCAMDATA_KIND__REGION
+
+	int32				horzunit;				// [out] horizontal step
+	int32				vertunit;				// [out] vertical step
+}
+DCAM_DECLARE_END( DCAMDEV_CAPABILITY_REGION )
+DCAM_DECLARE_BEGIN( struct, DCAMDEV_CAPABILITY_FRAMEOPTION )
+{
+	DCAMDEV_CAPABILITY	hdr;					// [in] size:		size of this structure
+												// [in]	domain:		DCAMDEV_CAPDOMAIN__FRAMEOPTION
+												// [out]capflag:	available DCAMBUF_PROCTYPE__* flags in current condition.
+												// [in]	kind:		0 reserved
+
+	int32	supportproc;						// [out] support DCAMBUF_PROCTYPE__* flags in the camera. hdr.capflag may be 0 if the function doesn't work in current condition.
+}
+DCAM_DECLARE_END( DCAMDEV_CAPABILITY_FRAMEOPTION )
 
 DCAM_DECLARE_BEGIN( struct, DCAMDEV_STRING )
 {
@@ -504,6 +617,55 @@ DCAM_DECLARE_BEGIN( struct, DCAMDEV_STRING )
 	int32				textbytes;				// [in]
 }
 DCAM_DECLARE_END( DCAMDEV_STRING )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDATA_HDR )
+{
+	int32				size;					// [in]	size of whole structure, not only this
+	int32				iKind;					// [in] DCAMDATA_KIND__*
+	int32				option;					// [in] DCAMDATA_OPTION__*
+	int32				reserved2;				// [in] 0 reserved
+}
+DCAM_DECLARE_END( DCAMDATA_HDR )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDATA_REGION )
+{
+	DCAMDATA_HDR		hdr;					// [in] iKind = DCAMDATA_KIND__REGION
+
+	int32				option;					// 0 reserved
+	int32				type;					// [in] DCAMDATA_REGIONTYPE
+	void*				data;					// Byte array or DCAMDATA_REGIONRECT array
+	int32				datasize;				// size of data
+	int32				reserved;				// 0 reserved
+}
+DCAM_DECLARE_END( DCAMDATA_REGION )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDATA_REGIONRECT )
+{
+	short	left;
+	short	top;
+	short	right;
+	short	bottom;
+}
+DCAM_DECLARE_END( DCAMDATA_REGIONRECT )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDATA_LUT )
+{
+	DCAMDATA_HDR		hdr;					// [in] iKind = DCAMDATA_KIND__LUT
+
+	int32				type;					// [in]	DCAMDATA_LUTTYPE
+	int32				page;					// [in] use to load or store
+	void*				data;					// WORD array or DCAMDATA_LINEARLUT array
+	int32				datasize;				// size of data
+	int32				reserved;				// 0 reserved
+}
+DCAM_DECLARE_END( DCAMDATA_LUT )
+
+DCAM_DECLARE_BEGIN( struct, DCAMDATA_LINEARLUT )
+{
+	int32	lutin;
+	int32	lutout;
+}
+DCAM_DECLARE_END( DCAMDATA_LINEARLUT )
 
 DCAM_DECLARE_BEGIN( struct, DCAMPROP_ATTR )
 {
@@ -593,7 +755,7 @@ DCAM_DECLARE_BEGIN( struct, DCAMREC_FRAME )	// currently the structure is same a
 	// "output" means function filles a value at returning.
 	int32				size;					// [i:i] size of this structure.
 	int32				iKind;					// reserved. set to 0.
-	int32				option;					// reserved. set to 0.
+	int32				option;					// DCAMREC_FRAME_OPTION
 	int32				iFrame;					// [i:i] frame index
 	void*				buf;					// [i:o] pointer for top-left image
 	int32				rowbytes;				// [i:o] byte size for next line.
@@ -629,7 +791,7 @@ DCAM_DECLARE_END( DCAMWAIT_START )
 DCAM_DECLARE_BEGIN( struct, DCAMCAP_TRANSFERINFO )
 {
 	int32				size;					// [in] size of this structure.
-	int32				reserved;				// [in]
+	int32				iKind;					// [in] DCAMCAP_TRANSFERKIND
 	int32				nNewestFrameIndex;		// [out]
 	int32				nFrameCount;			// [out]
 }
@@ -715,7 +877,7 @@ DCAM_DECLARE_END( DCAM_METADATABLOCKHDR )
 DCAM_DECLARE_BEGIN( struct, DCAM_USERDATATEXT )
 {
 	DCAM_METADATAHDR	hdr;					// [in] size member should be size of this structure
-												// [in] iKind should be DCAM_METADATAKIND_USERDATATEXT.
+												// [in] iKind should be DCAMREC_METADATAKIND_USERDATATEXT.
 												// [in] option should be one of DCAMREC_METADATAOPTION
 
 	char*				text;					// [in] UTF-8 encoding
@@ -727,7 +889,7 @@ DCAM_DECLARE_END( DCAM_USERDATATEXT )
 DCAM_DECLARE_BEGIN( struct, DCAM_USERDATABIN )
 {
 	DCAM_METADATAHDR	hdr;					// [in] size member should be size of this structure
-												// [in] iKind should be DCAM_METADATAKIND_USERDATABIN.
+												// [in] iKind should be DCAMREC_METADATAKIND_USERDATABIN.
 												// [in] option should be one of DCAMREC_METADATAOPTION
 
 	void*				bin;					// [in] binary meta data
@@ -739,7 +901,7 @@ DCAM_DECLARE_END( DCAM_USERDATABIN )
 DCAM_DECLARE_BEGIN( struct, DCAM_TIMESTAMPBLOCK )
 {
 	DCAM_METADATABLOCKHDR	hdr;				// [in] size member should be size of this structure
-												// [in] iKind should be DCAM_METADATAKIND_TIMESTAMPS.
+												// [in] iKind should be DCAMREC_METADATAKIND_TIMESTAMPS.
 												// [in] option should be one of DCAMBUF_METADATAOPTION or DCAMREC_METADATAOPTION
 
 	DCAM_TIMESTAMP*		timestamps;				// [in] pointer for TIMESTAMP block
@@ -815,7 +977,7 @@ DCAM_DECLARE_BEGIN( struct, DCAMREC_STATUS )
 	int32				maxframecount_per_session;
 	int32				currentframe_index;
 	int32				missingframe_count;
-	int32				flags;
+	int32				flags;					// DCAMREC_STATUSFLAG
 	int32				totalframecount;
 	int32				reserved;
 }
@@ -835,6 +997,8 @@ DCAMERR DCAMAPI dcamdev_close			( HDCAM h );
 DCAMERR DCAMAPI dcamdev_showpanel		( HDCAM h, int32 iKind );
 DCAMERR DCAMAPI dcamdev_getcapability	( HDCAM h, DCAMDEV_CAPABILITY* param );
 DCAMERR DCAMAPI dcamdev_getstring		( HDCAM h, DCAMDEV_STRING* param );
+DCAMERR DCAMAPI dcamdev_setdata			( HDCAM h, DCAMDATA_HDR* param );
+DCAMERR DCAMAPI dcamdev_getdata			( HDCAM h, DCAMDATA_HDR* param );
 
 // Property control
 DCAMERR DCAMAPI dcamprop_getattr		( HDCAM h, DCAMPROP_ATTR* param );
@@ -898,33 +1062,6 @@ DCAMERR DCAMAPI dcamrec_pause			( HDCAMREC hrec );
 DCAMERR DCAMAPI dcamrec_resume			( HDCAMREC hrec );
 DCAMERR DCAMAPI dcamrec_status			( HDCAMREC hrec, DCAMREC_STATUS* pStatus );
 
-// backward compatibility
-
-typedef	DCAMBUF_FRAME		DCAM_FRAME;
-
-// ---- obsolete ----
-
-DCAM_DECLARE_BEGIN( enum, DCAM_METADATAKIND )	// obsolete
-{
-	DCAM_METADATAKIND_USERDATATEXT			= 0x00000001,
-	DCAM_METADATAKIND_USERDATABIN			= 0x00000002,
-	DCAM_METADATAKIND_TIMESTAMPS			= 0x00010000,
-	DCAM_METADATAKIND_FRAMESTAMPS			= 0x00020000,
-
-	end_of_dcam_metadatakind
-}
-DCAM_DECLARE_END( DCAM_METADATAKIND )
-
-DCAM_DECLARE_BEGIN( enum, DCAM_USERDATAKIND )
-{
-	DCAM_USERDATAKIND_FRAME				= DCAMREC_METADATAOPTION__LOCATION_FRAME,
-	DCAM_USERDATAKIND_FILE				= DCAMREC_METADATAOPTION__LOCATION_FILE,
-	DCAM_USERDATAKIND_SESSION			= DCAMREC_METADATAOPTION__LOCATION_SESSION,
-
-	DCAM_USERDATAKIND_LOCATION_MASK		= DCAMREC_METADATAOPTION__LOCATION__MASK
-}
-DCAM_DECLARE_END( DCAM_USERDATAKIND )
-
 DCAM_DECLARE_BEGIN( struct, DCAM_METADATABLOCK )
 {
 	DCAM_METADATABLOCKHDR	hdr;
@@ -965,15 +1102,9 @@ inline int failed( DCAMERR err )
 
 #endif
 
-#if ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
-
-#include "dcamapi3.h"
-
-#endif // ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
-
 #if (defined(_MSC_VER)&&defined(_LINK_DCAMAPI_LIB))
 #pragma comment(lib, "dcamapi.lib")
 #endif
 
-#define	_INCLUDE_DCAMAPI_H_
+#define	_INCLUDE_DCAMAPI4_H_
 #endif

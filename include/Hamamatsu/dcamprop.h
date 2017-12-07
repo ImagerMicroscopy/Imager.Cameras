@@ -1,6 +1,6 @@
 /* **************************************************************** *
 
-		dcamprop.h:	Sep 30, 2015
+		dcamprop.h:	April 4, 2017
 
  * **************************************************************** */
 
@@ -31,85 +31,6 @@ extern "C" {
 #endif
 
 #endif
-
-/* **************************************************************** *
-
-	structure declaration
-
- * **************************************************************** */
-
-#if DCAMAPI_VER >= 4000
-
-#define	DCAM_PARAM_PROPERTYATTR				DCAMPROP_ATTR
-typedef struct DCAM_PARAM_PROPERTYATTR		DCAM_PROPERTYATTR;
-
-#define	DCAM_PARAM_PROPERTYVALUETEXT		DCAMPROP_VALUETEXT
-typedef struct DCAM_PARAM_PROPERTYVALUETEXT	DCAM_PROPERTYVALUETEXT;
-
-#else
-
-typedef struct DCAM_PARAM_PROPERTYATTR
-{
-	/* input parameters */
-	int32	cbSize;			/*	[in]	size of this structure	*/
-	int32	iProp;			/*	[in]	DCAMIDPROPERTY			*/
-	int32	option;			/*	[in]	DCAMPROPOPTION			*/
-	int32	iReserved1;		/*	[in]	must be 0				*/
-
-	/* output parameters */
-	int32	attribute;		/*	[out]	DCAMPROPATTRIBUTE		*/
-	int32	iGroup;			/*	[out]	0 reserved; DCAMIDGROUP	*/
-	int32	iUnit;			/*	[out]	DCAMPROPUNIT			*/
-	int32	attribute2;		/*	[out]	DCAMPROPATTRIBUTE2		*/
-
-	double	valuemin;		/*	[out]	minimum value			*/
-	double	valuemax;		/*	[out]	maximum value			*/
-	double	valuestep;		/*	[out]	minimum stepping between a value and the next	*/
-	double	valuedefault;	/*	[out]	default value			*/
-
-	/* available from DCAM-API 3.0 */
-	int32	nMaxChannel;	/*	[out]	max channel if supports	*/
-	int32	iReserved3;		/*	[n/a]	reserved to 0			*/
-	int32	nMaxView;		/*	[out]	max view if supports	*/
-
-	/* available from DCAM-API 3.03 */
-	int32	iProp_NumberOfElement;	/*	[out]	property id to get number of elements of this property if it is array	*/
-	int32	iProp_ArrayBase;		/*	[out]	base id of array if element		*/
-	int32	iPropStep_Element;		/*	[out]	step for iProp to next element	*/
-} DCAM_PROPERTYATTR;
-
-typedef struct DCAM_PARAM_PROPERTYVALUETEXT
-{
-	int32	cbSize;			/*	[in]	of this structure		*/
-	int32	iProp;			/*	[in]	DCAMIDPROP				*/
-	double	value;			/*	[in]	value of property		*/
-	char*	text;			/*	[obuf]	text of the value		*/
-	int32	textbytes;		/*	[in]	text buf size			*/
-} DCAM_PROPERTYVALUETEXT;
-
-#endif
-
-/* **************************************************************** *
-
-	functions declaration
-
- * **************************************************************** */
-
-#if ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
-
-/* DCAM-API 3.0 */
-BOOL DCAMAPI dcam_getpropertyattr	( HDCAM h, DCAM_PROPERTYATTR* param );
-BOOL DCAMAPI dcam_getpropertyvalue	( HDCAM h, int32 iProp, double* pValue );
-BOOL DCAMAPI dcam_setpropertyvalue	( HDCAM h, int32 iProp, double  fValue );
-
-BOOL DCAMAPI dcam_setgetpropertyvalue(HDCAM h, int32 iProp, double* pValue, int32 option DCAM_DEFAULT_ARG );
-BOOL DCAMAPI dcam_querypropertyvalue( HDCAM h, int32 iProp, double* pValue, int32 option DCAM_DEFAULT_ARG );
-
-BOOL DCAMAPI dcam_getnextpropertyid	( HDCAM h, int32* pProp, int32 option DCAM_DEFAULT_ARG );
-BOOL DCAMAPI dcam_getpropertyname	( HDCAM h, int32 iProp, char* text, int32 textbytes );
-BOOL DCAMAPI dcam_getpropertyvaluetext( HDCAM h, DCAM_PROPERTYVALUETEXT* param );
-
-#endif // ! defined(DCAMAPI_VERMIN) || DCAMAPI_VERMIN <= 3200
 
 /* **************************************************************** *
 
@@ -211,6 +132,7 @@ typedef enum _DCAMPROPUNIT
 	DCAMPROP_UNIT_KELVIN		= 3,			/* for color temperature */
 	DCAMPROP_UNIT_METERPERSECOND= 4,			/* for LINESPEED */
 	DCAMPROP_UNIT_PERSECOND		= 5,			/* for FRAMERATE and LINERATE */
+	DCAMPROP_UNIT_DEGREE		= 6,			/* for OUTPUT ROTATION */	/* reserved */
 	DCAMPROP_UNIT_MICROMETER	= 7,			/* for length */	/* reserved */
 
 	DCAMPROP_UNIT_NONE			= 0
@@ -230,6 +152,7 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_SENSORMODE__PANORAMIC				= 11,			/*	"PANORAMIC"				*/	/* reserved */
 	DCAMPROP_SENSORMODE__PROGRESSIVE			= 12,			/*	"PROGRESSIVE"			*/	/* reserved */
 	DCAMPROP_SENSORMODE__SPLITVIEW				= 14,			/*	"SPLIT VIEW"			*/	/* reserved */
+	DCAMPROP_SENSORMODE__DUALLIGHTSHEET			= 16,			/*	"DUAL LIGHTSHEET"		*/
 
 	/* DCAM_IDPROP_READOUTSPEED */
 	DCAMPROP_READOUTSPEED__SLOWEST				= 1,			/*	no text					*/
@@ -290,6 +213,7 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_TRIGGERSOURCE__INTERNAL			= 1,			/*	"INTERNAL"				*/
 	DCAMPROP_TRIGGERSOURCE__EXTERNAL			= 2,			/*	"EXTERNAL"				*/
 	DCAMPROP_TRIGGERSOURCE__SOFTWARE			= 3,			/*	"SOFTWARE"				*/
+	DCAMPROP_TRIGGERSOURCE__MASTERPULSE			= 4,			/*	"MASTER PULSE"			*/
 
 	/* DCAM_IDPROP_TRIGGERACTIVE */
 	DCAMPROP_TRIGGERACTIVE__EDGE				= 1,			/*	"EDGE"					*/
@@ -397,6 +321,15 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_FIRSTTRIGGER_BEHAVIOR__STARTEXPOSURE	= 1,		/*	"START EXPOSURE"				*/
 	DCAMPROP_FIRSTTRIGGER_BEHAVIOR__STARTREADOUT	= 2,		/*	"START READOUT"				*/
 
+	/* DCAM_IDPROP_MASTERPULSE_MODE */
+	DCAMPROP_MASTERPULSE_MODE__CONTINUOUS		= 1,			/*	"CONTINUOUS"		*/
+	DCAMPROP_MASTERPULSE_MODE__START			= 2,			/*	"START"				*/
+	DCAMPROP_MASTERPULSE_MODE__BURST			= 3,			/*	"BURST"				*/
+
+	/* DCAM_IDPROP_MASTERPULSE_TRIGGERSOURCE */
+	DCAMPROP_MASTERPULSE_TRIGGERSOURCE__EXTERNAL	= 1,			/*	"EXTERNAL"		*/
+	DCAMPROP_MASTERPULSE_TRIGGERSOURCE__SOFTWARE	= 2,			/*	"SOFTWARE"		*/
+
 	/* DCAM_IDPROP_MECHANICALSHUTTER */
 	DCAMPROP_MECHANICALSHUTTER__AUTO			= 1,			/*	"AUTO"					*/
 	DCAMPROP_MECHANICALSHUTTER__CLOSE			= 2,			/*	"CLOSE"					*/
@@ -432,6 +365,11 @@ typedef enum _DCAMPROPMODEVALUE
 /*	DCAMPROP_SENSORCOOLER__BEST					= 3,	*/		/*	"BEST"					*/	/* reserved */
 	DCAMPROP_SENSORCOOLER__MAX					= 4,			/*	"MAX"					*/
 
+	/* DCAM_IDPROP_SENSORTEMPERATURE_STATUS */
+	DCAMPROP_SENSORTEMPERATURE_STATUS__NORMAL		= 0,		/*	"NORMAL"				*/
+	DCAMPROP_SENSORTEMPERATURE_STATUS__WARNING		= 1,		/*	"WARNING"				*/
+	DCAMPROP_SENSORTEMPERATURE_STATUS__PROTECTION	= 2,		/*	"PROTECTION"			*/
+
 	/* DCAM_IDPROP_SENSORCOOLERSTATUS */
 	DCAMPROP_SENSORCOOLERSTATUS__ERROR4			= -4,			/*	"ERROR4"				*/
 	DCAMPROP_SENSORCOOLERSTATUS__ERROR3			= -3,			/*	"ERROR3"				*/
@@ -447,6 +385,13 @@ typedef enum _DCAMPROPMODEVALUE
 /*	DCAMPROP_CONTRAST_CONTROL__OFF				= 1,	*/		/*	"OFF"					*/	/* reserved */
 /*	DCAMPROP_CONTRAST_CONTROL__ON				= 2,	*/		/*	"ON"					*/	/* reserved */
 /*	DCAMPROP_CONTRAST_CONTROL__FRONTPANEL		= 3,	*/		/*	"FRONT PANEL"			*/	/* reserved */
+
+	/* DCAM_IDPROP_REALTIMEAGAINCORRECT_LEVEL */
+	DCAMPROP_REALTIMEGAINCORRECT_LEVEL__1		= 1,			/*	"1"						*/
+	DCAMPROP_REALTIMEGAINCORRECT_LEVEL__2		= 2,			/*	"2"						*/
+	DCAMPROP_REALTIMEGAINCORRECT_LEVEL__3		= 3,			/*	"3"						*/
+	DCAMPROP_REALTIMEGAINCORRECT_LEVEL__4		= 4,			/*	"4"						*/
+	DCAMPROP_REALTIMEGAINCORRECT_LEVEL__5		= 5,			/*	"5"						*/
 
 	/* DCAM_IDPROP_WHITEBALANCEMODE */
 	DCAMPROP_WHITEBALANCEMODE__FLAT				= 1,			/*	"FLAT"					*/
@@ -474,6 +419,12 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_INTERFRAMEALU_ENABLE__OFF			= 1,			/*	"OFF"					*/
 	DCAMPROP_INTERFRAMEALU_ENABLE__TRIGGERSOURCE_ALL = 2,		/*	"TRIGGER SOURCE ALL"	*/
 	DCAMPROP_INTERFRAMEALU_ENABLE__TRIGGERSOURCE_INTERNAL=3,	/*	"TRIGGER SOURCE INTERNAL ONLY"	*/
+
+	/* DCAM_IDPROP_SUBTRACT_DATASTATUS/DCAM_IDPROP_SHADINGCALIB_DATASTATUS */
+	DCAMPROP_CALIBDATASTATUS__NONE				= 1,			/*	"NONE"					*/
+	DCAMPROP_CALIBDATASTATUS__FORWARD			= 2,			/*	"FORWARD"				*/
+	DCAMPROP_CALIBDATASTATUS__BACKWARD			= 3,			/*	"BACKWARD"				*/
+	DCAMPROP_CALIBDATASTATUS__BOTH				= 4,			/*	"BOTH"					*/
 
 	/* DCAM_IDPROP_TAPGAINCALIB_METHOD */
 	DCAMPROP_TAPGAINCALIB_METHOD__AVE			= 1,			/*	"AVERAGE"				*/
@@ -523,6 +474,11 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_DEFECTCORRECT_METHOD__CEILING		= 3,			/*	"CEILING"				*/
 	DCAMPROP_DEFECTCORRECT_METHOD__PREVIOUS		= 4,			/*	"PREVIOUS"				*/
 
+	/* DCAM_IDPROP_HOTPIXELCORRECT_LEVEL */
+	DCAMPROP_HOTPIXELCORRECT_LEVEL__STANDARD	= 1,			/*	"STANDARD"				*/
+	DCAMPROP_HOTPIXELCORRECT_LEVEL__MINIMUM		= 2,			/*	"MINIMUM"				*/
+	DCAMPROP_HOTPIXELCORRECT_LEVEL__AGGRESSIVE	= 3,			/*	"AGGRESSIVE"			*/
+
 	/* DCAM_IDPROP_SYSTEM_ALIVE */
 	DCAMPROP_SYSTEM_ALIVE__OFFLINE				= 1,			/*	"OFFLINE"				*/
 	DCAMPROP_SYSTEM_ALIVE__ONLINE				= 2,			/*	"ONLINE"				*/
@@ -567,6 +523,7 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_CAMERASTATUS_INTENSITY__UNCARE				= 4,	/* "UNCARE"					*/
 	DCAMPROP_CAMERASTATUS_INTENSITY__EMGAIN_PROTECTION	= 5,	/* "EMGAIN PROTECTION"		*/
 	DCAMPROP_CAMERASTATUS_INTENSITY__INCONSISTENT_OPTICS= 6,	/* "INCONSISTENT OPTICS"	*/
+	DCAMPROP_CAMERASTATUS_INTENSITY__NODATA				= 7,	/* "NO DATA"				*/
 
 	/* DCAM_IDPROP_CAMERASTATUS_INPUTTRIGGER */
 	DCAMPROP_CAMERASTATUS_INPUTTRIGGER__GOOD			= 1,	/* "GOOD"					*/
@@ -584,15 +541,13 @@ typedef enum _DCAMPROPMODEVALUE
 	DCAMPROP_CAMERASTATUS_CALIBRATION__TOOBRIGHT			= 8,/* "TOO BRIGHT"				*/
 	DCAMPROP_CAMERASTATUS_CALIBRATION__NOTDETECTOBJECT		= 9,/* "NOT DETECT OBJECT"		*/
 
-	/* DCAM_IDPROP_ATTACHBUFFER_TARGET */
-	DCAMPROP_ATTACHBUFFER_TARGET__EACHFRAME		= 1,			/* "EACH FRAME"				*/
-	DCAMPROP_ATTACHBUFFER_TARGET__EVERYCHANNEL	= 2,			/* "EVERY CHANNEL"			*/
-
 	/*-- for general purpose --*/
 	DCAMPROP_MODE__OFF							= 1,			/*	"OFF"					*/
 	DCAMPROP_MODE__ON							= 2,			/*	"ON"					*/
 
-	/*-- for backward compativilities --*/
+	/*-- options --*/
+
+	/* for backward compativilities */
 
 	DCAMPROP_SCAN_MODE__NORMAL			= DCAMPROP_SENSORMODE__AREA,
 	DCAMPROP_SCAN_MODE__SLIT			= DCAMPROP_SENSORMODE__SLIT,
@@ -654,6 +609,11 @@ typedef enum _DCAMIDPROP
 											/*				 - 0x001C10FF for 16 output trigger connector, reserved		*/
 	DCAM_IDPROP__OUTPUTTRIGGER					= 0x00000100,	/* the offset of ID for Nth OUTPUT TRIGGER parameter */
 
+	DCAM_IDPROP_MASTERPULSE_MODE				= 0x001E0020,	/* R/W, mode,	"MASTER PULSE MODE"			*/
+	DCAM_IDPROP_MASTERPULSE_TRIGGERSOURCE		= 0x001E0030,	/* R/W, mode,	"MASTER PULSE TRIGGER SOURCE"	*/
+	DCAM_IDPROP_MASTERPULSE_INTERVAL			= 0x001E0040,	/* R/W, sec,	"MASTER PULSE INTERVAL"		*/
+	DCAM_IDPROP_MASTERPULSE_BURSTTIMES			= 0x001E0050,	/* R/W, long,	"MASTER PULSE BURST TIMES"	*/
+
 /* Group: FEATURE */
 	/* exposure period */
 	DCAM_IDPROP_EXPOSURETIME					= 0x001F0110,	/* R/W, sec,	"EXPOSURE TIME"			*/
@@ -693,6 +653,11 @@ typedef enum _DCAMIDPROP
 	DCAM_IDPROP_SENSORTEMPERATURETARGET			= 0x00200330,	/* R/W, celsius,"SENSOR TEMPERATURE TARGET"	*/
 	DCAM_IDPROP_SENSORCOOLERSTATUS				= 0x00200340,	/* R/O, mode,	"SENSOR COOLER STATUS"	*/
 	DCAM_IDPROP_SENSORCOOLERFAN					= 0x00200350,	/* R/W, mode,	"SENSOR COOLER FAN"		*/
+	DCAM_IDPROP_SENSORTEMPERATURE_AVE			= 0x00200360,	/* R/O, celsius,"SENSOR TEMPERATURE AVE"	*/
+	DCAM_IDPROP_SENSORTEMPERATURE_MIN			= 0x00200370,	/* R/O, celsius,"SENSOR TEMPERATURE MIN"	*/
+	DCAM_IDPROP_SENSORTEMPERATURE_MAX			= 0x00200380,	/* R/O, celsius,"SENSOR TEMPERATURE MAX"	*/
+	DCAM_IDPROP_SENSORTEMPERATURE_STATUS		= 0x00200390,	/* R/O, mode,	"SENSOR TEMPERATURE STATUS"	*/
+	DCAM_IDPROP_SENSORTEMPERATURE_PROTECT		= 0x00200400,	/* R/W, mode,	"SENSOR TEMPERATURE MODE"	*/
 
 	/* mechanical shutter */
 	DCAM_IDPROP_MECHANICALSHUTTER				= 0x00200410,	/* R/W, mode,	"MECHANICAL SHUTTER"	*/
@@ -705,6 +670,10 @@ typedef enum _DCAMIDPROP
 											/*	  0x00300140 is reserved */
 	DCAM_IDPROP_HIGHDYNAMICRANGE_MODE			= 0x00300150,	/* R/W, mode,	"HIGH DYNAMIC RANGE MODE"	*/
 	DCAM_IDPROP_DIRECTGAIN_MODE					= 0x00300160,	/* R/W, mode,	"DIRECT GAIN MODE"		*/
+
+	DCAM_IDPROP_REALTIMEGAINCORRECT_MODE		= 0x00300170,	/* R/W,	mode,	"REALTIME GAIN CORRECT MODE"	*/
+	DCAM_IDPROP_REALTIMEGAINCORRECT_LEVEL		= 0x00300180,	/* R/W,	mode,	"REALTIME GAIN CORRECT LEVEL"		*/
+	DCAM_IDPROP_REALTIMEGAINCORRECT_INTERVAL	= 0x00300190,	/* R/W,	mode,	"REALTIME GAIN CORRECT INTERVAL"	*/
 
 	/* color features */
 	DCAM_IDPROP_VIVIDCOLOR						= 0x00300200,	/* R/W, mode,	"VIVID COLOR"			*/	/* comment */
@@ -724,6 +693,8 @@ typedef enum _DCAMIDPROP
 	DCAM_IDPROP_STORESUBTRACTIMAGETOMEMORY		= 0x00380230,	/* W/O, mode,	"STORE SUBTRACT IMAGE TO MEMORY"	*/
 	DCAM_IDPROP_SUBTRACTOFFSET					= 0x00380240,	/* R/W, long	"SUBTRACT OFFSET"		*/
 	DCAM_IDPROP_DARKCALIB_STABLEMAXINTENSITY	= 0x00380250,	/* R/W, long,	"DARKCALIB STABLE MAX INTENSITY"	*/
+	DCAM_IDPROP_SUBTRACT_DATASTATUS				= 0x003802F0,	/* R/W	mode,	"SUBTRACT DATA STATUS"	*/
+	DCAM_IDPROP_SHADINGCALIB_DATASTATUS			= 0x00380300,	/* R/W	mode,	"SHADING CALIB DATA STATUS"	*/
 	DCAM_IDPROP_SHADINGCORRECTION				= 0x00380310,	/* R/W, mode,	"SHADING CORRECTION"	*/
 	DCAM_IDPROP_SHADINGCALIBDATAMEMORY			= 0x00380320,	/* R/W, mode,	"SHADING CALIB DATA MEMORY"		*/
 	DCAM_IDPROP_STORESHADINGCALIBDATATOMEMORY	= 0x00380330,	/* W/O, mode,	"STORE SHADING DATA TO MEMORY"	*/
@@ -743,6 +714,7 @@ typedef enum _DCAMIDPROP
 	DCAM_IDPROP_INTENSITYLUT_PAGE				= 0x00380520,	/* R/W, long,	"INTENSITY LUT PAGE"	*/
 	DCAM_IDPROP_INTENSITYLUT_WHITECLIP			= 0x00380530,	/* R/W, long,	"INTENSITY LUT WHITE CLIP"	*/
 	DCAM_IDPROP_INTENSITYLUT_BLACKCLIP			= 0x00380540,	/* R/W, long,	"INTENSITY LUT BLACK CLIP"	*/
+	DCAM_IDPROP_SENSORGAPCORRECT_MODE			= 0x00380620,	/* R/W,	long,	"SENSOR GAP CORRECT MODE"	*/
 
 	/* TAP CALIBRATION */
 	DCAM_IDPROP_TAPGAINCALIB_METHOD				= 0x00380F10,	/* R/W, mode,	"TAP GAIN CALIB METHOD"	*/
@@ -780,6 +752,8 @@ typedef enum _DCAMIDPROP
 
 	DCAM_IDPROP_TESTPATTERN_KIND				= 0x00400510,	/* R/W, mode,	"TEST PATTERN KIND"		*/
 	DCAM_IDPROP_TESTPATTERN_OPTION				= 0x00400520,	/* R/W, long,	"TEST PATTERN OPTION"	*/
+
+	DCAM_IDPROP_EXTRACTION_MODE					= 0x00400620,	/* R/W	mode,	"EXTRACTION MODE	"*/
 
 /* Group: ROI */
 	/* binning and subarray */
@@ -832,7 +806,6 @@ typedef enum _DCAMIDPROP
 	DCAM_IDPROP_ACTIVE_CHANNELINDEX				= 0x00420190,	/* R/W, mode,	"ACTIVE CHANNEL INDEX"	*/
 	DCAM_IDPROP_NUMBEROF_VIEW					= 0x004201C0,	/* R/O, long,	"NUMBER OF VIEW"		*/
 	DCAM_IDPROP_ACTIVE_VIEWINDEX				= 0x004201D0,	/* R/W, mode,	"ACTIVE VIEW INDEX"		*/
-	DCAM_IDPROP_NUMBEROF_TARGETPERATTACHBUFFER	= 0x004201E0,	/* R/O, long,	"NUMBER OF TARGET PER ATTACHBUFFER"	*/
 
 	DCAM_IDPROP_IMAGE_WIDTH						= 0x00420210,	/* R/O, long,	"IMAGE WIDTH"			*/
 	DCAM_IDPROP_IMAGE_HEIGHT					= 0x00420220,	/* R/O, long,	"IMAGE HEIGHT"			*/
@@ -878,6 +851,7 @@ typedef enum _DCAMIDPROP
 	/* defect */
 	DCAM_IDPROP_DEFECTCORRECT_MODE				= 0x00470010,	/* R/W, mode,	"DEFECT CORRECT MODE"	*/
 	DCAM_IDPROP_NUMBEROF_DEFECTCORRECT			= 0x00470020,	/* R/W, long,	"NUMBER OF DEFECT CORRECT"	*/
+	DCAM_IDPROP_HOTPIXELCORRECT_LEVEL			= 0x00470030,	/* R/W, mode,	"HOT PIXEL CORRECT LEVEL"	*/
 	DCAM_IDPROP_DEFECTCORRECT_HPOS				= 0x00471000,	/* R/W, long,	"DEFECT CORRECT HPOS"		*/
 	DCAM_IDPROP_DEFECTCORRECT_METHOD			= 0x00473000,	/* R/W, mode,	"DEFECT CORRECT METHOD"		*/
 											/*				 - 0x0047FFFF for 256 DEFECT */
@@ -923,10 +897,10 @@ typedef enum _DCAMIDPROP
 
 	DCAM_IDPROP_SYSTEM_ALIVE					= 0x00FF0010,	/* R/O, mode,	"SYSTEM ALIVE"			*/
 
-	DCAM_IDPROP_ATTACHBUFFER_TARGET				= 0x00FF1110,	/* R/W, mode,	"ATTACH BUFFER TARGET"	*/
-
 	DCAM_IDPROP_CONVERSIONFACTOR_COEFF			= 0x00FFE010,	/* R/O, double,	"CONVERSION FACTOR COEFF"	*/
 	DCAM_IDPROP_CONVERSIONFACTOR_OFFSET			= 0x00FFE020,	/* R/O, double,	"CONVERSION FACTOR OFFSET"	*/
+
+	/*-- options --*/
 
 	/* option */
 	DCAM_IDPROP__RATIO				= 0x80000000,
@@ -942,7 +916,7 @@ typedef enum _DCAMIDPROP
 	DCAM_IDPROP__MASK_VIEW			= 0x0F000000,
 	DCAM_IDPROP__MASK_BODY			= 0x00FFFFF0,
 
-	/*-- for backward compativilities --*/
+	/* for backward compativilities */
 	DCAMPROP_ATTR_REMOTE_VALUE		= DCAMPROP_ATTR_VOLATILE,
 
 	DCAMPROP_PHOTONIMAGING_MODE__0	= DCAMPROP_PHOTONIMAGINGMODE__0,
