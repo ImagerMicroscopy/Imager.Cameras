@@ -19,6 +19,10 @@
 #include "HamamatsuCamera.h"
 #endif
 
+#ifdef WITH_IDS
+#include "IDSCamera.h"
+#endif
+
 #ifdef WITH_DUMMYCAM
 #include "DummyCamera.h"
 #endif
@@ -43,12 +47,14 @@ CameraManager::~CameraManager() {
 }
 
 void CameraManager::discoverCameras() {
+    int err;
+
 	_availableCameras.clear();
 
 #ifdef WITH_PHOTOMETRICS
 	std::vector<std::string> cameraNames;
 	std::int16_t nCameras;
-	int err = pl_cam_get_total(&nCameras);
+	err = pl_cam_get_total(&nCameras);
 	if (!err)
 		throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 
@@ -99,6 +105,24 @@ void CameraManager::discoverCameras() {
 		std::shared_ptr<BaseCameraClass> hamamatsuCamera(new HamamatsuCamera(hdCam));
 		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(hamamatsuCamera->getIdentifierStr(), hamamatsuCamera));
 	}
+#endif
+
+#ifdef WITH_IDS
+    is_SetErrorReport(0, IS_DISABLE_ERR_REP);
+    int nIDSCams;
+    err = is_GetNumberOfCameras(&nIDSCams);
+    if (err != IS_SUCCESS) {
+        throw std::runtime_error("unable to determine number of IDS cameras");
+    }
+    for (int i = 0; i < nIDSCams; i += 1) {
+        HIDS camHandle = 0;
+        err = is_InitCamera(&camHandle, nullptr);
+        if (err != IS_SUCCESS) {
+            throw std::runtime_error("unable to open IDS camera");
+        }
+        std::shared_ptr<BaseCameraClass> idsCamera(new IDSCamera(camHandle));
+        _availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(idsCamera->getIdentifierStr(), idsCamera));
+    }
 #endif
 
 #ifdef WITH_DUMMYCAM

@@ -140,7 +140,7 @@ int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
 std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
 	double currentGain = getEMGain();
 	double minGain = 0.0;
-	setEMGain(1.0e12);
+	setEMGain(65000.0);
 	double maxGain = getEMGain();
 	setEMGain(currentGain);
 	return std::pair<double, double>(minGain, maxGain);
