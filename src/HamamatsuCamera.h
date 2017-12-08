@@ -47,7 +47,6 @@ private:
 	std::vector<std::uint16_t> _frameBuffer;
 	int _nBytesPerImage;
 	HDCAMWAIT _camWaitHandle;
-	bool _haveAttachedBuffers;
 	int _numberOfImagesDelivered;
 };
 
