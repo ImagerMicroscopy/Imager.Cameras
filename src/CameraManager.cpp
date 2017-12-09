@@ -47,21 +47,19 @@ CameraManager::~CameraManager() {
 }
 
 void CameraManager::discoverCameras() {
-    int err;
-
 	_availableCameras.clear();
 
 #ifdef WITH_PHOTOMETRICS
 	std::vector<std::string> cameraNames;
 	std::int16_t nCameras;
-	err = pl_cam_get_total(&nCameras);
-	if (!err)
+	int pvcamErr = pl_cam_get_total(&nCameras);
+	if (!pvcamErr)
 		throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 
 	for (std::int16_t i = 0; i < nCameras; i++) {
 		char camName[CAM_NAME_LEN + 1];
-		err = pl_cam_get_name(i, camName);
-		if (!err)
+		pvcamErr = pl_cam_get_name(i, camName);
+		if (!pvcamErr)
 			throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 		cameraNames.push_back(std::string(camName));
 	}
@@ -87,9 +85,9 @@ void CameraManager::discoverCameras() {
 	DCAMAPI_INIT paraminit;
 	memset(&paraminit, 0, sizeof(paraminit));
 	paraminit.size = sizeof(paraminit);
-	DCAMERR	err;
-	err = dcamapi_init( &paraminit );
-	if (err != DCAMERR_SUCCESS) {
+	DCAMERR	dcamErr;
+	dcamErr = dcamapi_init( &paraminit );
+	if (dcamErr != DCAMERR_SUCCESS) {
 		throw std::runtime_error("can't initial DCAM api");
 	}
 	int nCameras = paraminit.iDeviceCount;
@@ -97,8 +95,8 @@ void CameraManager::discoverCameras() {
 		DCAMDEV_OPEN devOpen = { 0 };
 		devOpen.index = i;
 		devOpen.size = sizeof(DCAMDEV_OPEN);
-		err = dcamdev_open(&devOpen);
-		if (err != DCAMERR_SUCCESS) {
+		dcamErr = dcamdev_open(&devOpen);
+		if (dcamErr != DCAMERR_SUCCESS) {
 			throw std::runtime_error("unable to open DCAM camera");
 		}
 		HDCAM hdCam = devOpen.hdcam;
@@ -110,14 +108,14 @@ void CameraManager::discoverCameras() {
 #ifdef WITH_IDS
     is_SetErrorReport(0, IS_DISABLE_ERR_REP);
     int nIDSCams;
-    err = is_GetNumberOfCameras(&nIDSCams);
-    if (err != IS_SUCCESS) {
+    int idsErr = is_GetNumberOfCameras(&nIDSCams);
+    if (idsErr != IS_SUCCESS) {
         throw std::runtime_error("unable to determine number of IDS cameras");
     }
     for (int i = 0; i < nIDSCams; i += 1) {
         HIDS camHandle = 0;
-        err = is_InitCamera(&camHandle, nullptr);
-        if (err != IS_SUCCESS) {
+		idsErr = is_InitCamera(&camHandle, nullptr);
+        if (idsErr != IS_SUCCESS) {
             throw std::runtime_error("unable to open IDS camera");
         }
         std::shared_ptr<BaseCameraClass> idsCamera(new IDSCamera(camHandle));
