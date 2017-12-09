@@ -5,7 +5,7 @@ IDSCamera::IDSCamera(HIDS camHandle) :
   , _idOfMemoryWithOldestImage(-1)
   , _ptrToMemoryWithOldestImage(nullptr)
 {
-
+	_setDefaults();
 }
 
 IDSCamera::~IDSCamera() {
@@ -46,7 +46,7 @@ std::string IDSCamera::getIdentifierStr() const {
     if (err != IS_SUCCESS) {
         throw std::runtime_error("unable to get IDS camera info");
     }
-    std::string idStr("IDS camera with serial number ");
+    std::string idStr("IDS with serial number ");
     idStr += std::string(camInfo.SerNo);
     return idStr;
 }
@@ -65,7 +65,7 @@ std::pair<int, int> IDSCamera::getSensorSize() const {
     if (err != IS_SUCCESS) {
         throw std::runtime_error("unable to get AOI");
     }
-    return std::pair<int, int>(rect.s32X, rect.s32Y);
+    return std::pair<int, int>(rect.s32Width, rect.s32Height);
 }
 
 void IDSCamera::_derivedStartAsyncAcquisition() {
@@ -83,6 +83,9 @@ void IDSCamera::_derivedStartAsyncAcquisition() {
             throw std::runtime_error("unable to set allocated memory");
         }
         err = is_AddToSequence(_camHandle, _frameBufferPointers[i], _frameBufferIDs[i]);
+		if (err != IS_SUCCESS) {
+			throw std::runtime_error("unable to set add memory to sequence");
+		}
     }
     
     err = is_InitImageQueue(_camHandle, 0);
@@ -130,8 +133,8 @@ bool IDSCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
 }
 
 bool IDSCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-    // not used because we will only call _waitForNewImageWithTimeout
-    throw std::runtime_error("calling IDSCamera::_derivedNewAsyncAcquisitionImageAvailable()");
+    // only _waitForNewImageWithTimeout() can be implemented with the available ISD api
+	return false;
 }
 
 void IDSCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
