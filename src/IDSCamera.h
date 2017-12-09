@@ -8,7 +8,7 @@
 
 #include "IDS/uEye.h"
 
-const int kIDSImagesInBuffer = 50;
+const int kIDSImagesInBuffer = 15;
 
 class IDSCamera : public BaseCameraClass {
 public:

@@ -9,7 +9,7 @@
 #include "windows.h"
 #include "Hamamatsu/dcamapi4.h"
 
-const int kHamamatsuImagesInBuffer = 50;
+const int kHamamatsuImagesInBuffer = 15;
 
 class HamamatsuCamera : public BaseCameraClass {
 public:

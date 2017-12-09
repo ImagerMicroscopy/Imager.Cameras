@@ -173,4 +173,20 @@ void IDSCamera::_setDefaults() {
     if (err != IS_SUCCESS) {
         throw std::runtime_error("unable to set gain boost mode");
     }
+
+	int nEnable = 0;
+	err = is_HotPixel(_camHandle, IS_HOTPIXEL_ADAPTIVE_CORRECTION_SET_ENABLE, &nEnable, sizeof(nEnable));
+	if (err != IS_SUCCESS) {
+		throw std::runtime_error("unable to set hot pixel correction");
+	}
+	int hotPixelMode = IS_HOTPIXEL_ADAPTIVE_CORRECTION_DETECT_ONCE;
+	err = is_HotPixel(_camHandle, IS_HOTPIXEL_ADAPTIVE_CORRECTION_SET_MODE, &hotPixelMode, sizeof(hotPixelMode));
+	if (err != IS_SUCCESS) {
+		throw std::runtime_error("unable to set hot pixel correction");
+	}
+	int hotPixelSensitivity = 5;
+	err = is_HotPixel(_camHandle, IS_HOTPIXEL_ADAPTIVE_CORRECTION_SET_SENSITIVITY, &hotPixelSensitivity, sizeof(hotPixelSensitivity));
+	if (err != IS_SUCCESS) {
+		throw std::runtime_error("unable to set hot pixel correction sensitivity");
+	}
 }
