@@ -124,6 +124,9 @@ void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
 }
 
 bool HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
+	if (_derivedNewAsyncAcquisitionImageAvailable()) {
+		return true;
+	}
 	DCAMWAIT_START waitParams = { 0 };
 	waitParams.size = sizeof(DCAMWAIT_START);
 	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
