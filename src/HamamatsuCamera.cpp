@@ -47,11 +47,11 @@ double HamamatsuCamera::getEMGain() const {
 }
 
 double HamamatsuCamera::getTemperature() const {
-	return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURE);
+    return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURE, true);
 }
 
 double HamamatsuCamera::getTemperatureSetpoint() const {
-	return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET);
+    return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, true);
 }
 
 std::pair<int, int> HamamatsuCamera::getSensorSize() const {
@@ -62,7 +62,7 @@ std::pair<int, int> HamamatsuCamera::getSensorSize() const {
 }
 
 void HamamatsuCamera::_derivedSetTemperature(const double temperature) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature, true);
 }
 
 std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
@@ -132,7 +132,7 @@ bool HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
 	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
 	waitParams.timeout = timeoutMillis;
 	DCAMERR err = dcamwait_start(_camWaitHandle, &waitParams);
-	return ((err == DCAMERR_SUCCESS) && (waitParams.eventhappened == DCAMWAIT_CAPEVENT_FRAMEREADY));
+    return _derivedNewAsyncAcquisitionImageAvailable();
 }
 
 bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
@@ -187,19 +187,23 @@ std::string HamamatsuCamera::_getDCAMString(HDCAM camHandle, int stringID) const
 	return std::string(buf);
 }
 
-double HamamatsuCamera::_getPropertyValue(HDCAM camHandle, int propertyID) const {
+double HamamatsuCamera::_getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors) const {
 	double value = 0.0;
 	DCAMERR err = dcamprop_getvalue(camHandle, propertyID, &value);
 	if (err != DCAMERR_SUCCESS) {
-		throw std::runtime_error("error getting dcam property value");
+        if (ignoreErrors) {
+            return 0.0;
+        } else {
+            throw std::runtime_error("error getting dcam property value");
+        }
 	}
 	return value;
 }
 
-void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double value) const {
+void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double value, bool ignoreErrors) const {
 	DCAMERR err = dcamprop_setvalue(camHandle, propertyID, value);
-	if (err != DCAMERR_SUCCESS) {
-		//throw std::runtime_error("error setting dcam property value");
+	if ((err != DCAMERR_SUCCESS) && !ignoreErrors) {
+		throw std::runtime_error("error setting dcam property value");
 	}
 }
 
