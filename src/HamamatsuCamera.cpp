@@ -35,7 +35,7 @@ void HamamatsuCamera::setExposureTime(const double exposureTime) {
 }
 
 void HamamatsuCamera::setEMGain(const double emGain) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSITIVITY, emGain);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSITIVITY, emGain, true);
 }
 
 double HamamatsuCamera::getExposureTime() const {
@@ -71,7 +71,7 @@ std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
 
 void HamamatsuCamera::_setCoolerOn(const bool on) {
 	int action = on ? DCAMPROP_SENSORCOOLER__ON : DCAMPROP_SENSORCOOLER__OFF;
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, action);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, action, true);
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
