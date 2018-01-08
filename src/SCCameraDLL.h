@@ -32,7 +32,13 @@ extern "C" {
 
 	LIBSPEC int ListConnectedCameraNames(char** namesPtr);
 
-	LIBSPEC int GetSensorDimensions(char *cameraName, int* rows, int* cols);
+	LIBSPEC int GetImageDimensions(char *cameraName, int* rows, int* cols);
+    LIBSPEC int GetAllowedCropSizes(char* cameraName, int* nRowsPtr, int* nColsPtr, int nEntriesInBuffers, int* nCropSizesReturned);
+    LIBSPEC int SetCropSize(char* cameraName, int nRows, int nCols);
+    LIBSPEC int GetAllowedBinningFactors(char* cameraName, int* binningFactors, int nEntriesInBuffer, int* nBinningFactorsReturned);
+    LIBSPEC int SetBinningFactor(char* cameraName, int binningFactor);
+    LIBSPEC int GetBinningFactor(char* cameraName, int* binningFactor);
+
 	LIBSPEC int SetEMGain(char *cameraName, double emGain);
 	LIBSPEC int ReadEMGain(char* cameraName, double* emGain);
 	LIBSPEC int ReadEMGainRange(char* cameraName, double* minGain, double* maxGain);

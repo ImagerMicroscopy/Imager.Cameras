@@ -12,75 +12,166 @@
 CameraManager* gCameraManager = nullptr;
 void StopCameraManager();
 bool StartCameraManager() {
-	try {
-		if (gCameraManager == nullptr) {
-			gCameraManager = new CameraManager();
-			gCameraManager->discoverCameras();
-		}
-	}
-	catch (std::runtime_error e) {
-		StopCameraManager();
-	}
+    try {
+        if (gCameraManager == nullptr) {
+            gCameraManager = new CameraManager();
+            gCameraManager->discoverCameras();
+        }
+    }
+    catch (std::runtime_error e) {
+        StopCameraManager();
+    }
 
-	return (gCameraManager != nullptr);
+    return (gCameraManager != nullptr);
 }
 
 void StopCameraManager() {
-	if (gCameraManager != nullptr) {
-		delete gCameraManager;
-		gCameraManager = nullptr;
-	}
+    if (gCameraManager != nullptr) {
+        delete gCameraManager;
+gCameraManager = nullptr;
+    }
 }
 
 bool CameraManagerIsAvailable() {
-	return StartCameraManager();
+    return StartCameraManager();
 }
 
 bool gHaveInit = false;
 
 int InitCameraDLL() {
-	StartCameraManager();
-	if (CameraManagerIsAvailable()) {
-		gHaveInit = true;
-		return 0;
-	} else {
-		return GENERIC_ERROR;
-	}
+    StartCameraManager();
+    if (CameraManagerIsAvailable()) {
+        gHaveInit = true;
+        return 0;
+    } else {
+        return GENERIC_ERROR;
+    }
 }
 
 void ShutdownCameraDLL() {
-	StopCameraManager();
-	gHaveInit = false;
+    StopCameraManager();
+    gHaveInit = false;
 }
 
 int ListConnectedCameraNames(char** namesPtr) {
-	if (!gHaveInit)
-		return NO_INIT;
-	
-	std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
-	for (size_t i = 0; i < std::min(cameraIdentifiers.size(), (size_t)MAX_CAMERAS); ++i) {
-		strncpy(namesPtr[i], cameraIdentifiers[i].c_str(), MAX_CAMERA_NAME_LENGTH);
-		namesPtr[MAX_CAMERA_NAME_LENGTH] = 0;
-	}
-	return cameraIdentifiers.size();
+    if (!gHaveInit)
+        return NO_INIT;
+
+    std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
+    for (size_t i = 0; i < std::min(cameraIdentifiers.size(), (size_t)MAX_CAMERAS); ++i) {
+        strncpy(namesPtr[i], cameraIdentifiers[i].c_str(), MAX_CAMERA_NAME_LENGTH);
+        namesPtr[MAX_CAMERA_NAME_LENGTH] = 0;
+    }
+    return cameraIdentifiers.size();
 }
 
-int GetSensorDimensions(char *cameraName, int* rows, int* cols) {
-	if (!gHaveInit)
-		return NO_INIT;
+int GetImageDimensions(char *cameraName, int* rows, int* cols) {
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		std::pair<int, int> size = camPtr->getSensorSize();
-		*rows = size.first;
-		*cols = size.second;
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        std::pair<int, int> size = camPtr->getActualImageSize();
+        *rows = size.first;
+        *cols = size.second;
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
+int GetAllowedCropSizes(char* cameraName, int* nRowsPtr, int* nColsPtr, int nEntriesInBuffers, int* nCropSizesReturned) {
+    if (!gHaveInit)
+        return NO_INIT;
+
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        std::vector<std::pair<int, int>> cropSizes = camPtr->getSupportedCropSizes();
+        *nCropSizesReturned = 0;
+        for (int i = 0; i < std::min((size_t)nEntriesInBuffers, cropSizes.size()); i += 1) {
+            nRowsPtr[i] = cropSizes.at(i).first;
+            nColsPtr[i] = cropSizes.at(i).second;
+            *nCropSizesReturned += 1;
+        }
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
+int SetCropSize(char* cameraName, int nRows, int nCols) {
+    if (!gHaveInit)
+        return NO_INIT;
+
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        camPtr->setImageCrop(std::pair<int, int>(nRows, nCols));
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
+int GetAllowedBinningFactors(char* cameraName, int* binningFactors, int nEntriesInBuffer, int* nBinningFactorsReturned) {
+    if (!gHaveInit)
+        return NO_INIT;
+
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        std::vector<int> binFactors = camPtr->getSupportedBinningFactors();
+        *nBinningFactorsReturned = 0;
+        for (int i = 0; i < std::min((size_t)nEntriesInBuffer, binFactors.size()); i += 1) {
+            binningFactors[i] = binFactors.at(i);
+            *nBinningFactorsReturned += 1;
+        }
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
+int SetBinningFactor(char* cameraName, int binningFactor) {
+    if (!gHaveInit)
+        return NO_INIT;
+
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        camPtr->setBinningFactor(binningFactor);
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
+int GetBinningFactor(char* cameraName, int* binningFactor) {
+    if (!gHaveInit)
+        return NO_INIT;
+
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        *binningFactor = camPtr->getBinningFactor();
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 int SetEMGain(char *cameraName, double emGain) {
@@ -235,7 +326,7 @@ int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, 
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		std::pair<int, int> size = camPtr->getSensorSize();
+		std::pair<int, int> size = camPtr->getActualImageSize();
 		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if (bufferSizeinBytes < requiredBufferSize)
 			return GENERIC_ERROR;
@@ -255,7 +346,7 @@ int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint1
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		std::pair<int, int> size = camPtr->getSensorSize();
+		std::pair<int, int> size = camPtr->getActualImageSize();
 		uint64_t imageSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if ((bufferSizeinBytes == 0) || ((bufferSizeinBytes % imageSize) != 0))
 			return BUFFER_SIZE_MUST_BE_MULTIPLE_OF_IMAGE_SIZE;

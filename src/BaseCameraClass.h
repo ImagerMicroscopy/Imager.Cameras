@@ -30,7 +30,14 @@ public:
 	void getAllowableEMGains(double* minGain, double* maxGain);
 	virtual double getTemperature() const = 0;
 	virtual double getTemperatureSetpoint() const = 0;
-	virtual std::pair<int, int> getSensorSize() const = 0;
+	
+    virtual std::pair<int, int> getSensorSize() const = 0;
+    virtual std::pair<int, int> getActualImageSize() const;
+    std::vector<std::pair<int, int>> getSupportedCropSizes() const;
+    virtual void setImageCrop(const std::pair<int, int>& crop);
+    std::vector<int> getSupportedBinningFactors() const;
+    virtual void setBinningFactor(const int binningFactor);
+    virtual int getBinningFactor();
 
 	void acquireImages(const int nImages, unsigned int nImagesToAverage, std::uint16_t* outputBuffer);
 
@@ -47,13 +54,22 @@ private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;
 	virtual std::pair<double, double> _derivedGetEMGainRange();
 	virtual void _setCoolerOn(const bool on) = 0;
-	void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
 
+    virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
+    void _cropImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const std::pair<int, int>& outputSize) const;
+    void _binImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const int binFactor) const;
+
+    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
 	virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
 	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
     virtual bool _waitForNewImageWithTimeout(int timeoutMillis);
 	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
+
+    bool _haveImageCrop;
+    std::pair<int, int> _croppedImageSize;
+    bool _haveBinning;
+    int _binFactor;
 
 	std::string _asyncErrorStr;
 	volatile int _asyncWantAbort;
