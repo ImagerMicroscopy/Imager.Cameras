@@ -56,11 +56,13 @@ private:
 	virtual void _setCoolerOn(const bool on) = 0;
 
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
+    std::vector<uint16_t>* _performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int,int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const;
     void _cropImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const std::pair<int, int>& outputSize) const;
     void _binImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const int binFactor) const;
+    bool _accumulateIntoAverage(const std::vector<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const;
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
-	virtual void _derivedStartAsyncAcquisition() = 0;
+    virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
 	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
     virtual bool _waitForNewImageWithTimeout(int timeoutMillis);

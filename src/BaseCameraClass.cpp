@@ -179,30 +179,48 @@ void BaseCameraClass::abortAsyncAquisitionIfRunning() {
 }
 
 int BaseCameraClass::getNImagesAsyncAcquired() {
-	return _asyncNImagesStored;
+    return _asyncNImagesStored;
 }
 
 int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
     if (!_asyncErrorStr.empty()) {
         throw std::runtime_error(_asyncErrorStr);
     }
-	std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
-	if (_imageIndicesWaitingToBeCopied.empty()) {
-		return -1;
-	} else {
-		int index = _imageIndicesWaitingToBeCopied.front();
-		_imageIndicesWaitingToBeCopied.erase(_imageIndicesWaitingToBeCopied.begin());
-		return index;
-	}
+    std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
+    if (_imageIndicesWaitingToBeCopied.empty()) {
+        return -1;
+    } else {
+        int index = _imageIndicesWaitingToBeCopied.front();
+        _imageIndicesWaitingToBeCopied.erase(_imageIndicesWaitingToBeCopied.begin());
+        return index;
+    }
 }
 
 std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
-	double currentGain = getEMGain();
-	double minGain = 0.0;
-	setEMGain(65000.0);
-	double maxGain = getEMGain();
-	setEMGain(currentGain);
-	return std::pair<double, double>(minGain, maxGain);
+    double currentGain = getEMGain();
+    double minGain = 0.0;
+    setEMGain(65000.0);
+    double maxGain = getEMGain();
+    setEMGain(currentGain);
+    return std::pair<double, double>(minGain, maxGain);
+}
+
+std::vector<uint16_t>* BaseCameraClass::_performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int, int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const {
+    bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
+    bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);
+
+    auto processedDataPtr = &fullSensorImage;
+    std::pair<int, int> latestSize = sensorSize;
+    if (needSoftwareCrop) {
+        _cropImage(fullSensorImage, sensorSize, croppedImage, _croppedImageSize);
+        latestSize = _croppedImageSize;
+        processedDataPtr = &croppedImage;
+    }
+    if (needSoftwareBinning) {
+        _binImage(*processedDataPtr, latestSize, desiredImage, _binFactor);
+        processedDataPtr = &desiredImage;
+    }
+    return processedDataPtr;
 }
 
 void BaseCameraClass::_cropImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const std::pair<int, int>& outputSize) const {
@@ -264,6 +282,32 @@ void BaseCameraClass::_binImage(const std::vector<std::uint16_t>& input, const s
     }
 }
 
+bool BaseCameraClass::_accumulateIntoAverage(const std::vector<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const {
+    if (averageImage.size() != inputImage.size()) {
+        throw std::runtime_error("averaging images of unequal dimensions");
+    }
+    if (nImagesToAccumulate <= 0) {
+        throw std::runtime_error("averaging <= 0 images");
+    }
+
+    if (nImagesAccumulated == 0) {
+        memset(averageImage.data(), 0, averageImage.size() * sizeof(std::uint32_t));
+    }
+
+    if (nImagesAccumulated == (nImagesToAccumulate - 1)) {
+        for (size_t i = 0; i < averageImage.size(); i += 1) {
+            averageImage[i] += inputImage[i];
+            averageImage[i] /= nImagesToAccumulate;
+        }
+    } else {
+        for (size_t i = 0; i < averageImage.size(); i += 1) {
+            averageImage[i] += inputImage[i];
+        }
+    }
+
+    return (nImagesAccumulated == (nImagesToAccumulate - 1));   // return truth that we are done accumulating for this image
+}
+
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
     auto desiredImageSize = getActualImageSize();
     auto sensorSize = getSensorSize();
@@ -274,7 +318,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 
 	try {
         std::vector<std::uint16_t> fullSensorImage;
-        if (needSoftwareCrop || needSoftwareBinning) {
+        if (needSoftwareCrop || needSoftwareBinning || needAveraging) {
             fullSensorImage.resize(sensorSize.first * sensorSize.second);
         }
 		std::vector<std::uint16_t> desiredImage;
@@ -309,37 +353,19 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
                 if (!needSoftwareCrop && !needSoftwareBinning && !needAveraging) {
                     _derivedStoreNewImageInBuffer(outputBuffer + nPixelsInDesiredImage * indexOfNextImage, nPixelsInDesiredImage * sizeof(std::uint16_t));
                 } else {
+                    _derivedStoreNewImageInBuffer(fullSensorImage.data(), fullSensorImage.size() * sizeof(std::uint16_t));
                     std::vector<std::uint16_t>* processedDataPtr = nullptr;
-                    if (!needSoftwareCrop && !needSoftwareBinning) {
-                        _derivedStoreNewImageInBuffer(desiredImage.data(), desiredImage.size() * sizeof(std::uint16_t));
-                        processedDataPtr = &desiredImage;
-                    } else {
-                        _derivedStoreNewImageInBuffer(fullSensorImage.data(), fullSensorImage.size() * sizeof(std::uint16_t));
-                        processedDataPtr = &fullSensorImage;
-                        std::pair<int, int> latestSize = sensorSize;
-                        if (needSoftwareCrop) {
-                            _cropImage(fullSensorImage, sensorSize, croppedImage, _croppedImageSize);
-                            latestSize = _croppedImageSize;
-                            processedDataPtr = &croppedImage;
-                        }
-                        if (needSoftwareBinning) {
-                            _binImage(*processedDataPtr, latestSize, desiredImage, _binFactor);
-                            processedDataPtr = &desiredImage;
-                        }
-                    }
+                    processedDataPtr = _performCroppingAndBinning(fullSensorImage, sensorSize, croppedImage, desiredImage);
                     if (!needAveraging) {
                         memcpy(outputBuffer + nPixelsInDesiredImage * indexOfNextImage, processedDataPtr->data(), nPixelsInDesiredImage * sizeof(std::uint16_t));
                     } else {
-                        for (int i = 0; i < nPixelsInDesiredImage; i += 1) {
-                            avgImage[i] += (*processedDataPtr)[i];
-                        }
+                        bool done = _accumulateIntoAverage(*processedDataPtr, avgImage, nImagesAccumulatedInAvg, nImagesToAverage);
                         nImagesAccumulatedInAvg += 1;
-                        if (nImagesAccumulatedInAvg == nImagesToAverage) {
-                            for (int i = 0; i < nPixelsInDesiredImage; i += 1) {
-                                outputBuffer[nPixelsInDesiredImage * indexOfNextImage + i] = avgImage[i] / nImagesAccumulatedInAvg;
+                        if (done) {
+                            for (size_t i = 0; i < avgImage.size(); i += 1) {
+                                outputBuffer[nPixelsInDesiredImage * indexOfNextImage + i] = avgImage[i];
                             }
                             nImagesAccumulatedInAvg = 0;
-                            memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
                         } else {
                             continue;
                         }
