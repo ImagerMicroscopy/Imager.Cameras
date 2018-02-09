@@ -25,12 +25,20 @@ public:
 	double getEMGain() const override;
 	double getTemperature() const override;
 	double getTemperatureSetpoint() const override;
+
 	std::pair<int, int> getSensorSize() const override;
+    std::pair<int, int> getActualImageSize() const override;
+    int getBinningFactor() const override;
 
 private:
 	void _derivedSetTemperature(const double temperature) override;
 	std::pair<double, double> _derivedGetEMGainRange() override;
 	void _setCoolerOn(const bool on) override;
+
+    void _derivedSetImageCrop(const std::pair<int, int>& crop) override;
+    void _derivedSetBinningFactor(const int binningFactor) override;
+
+    bool _usesSoftwareCroppingAndBinning() const override  { return false; };
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;

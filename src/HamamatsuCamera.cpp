@@ -12,7 +12,14 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 {
 	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
 	std::pair<int, int> sensorSize = getSensorSize();
+
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__ON, false);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, sensorSize.first, false);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, sensorSize.second, false);
+
 	_nBytesPerImage = sensorSize.first * sensorSize.second * sizeof(std::uint16_t);
+
+    
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
@@ -56,13 +63,50 @@ double HamamatsuCamera::getTemperatureSetpoint() const {
 
 std::pair<int, int> HamamatsuCamera::getSensorSize() const {
 	std::pair<int, int> size;
-	size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
-	size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
+    DCAMPROP_ATTR attr = { 0 };
+    attr.cbSize = sizeof(attr);
+    attr.iProp = DCAM_IDPROP_SUBARRAYHSIZE;
+    DCAMERR err = dcamprop_getattr(_camHandle, &attr);
+    if (err != DCAMERR_SUCCESS) {
+        throw std::runtime_error("unable to get attribute");
+    }
+    size.first = attr.valuemax;
+    attr.iProp = DCAM_IDPROP_SUBARRAYVSIZE;
+    err = dcamprop_getattr(_camHandle, &attr);
+    if (err != DCAMERR_SUCCESS) {
+        throw std::runtime_error("unable to get attribute");
+    }
+    size.second = attr.valuemax;
 	return size;
 }
 
+std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
+    std::pair<int, int> size;
+    size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
+    size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
+    return size;
+}
+
+int HamamatsuCamera::getBinningFactor() const {
+    int fact = _getPropertyValue(_camHandle, DCAM_IDPROP_BINNING);
+    switch (fact) {
+        case DCAMPROP_BINNING__1:
+            return 1;
+            break;
+        case DCAMPROP_BINNING__2:
+            return 2;
+            break;
+        case DCAMPROP_BINNING__4:
+            return 4;
+            break;
+        default:
+            throw std::runtime_error("unknown hamamatsu binning factor");
+            break;
+    }
+}
+
 void HamamatsuCamera::_derivedSetTemperature(const double temperature) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature, true);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature);
 }
 
 std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
@@ -72,6 +116,37 @@ std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
 void HamamatsuCamera::_setCoolerOn(const bool on) {
 	int action = on ? DCAMPROP_SENSORCOOLER__ON : DCAMPROP_SENSORCOOLER__OFF;
 	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, action, true);
+}
+
+void HamamatsuCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {
+    auto sensorSize = getSensorSize();
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHPOS, 0);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVPOS, 0);
+    int rowOffset = (sensorSize.first - crop.first) / 2;
+    int colOffset = (sensorSize.second - crop.second) / 2;
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, crop.first);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, crop.second);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHPOS, rowOffset);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVPOS, colOffset);
+}
+
+void HamamatsuCamera::_derivedSetBinningFactor(const int binningFactor) {
+    int fact = 0;
+    switch (binningFactor) {
+        case 1:
+            fact = DCAMPROP_BINNING__1;
+            break;
+        case 2:
+            fact = DCAMPROP_BINNING__2;
+            break;
+        case 4:
+            fact = DCAMPROP_BINNING__4;
+            break;
+        default:
+            throw std::runtime_error("unknown hamamatsu binning factor");
+            break;
+    }
+    _setPropertyValue(_camHandle, DCAM_IDPROP_BINNING, fact);
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {

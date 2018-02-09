@@ -83,8 +83,7 @@ void BaseCameraClass::setImageCrop(const std::pair<int, int>& crop) {
     auto supportedCropSizes = getSupportedCropSizes();
     auto it = std::find(supportedCropSizes.cbegin(), supportedCropSizes.cend(), crop);
     if (it != supportedCropSizes.cend()) {
-        _croppedImageSize = crop;
-        _haveImageCrop = (_croppedImageSize != getSensorSize());
+        _derivedSetImageCrop(crop);
     }
 }
 
@@ -97,12 +96,11 @@ void BaseCameraClass::setBinningFactor(const int binningFactor) {
     auto supportedBinningFactors = getSupportedBinningFactors();
     auto it = std::find(supportedBinningFactors.cbegin(), supportedBinningFactors.cend(), binningFactor);
     if (it != supportedBinningFactors.cend()) {
-        _binFactor = binningFactor;
-        _haveBinning = (_binFactor != 1);
+        _derivedSetBinningFactor(binningFactor);
     }
 }
 
-int BaseCameraClass::getBinningFactor() {
+int BaseCameraClass::getBinningFactor() const {
     if (_haveBinning) {
         return _binFactor;
     } else {
@@ -203,6 +201,16 @@ std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
     double maxGain = getEMGain();
     setEMGain(currentGain);
     return std::pair<double, double>(minGain, maxGain);
+}
+
+void BaseCameraClass::_derivedSetImageCrop(const std::pair<int, int>& crop) {
+    _croppedImageSize = crop;
+    _haveImageCrop = (_croppedImageSize != getSensorSize());
+}
+
+void BaseCameraClass::_derivedSetBinningFactor(const int binningFactor) {
+    _binFactor = binningFactor;
+    _haveBinning = (_binFactor != 1);
 }
 
 std::vector<uint16_t>* BaseCameraClass::_performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int, int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const {

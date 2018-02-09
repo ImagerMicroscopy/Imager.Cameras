@@ -34,10 +34,10 @@ public:
     virtual std::pair<int, int> getSensorSize() const = 0;
     virtual std::pair<int, int> getActualImageSize() const;
     std::vector<std::pair<int, int>> getSupportedCropSizes() const;
-    virtual void setImageCrop(const std::pair<int, int>& crop);
+    void setImageCrop(const std::pair<int, int>& crop);
     std::vector<int> getSupportedBinningFactors() const;
-    virtual void setBinningFactor(const int binningFactor);
-    virtual int getBinningFactor();
+    void setBinningFactor(const int binningFactor);
+    virtual int getBinningFactor() const;
 
 	void acquireImages(const int nImages, unsigned int nImagesToAverage, std::uint16_t* outputBuffer);
 
@@ -54,6 +54,9 @@ private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;
 	virtual std::pair<double, double> _derivedGetEMGainRange();
 	virtual void _setCoolerOn(const bool on) = 0;
+
+    virtual void _derivedSetImageCrop(const std::pair<int, int>& crop);
+    virtual void _derivedSetBinningFactor(const int binningFactor);
 
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
     std::vector<uint16_t>* _performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int,int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const;
