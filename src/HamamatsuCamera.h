@@ -26,7 +26,7 @@ public:
 	double getTemperature() const override;
 	double getTemperatureSetpoint() const override;
 
-	std::pair<int, int> getSensorSize() const override;
+	std::pair<int, int> getSensorSize() const override { return _sensorSize; }
     std::pair<int, int> getActualImageSize() const override;
     int getBinningFactor() const override;
 
@@ -52,8 +52,8 @@ private:
 
 	HDCAM _camHandle;
 	std::string _camName;
+	std::pair<int, int> _sensorSize;
 	std::vector<std::uint16_t> _frameBuffer;
-	int _nBytesPerImage;
 	HDCAMWAIT _camWaitHandle;
 	int _numberOfImagesDelivered;
 };

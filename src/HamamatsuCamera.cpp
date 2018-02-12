@@ -11,15 +11,14 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_camWaitHandle(nullptr)
 {
 	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
-	std::pair<int, int> sensorSize = getSensorSize();
+	
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__OFF);
+	_sensorSize.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
+	_sensorSize.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
 
-    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__ON, false);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, sensorSize.first, false);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, sensorSize.second, false);
-
-	_nBytesPerImage = sensorSize.first * sensorSize.second * sizeof(std::uint16_t);
-
-    
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__ON);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, _sensorSize.first);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, _sensorSize.second);
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
@@ -61,25 +60,6 @@ double HamamatsuCamera::getTemperatureSetpoint() const {
     return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, true);
 }
 
-std::pair<int, int> HamamatsuCamera::getSensorSize() const {
-	std::pair<int, int> size;
-    DCAMPROP_ATTR attr = { 0 };
-    attr.cbSize = sizeof(attr);
-    attr.iProp = DCAM_IDPROP_SUBARRAYHSIZE;
-    DCAMERR err = dcamprop_getattr(_camHandle, &attr);
-    if (err != DCAMERR_SUCCESS) {
-        throw std::runtime_error("unable to get attribute");
-    }
-    size.first = attr.valuemax;
-    attr.iProp = DCAM_IDPROP_SUBARRAYVSIZE;
-    err = dcamprop_getattr(_camHandle, &attr);
-    if (err != DCAMERR_SUCCESS) {
-        throw std::runtime_error("unable to get attribute");
-    }
-    size.second = attr.valuemax;
-	return size;
-}
-
 std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
     std::pair<int, int> size;
     size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
@@ -106,7 +86,7 @@ int HamamatsuCamera::getBinningFactor() const {
 }
 
 void HamamatsuCamera::_derivedSetTemperature(const double temperature) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature, true);
 }
 
 std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
@@ -150,10 +130,10 @@ void HamamatsuCamera::_derivedSetBinningFactor(const int binningFactor) {
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
-	std::pair<int, int> sensorSize = getSensorSize();
-	int nPixelsInImage = sensorSize.first * sensorSize.second;
+	std::pair<int, int> imageSize = getActualImageSize();
+	int nPixelsInImage = imageSize.first * imageSize.second;
 	
-	_frameBuffer.resize(sensorSize.first * sensorSize.second * kHamamatsuImagesInBuffer);
+	_frameBuffer.resize(nPixelsInImage * kHamamatsuImagesInBuffer);
 
     DCAMERR err;
     std::uint16_t* bufferPtrs[kHamamatsuImagesInBuffer];
@@ -222,8 +202,10 @@ bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 
 void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-	int nPixelsInImage  = _nBytesPerImage / 2;
-	if (nBytes != _nBytesPerImage) {
+	auto imageSize = getActualImageSize();
+	int nPixelsInImage = imageSize.first * imageSize.second;
+	int nBytesPerImage = nPixelsInImage * sizeof(std::uint16_t);
+	if (nBytes != nBytesPerImage) {
 		throw std::runtime_error("buffer of invalid size");
 	}
 
@@ -243,7 +225,7 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 	}
 
 	std::uint16_t* startOfImage = _frameBuffer.data() + indexOfEarliestUnreadImage * nPixelsInImage;
-	memcpy(bufferForThisImage, startOfImage, _nBytesPerImage);
+	memcpy(bufferForThisImage, startOfImage, nBytesPerImage);
 	_numberOfImagesDelivered += 1;
 }
 

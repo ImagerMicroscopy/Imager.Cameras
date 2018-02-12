@@ -66,7 +66,7 @@ std::pair<int, int> BaseCameraClass::getActualImageSize() const {
 }
 
 std::vector<std::pair<int, int>> BaseCameraClass::getSupportedCropSizes() const {
-    int cropDimensions[] = { 4,16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
+    int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
     std::pair<int, int> sensorSize = getSensorSize();
     std::vector<std::pair<int, int>> result;
     for (int s : cropDimensions) {
