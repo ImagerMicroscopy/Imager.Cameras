@@ -15,7 +15,7 @@ public:
 
 	std::string getIdentifierStr() const override { return std::string("ZZ__DummyCam"); };
 
-	void setExposureTime(const double exposureTime) override { _exposureTime = clamp(exposureTime, 5e-3, 500e-3); }
+	void setExposureTime(const double exposureTime) override;
 	void setEMGain(const double emGain) override { _emGain = emGain; };
 
 	double getExposureTime() const override { return _exposureTime; };

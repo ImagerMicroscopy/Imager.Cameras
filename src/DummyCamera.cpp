@@ -12,9 +12,15 @@ DummyCamera::DummyCamera() :
 	_emGain(5.0),
 	_coolerOn(false),
 	_temperature(-50.0),
-	_frameCounter(0)
-{
+	_frameCounter(0) {
 
+}
+
+void DummyCamera::setExposureTime(const double exposureTime) {
+	auto sensorSize = getSensorSize();
+	auto currentSize = getActualImageSize();
+	double minExposureTime = 50e-3 / (sensorSize.first * sensorSize.second / (currentSize.first * currentSize.second));
+	_exposureTime = clamp(exposureTime, minExposureTime, 500e-3);
 }
 
 double DummyCamera::getTemperature() const {
