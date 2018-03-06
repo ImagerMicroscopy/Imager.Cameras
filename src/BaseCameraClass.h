@@ -16,7 +16,7 @@ public:
 		AcqFillAndStop
 	};
 	BaseCameraClass();
-	~BaseCameraClass();
+	virtual ~BaseCameraClass();
 
 	virtual std::string getIdentifierStr() const = 0;
 

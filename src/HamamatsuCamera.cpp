@@ -12,13 +12,21 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 {
 	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
 	
+	_setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD, true);
+
 	_setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__OFF);
 	_sensorSize.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
 	_sensorSize.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
 
+	std::pair<double, double> readoutLimits = _getPropertyLimits(_camHandle, DCAM_IDPROP_READOUTSPEED);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED, readoutLimits.second);
+
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__ON);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, _sensorSize.first);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, _sensorSize.second);
+
+	_setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY, DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__EXPOSURE);
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
@@ -262,6 +270,17 @@ void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double 
 	if ((err != DCAMERR_SUCCESS) && !ignoreErrors) {
 		throw std::runtime_error("error setting dcam property value");
 	}
+}
+
+std::pair<double, double> HamamatsuCamera::_getPropertyLimits(HDCAM camHandle, int propertyID) const {
+	DCAMERR err;
+	DCAMPROP_ATTR attr = { 0 };
+	attr.iProp = propertyID;
+	err = dcamprop_getattr(camHandle, &attr);
+	if (err != DCAMERR_SUCCESS) {
+		throw std::runtime_error("error get dcam property limits");
+	}
+	return std::pair<double, double>(attr.valuemin, attr.valuemax);
 }
 
 #endif

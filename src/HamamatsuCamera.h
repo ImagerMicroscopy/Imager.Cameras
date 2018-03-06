@@ -49,6 +49,7 @@ private:
 	std::string _getDCAMString(HDCAM camHandle, int stringID) const;
 	double _getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors = false) const;
 	void _setPropertyValue(HDCAM camHandle, int propertyID, double value, bool ignoreErrors = false) const;
+	std::pair<double, double> _getPropertyLimits(HDCAM camHandle, int propertyID) const;
 
 	HDCAM _camHandle;
 	std::string _camName;
