@@ -18,8 +18,7 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_sensorSize.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
 	_sensorSize.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
 
-	std::pair<double, double> readoutLimits = _getPropertyLimits(_camHandle, DCAM_IDPROP_READOUTSPEED);
-	_setPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED, readoutLimits.second);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED, DCAMPROP_READOUTSPEED__FASTEST);
 
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__ON);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, _sensorSize.first);
