@@ -1,6 +1,8 @@
 #include "ImageRecycler.h"
 
 #include <algorithm>
+#include <thread>
+#include <mutex>
 
 
 class ImageRecycler {
@@ -17,6 +19,7 @@ private:
     std::vector<std::pair<size_t, size_t>> _availableDimensions;
     std::vector<std::deque<std::shared_ptr<std::uint16_t>>> _availableImages;
     std::vector<std::deque<std::shared_ptr<std::uint16_t>>> _imagesInUse;
+    std::mutex _mutex;
 };
 
 ImageRecycler gImageRecycler;
@@ -30,6 +33,8 @@ ImageRecycler::~ImageRecycler() {
 }
 
 std::shared_ptr<std::uint16_t> ImageRecycler::newRecycledImage(std::pair<size_t, size_t> size) {
+    std::lock_guard<std::mutex> lock(_mutex);
+
     // do we already have images of this size available?
     std::vector<std::pair<size_t, size_t>>::const_iterator it;
     if ((it = std::find(_availableDimensions.cbegin(), _availableDimensions.cend(), size)) == _availableDimensions.cend()) {
@@ -54,6 +59,7 @@ std::shared_ptr<std::uint16_t> ImageRecycler::newRecycledImage(std::pair<size_t,
 }
 
 void ImageRecycler::freeAllImages() {
+    std::lock_guard<std::mutex> lock(_mutex);
     for (const auto& v : _imagesInUse) {
         if (!v.empty()) {
             throw std::logic_error("recycler freeing all images but still in use");
@@ -65,6 +71,8 @@ void ImageRecycler::freeAllImages() {
 }
 
 void ImageRecycler::_returnImage(std::uint16_t* ptr) {
+    std::lock_guard<std::mutex> lock(_mutex);
+
     bool foundIt = false;
     size_t sizeIdx = 0;
     std::deque<std::shared_ptr<std::uint16_t>>::iterator it;

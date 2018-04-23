@@ -65,6 +65,41 @@ int ListConnectedCameraNames(char** namesPtr) {
     return cameraIdentifiers.size();
 }
 
+int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+
+        std::vector<std::shared_ptr<ImageProcessingDescriptor>> ops;
+        for (int i = 0; i < nOps; i += 1) {
+            switch (orientationOps[i]) {
+                case kRotateCW:
+                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDRotateCW));
+                    break;
+                case kRotateCCW:
+                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDRotateCCW));
+                    break;
+                case kFlipHorizontal:
+                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDFlipHorizontal));
+                    break;
+                case kFlipVertical:
+                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDFlipVertical));
+                    break;
+                default:
+                    return -1;
+                    break;
+            }
+        }
+
+        camPtr->setImageOrientationOps(ops);
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
 int GetImageDimensions(char *cameraName, int* rows, int* cols) {
     if (!gHaveInit)
         return NO_INIT;

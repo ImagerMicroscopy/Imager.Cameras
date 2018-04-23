@@ -66,6 +66,10 @@ std::pair<int, int> BaseCameraClass::getActualImageSize() const {
     return size;
 }
 
+void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops) {
+    _imageOrientationOps = ops;
+}
+
 std::vector<std::pair<int, int>> BaseCameraClass::getSupportedCropSizes() const {
     int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
     std::pair<int, int> sensorSize = getSensorSize();
@@ -318,7 +322,7 @@ bool BaseCameraClass::_accumulateIntoAverage(const std::shared_ptr<std::uint16_t
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
     auto desiredImageSize = getActualImageSize();
     auto sensorSize = getSensorSize();
-	int nPixelsInDesiredImage = desiredImageSize.first * desiredImageSize.second;
+    auto inputImageSize = (_usesSoftwareCroppingAndBinning()) ? sensorSize : desiredImageSize;
     bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
     bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);
     bool needAveraging = nImagesToAverage > 1;
@@ -331,11 +335,14 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
         if (needSoftwareBinning) {
             imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_binFactor)));
         }
+        for (const auto& pd : _imageOrientationOps) {
+            imageProcessingDescriptors.push_back(pd);
+        }
 
         moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> processingQueue;
         _processingAsyncHasError = false;
         std::future<void> imageProcessingFuture = std::async(std::launch::async, [&]() {
-            _imageProcessingWorker(desiredImageSize.first, desiredImageSize.second, imageProcessingDescriptors, processingQueue, outputBuffer, nImagesInBuffer);
+            _imageProcessingWorker(inputImageSize.first, inputImageSize.second, imageProcessingDescriptors, processingQueue, outputBuffer, nImagesInBuffer);
         });
         CleanupRunner ipRunner([&]() {
             processingQueue.enqueue(std::shared_ptr<std::uint16_t>());
@@ -344,7 +351,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 
 		std::vector<std::uint32_t> avgImage;
 		if (needAveraging) {
-			avgImage.resize(desiredImageSize.first * desiredImageSize.second);
+			avgImage.resize(inputImageSize.first * inputImageSize.second);
 			memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
 		}
 
@@ -366,8 +373,8 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 
             bool haveImage = _waitForNewImageWithTimeout(100);
             if (haveImage) {
-                std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(desiredImageSize);
-                _derivedStoreNewImageInBuffer(theImage.get(), nPixelsInDesiredImage * sizeof(std::uint16_t));
+                std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(inputImageSize);
+                _derivedStoreNewImageInBuffer(theImage.get(), inputImageSize.first * inputImageSize.second * sizeof(std::uint16_t));
 
                 if (needAveraging) {
                     bool done = _accumulateIntoAverage(theImage, avgImage, nImagesAccumulatedInAvg, nImagesToAverage);
@@ -375,7 +382,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
                     if (!done) {
                         continue;
                     }
-                    memcpy(theImage.get(), avgImage.data(), nPixelsInDesiredImage * sizeof(std::uint16_t));
+                    memcpy(theImage.get(), avgImage.data(), avgImage.size() * sizeof(std::uint16_t));
                     nImagesAccumulatedInAvg = 0;
                 }
 

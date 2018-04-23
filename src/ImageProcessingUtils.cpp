@@ -47,23 +47,23 @@ void BinImage(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint1
 
     int nRowsOutput = nRows / binFactor;
     int nColsOutput = nCols / binFactor;
+    int nPixelsOutput = nRowsOutput * nColsOutput;
+
+    const std::uint16_t* inputPtr = image;
+    std::uint16_t* outputPtr = binnedImage;
 
     for (int col = 0; col < nColsOutput; col += 1) {
-        const std::uint16_t* rowPointers[32];
-        for (int i = 0; i < binFactor; i += 1) {
-            rowPointers[i] = image + (col * binFactor + i) * nRows;
-        }
-        std::uint16_t* outputPtr = binnedImage + col * nRowsOutput;
         for (int row = 0; row < nRowsOutput; row += 1) {
             std::uint32_t accum = 0;
             for (int bCol = 0; bCol < binFactor; bCol += 1) {
                 for (int bRow = 0; bRow < binFactor; bRow += 1) {
-                    accum += *(rowPointers[bCol]);
-                    rowPointers[bCol] += 1;
+                    accum += *(inputPtr + bRow + bCol * nRows);
                 }
             }
-            *outputPtr = std::min(accum, (std::uint32_t)std::numeric_limits<std::uint16_t>::max());
+            *outputPtr = (accum > 65535) ? 65535 : *outputPtr;
             outputPtr += 1;
+            inputPtr += binFactor;
         }
+        inputPtr += nRows * (binFactor - 1);
     }
 }

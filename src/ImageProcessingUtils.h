@@ -15,12 +15,12 @@ void CropImage(const std::uint16_t* image, size_t nRows, size_t nCols, size_t ou
 void BinImage(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* binnedImage, const int binFactor);
 
 enum ImageProcessingTypes {
-    kRotateCW,
-    kRotateCCW,
-    kFlipHorizontal,
-    kFlipVertical,
-    kCrop,
-    kBin
+    kRotateCW = 0,
+    kRotateCCW = 1,
+    kFlipHorizontal = 2,
+    kFlipVertical = 3,
+    kCrop = 4,
+    kBin = 5
 };
 
 class ImageProcessingDescriptor {
@@ -38,12 +38,12 @@ public:
     ImageProcessingTypes getType() const override { return kRotateCCW; }
 };
 
-class IPDRotateFlipHorizontal : public ImageProcessingDescriptor {
+class IPDFlipHorizontal : public ImageProcessingDescriptor {
 public:
     ImageProcessingTypes getType() const override { return kFlipHorizontal; }
 };
 
-class IPDRotateFlipVertical : public ImageProcessingDescriptor {
+class IPDFlipVertical : public ImageProcessingDescriptor {
 public:
     ImageProcessingTypes getType() const override { return kFlipVertical; }
 };

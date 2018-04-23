@@ -38,6 +38,7 @@ public:
 	
     virtual std::pair<int, int> getSensorSize() const = 0;
     virtual std::pair<int, int> getActualImageSize() const;
+    virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
     std::vector<std::pair<int, int>> getSupportedCropSizes() const;
     void setImageCrop(const std::pair<int, int>& crop);
     std::vector<int> getSupportedBinningFactors() const;
@@ -80,6 +81,7 @@ private:
 
     std::shared_ptr<std::uint16_t> _doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
 
+    std::vector<std::shared_ptr<ImageProcessingDescriptor>> _imageOrientationOps;
     bool _haveImageCrop;
     std::pair<int, int> _croppedImageSize;
     bool _haveBinning;
