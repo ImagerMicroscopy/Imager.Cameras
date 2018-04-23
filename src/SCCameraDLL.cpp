@@ -427,27 +427,3 @@ int AbortAsyncAcquisition(char* cameraName) {
 	}
 	return 0;
 }
-
-void RotateImageCW(uint16_t* image, int nRows, int nCols, uint16_t* rotatedImage, int* newNRows, int* newNCols) {
-    RotateCW(image, nRows,  nCols, rotatedImage);
-    *newNRows = nCols;
-    *newNCols = nRows;
-}
-
-void RotateImageCCW(uint16_t *image, int nRows, int nCols, uint16_t* rotatedImage, int* newNRows, int* newNCols) {
-    RotateCCW(image, nRows, nCols, rotatedImage);
-    *newNRows = nCols;
-    *newNCols = nRows;
-}
-
-void FlipImageHorizontal(uint16_t *image, int nRows, int nCols, uint16_t* flippedImage, int* newNRows, int* newNCols) {
-    FlipHorizontal(image, nRows, nCols, flippedImage);
-    *newNRows = nRows;
-    *newNCols = nCols;
-}
-
-void FlipImageVertical(uint16_t *image, int nRows, int nCols, uint16_t* flippedImage, int* newNRows, int* newNCols) {
-    FlipVertical(image, nRows, nCols, flippedImage);
-    *newNRows = nRows;
-    *newNCols = nCols;
-}

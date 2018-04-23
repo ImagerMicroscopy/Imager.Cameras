@@ -55,12 +55,6 @@ extern "C" {
 	LIBSPEC int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes);
 	LIBSPEC int GetIndexOfLastImageAsyncAcquired(char* cameraName, int* indexOfLastImageAcquired);
 	LIBSPEC int AbortAsyncAcquisition(char* cameraName);
-
-    LIBSPEC void RotateImageCW(uint16_t *image, int nRows, int nCols, uint16_t* rotatedImage, int* newNRows, int* newNCols);
-    LIBSPEC void RotateImageCCW(uint16_t *image, int nRows, int nCols, uint16_t* rotatedImage, int* newNRows, int* newNCols);
-    LIBSPEC void FlipImageHorizontal(uint16_t *image, int nRows, int nCols, uint16_t* flippedImage, int* newNRows, int* newNCols);
-    LIBSPEC void FlipImageVertical(uint16_t *image, int nRows, int nCols, uint16_t* flippedImage, int* newNRows, int* newNCols);
-
 #ifdef __cplusplus
 }
 #endif

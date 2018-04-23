@@ -66,8 +66,6 @@ private:
 
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
     std::vector<uint16_t>* _performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int,int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const;
-    void _cropImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const std::pair<int, int>& outputSize) const;
-    void _binImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const int binFactor) const;
     bool _accumulateIntoAverage(const std::shared_ptr<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const;
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
