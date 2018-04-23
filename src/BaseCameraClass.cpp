@@ -8,6 +8,7 @@
 #endif
 
 #include "Utils.h"
+#include "ImageRecycler.h"
 
 template <typename T>
 class ScopedSetter {
@@ -290,10 +291,7 @@ void BaseCameraClass::_binImage(const std::vector<std::uint16_t>& input, const s
     }
 }
 
-bool BaseCameraClass::_accumulateIntoAverage(const std::vector<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const {
-    if (averageImage.size() != inputImage.size()) {
-        throw std::runtime_error("averaging images of unequal dimensions");
-    }
+bool BaseCameraClass::_accumulateIntoAverage(const std::shared_ptr<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const {
     if (nImagesToAccumulate <= 0) {
         throw std::runtime_error("averaging <= 0 images");
     }
@@ -302,14 +300,15 @@ bool BaseCameraClass::_accumulateIntoAverage(const std::vector<std::uint16_t>& i
         memset(averageImage.data(), 0, averageImage.size() * sizeof(std::uint32_t));
     }
 
+    const std::uint16_t* imagePtr = inputImage.get();
     if (nImagesAccumulated == (nImagesToAccumulate - 1)) {
         for (size_t i = 0; i < averageImage.size(); i += 1) {
-            averageImage[i] += inputImage[i];
+            averageImage[i] += imagePtr[i];
             averageImage[i] /= nImagesToAccumulate;
         }
     } else {
         for (size_t i = 0; i < averageImage.size(); i += 1) {
-            averageImage[i] += inputImage[i];
+            averageImage[i] += imagePtr[i];
         }
     }
 
@@ -325,18 +324,24 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
     bool needAveraging = nImagesToAverage > 1;
 
 	try {
-        std::vector<std::uint16_t> fullSensorImage;
-        if (needSoftwareCrop || needSoftwareBinning || needAveraging) {
-            fullSensorImage.resize(sensorSize.first * sensorSize.second);
-        }
-		std::vector<std::uint16_t> desiredImage;
-        if (needSoftwareBinning || needSoftwareCrop || needAveraging) {
-            desiredImage.resize(desiredImageSize.first * desiredImageSize.second);
-        }
-        std::vector<std::uint16_t> croppedImage;
+        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
         if (needSoftwareCrop) {
-            croppedImage.resize(_croppedImageSize.first * _croppedImageSize.second);
+            imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_croppedImageSize.first, _croppedImageSize.second)));
         }
+        if (needSoftwareBinning) {
+            imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_binFactor)));
+        }
+
+        moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> processingQueue;
+        _processingAsyncHasError = false;
+        std::future<void> imageProcessingFuture = std::async(std::launch::async, [&]() {
+            _imageProcessingWorker(desiredImageSize.first, desiredImageSize.second, imageProcessingDescriptors, processingQueue, outputBuffer, nImagesInBuffer);
+        });
+        CleanupRunner ipRunner([&]() {
+            processingQueue.enqueue(std::shared_ptr<std::uint16_t>());
+            imageProcessingFuture.get();
+        });
+
 		std::vector<std::uint32_t> avgImage;
 		if (needAveraging) {
 			avgImage.resize(desiredImageSize.first * desiredImageSize.second);
@@ -349,51 +354,37 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
         });
 
 		std::uint32_t nImagesAccumulatedInAvg = 0;
-		int indexOfNextImage = 0;
 
 		for ( ; ;) {
 			if (this->_asyncWantAbort) {
 				return;
 			}
+            if (this->_processingAsyncHasError) {
+                _asyncErrorStr = "image processing async had error";
+                return;
+            }
 
             bool haveImage = _waitForNewImageWithTimeout(100);
             if (haveImage) {
-                if (!needSoftwareCrop && !needSoftwareBinning && !needAveraging) {
-                    _derivedStoreNewImageInBuffer(outputBuffer + nPixelsInDesiredImage * indexOfNextImage, nPixelsInDesiredImage * sizeof(std::uint16_t));
-                } else {
-                    _derivedStoreNewImageInBuffer(fullSensorImage.data(), fullSensorImage.size() * sizeof(std::uint16_t));
-                    std::vector<std::uint16_t>* processedDataPtr = nullptr;
-                    processedDataPtr = _performCroppingAndBinning(fullSensorImage, sensorSize, croppedImage, desiredImage);
-                    if (!needAveraging) {
-                        memcpy(outputBuffer + nPixelsInDesiredImage * indexOfNextImage, processedDataPtr->data(), nPixelsInDesiredImage * sizeof(std::uint16_t));
-                    } else {
-                        bool done = _accumulateIntoAverage(*processedDataPtr, avgImage, nImagesAccumulatedInAvg, nImagesToAverage);
-                        nImagesAccumulatedInAvg += 1;
-                        if (done) {
-                            for (size_t i = 0; i < avgImage.size(); i += 1) {
-                                outputBuffer[nPixelsInDesiredImage * indexOfNextImage + i] = avgImage[i];
-                            }
-                            nImagesAccumulatedInAvg = 0;
-                        } else {
-                            continue;
-                        }
+                std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(desiredImageSize);
+                _derivedStoreNewImageInBuffer(theImage.get(), nPixelsInDesiredImage * sizeof(std::uint16_t));
+
+                if (needAveraging) {
+                    bool done = _accumulateIntoAverage(theImage, avgImage, nImagesAccumulatedInAvg, nImagesToAverage);
+                    nImagesAccumulatedInAvg += 1;
+                    if (!done) {
+                        continue;
                     }
+                    memcpy(theImage.get(), avgImage.data(), nPixelsInDesiredImage * sizeof(std::uint16_t));
+                    nImagesAccumulatedInAvg = 0;
                 }
 
+                processingQueue.enqueue(theImage);
 				_asyncNImagesStored += 1;
-				{
-					std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
-					if (_imageIndicesWaitingToBeCopied.size() == nImagesInBuffer) {
-						// buffer overflow
-						_imageIndicesWaitingToBeCopied.clear();
-					}
-					_imageIndicesWaitingToBeCopied.push_back(indexOfNextImage);
-				}
+				
 				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesInBuffer)) {
 					return;
 				}
-
-				indexOfNextImage = (indexOfNextImage + 1) % nImagesInBuffer;
 			}
 		}
 	}
@@ -407,6 +398,47 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 	}
 }
 
+void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
+                                             moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue, std::uint16_t* outputBuffer, const size_t nImagesInOutputBuffer) {
+    try {
+        size_t indexOfNextImage = 0;
+
+        std::shared_ptr<std::uint16_t> inputImage;
+        for (; ; ) {
+            queue.wait_dequeue(inputImage);
+            if (inputImage.get() == nullptr) {
+                return;
+            }
+
+            size_t nInputRows = nRows, nInputCols = nCols;
+            size_t nOutputRows = nRows, nOutputCols = nCols;
+            std::shared_ptr<std::uint16_t> outputImage = inputImage;
+            for (const auto& pd : processingDescriptors) {
+                nInputRows = nOutputRows;
+                nInputCols = nOutputCols;
+                inputImage = outputImage;
+                outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
+            }
+
+            memcpy(outputBuffer + indexOfNextImage * nOutputRows * nOutputCols, outputImage.get(), nOutputRows * nOutputCols * sizeof(std::uint16_t));
+            {
+                std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
+                if (_imageIndicesWaitingToBeCopied.size() == nImagesInOutputBuffer) {
+                    // buffer overflow
+                    _imageIndicesWaitingToBeCopied.clear();
+                }
+                _imageIndicesWaitingToBeCopied.push_back(indexOfNextImage);
+            }
+
+            indexOfNextImage = (indexOfNextImage + 1) % nImagesInOutputBuffer;
+        }
+    }
+    catch (...) {
+        _processingAsyncHasError = true;
+        return;
+    }
+}
+
 bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
     auto start = std::chrono::high_resolution_clock::now();
     for ( ; ; ) {
@@ -418,5 +450,64 @@ bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
             return false;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+}
+
+std::shared_ptr<std::uint16_t> BaseCameraClass::_doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, 
+                                                                  size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput) {
+    int processingType = descriptor->getType();
+    switch (processingType) {
+        case kRotateCW:
+        case kRotateCCW:
+        {
+            nRowsOutput = nColsInput;
+            nColsOutput = nRowsInput;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            if (processingType == kRotateCW) {
+                RotateCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            } else {
+                RotateCCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            }
+            return outputImage;
+            break;
+        }
+        case kFlipHorizontal:
+        case kFlipVertical:
+        {
+            nRowsOutput = nRowsInput;
+            nColsOutput = nColsInput;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            if (processingType == kFlipHorizontal) {
+                FlipHorizontal(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            } else {
+                FlipVertical(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            }
+            return outputImage;
+            break;
+        }
+        case kCrop:
+        {
+            IPDCrop* cropObj = reinterpret_cast<IPDCrop*>(descriptor.get());
+            nRowsOutput = cropObj->nRows;
+            nColsOutput = cropObj->nCols;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            CropImage(inputImage.get(), nRowsInput, nColsInput, nRowsOutput, nColsOutput, outputImage.get());
+            return outputImage;
+            break;
+        }
+        case kBin:
+        {
+            IPDBin* binObj = reinterpret_cast<IPDBin*>(descriptor.get());
+            int binFactor = binObj->binFactor;
+            nRowsOutput = nRowsInput / binFactor;
+            nColsOutput = nColsInput / binFactor;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            BinImage(inputImage.get(), nRowsInput, nColsInput, outputImage.get(), binFactor);
+            return outputImage;
+            break;
+        }
+        default:
+            throw std::logic_error("no processing in _doProcessingStep()");
+            break;
     }
 }

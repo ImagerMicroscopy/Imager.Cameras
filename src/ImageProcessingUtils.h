@@ -1,78 +1,65 @@
 #ifndef IMAGEPROCESSINGUTILS_H
 #define IMAGEPROCESSINGUTILS_H
 
-const size_t kBlockSize = 32;
+#include <cstdint>
 
-template <typename T>
-void RotateCW(T* image, size_t nRows, size_t nCols, T* rotatedImage) {
-    size_t blockSize = std::min(std::min(nRows, nCols), kBlockSize);
-    #pragma omp parallel for num_threads(2)
-    for (int rowOffset = 0; rowOffset < nRows; rowOffset += blockSize) {
-        for (size_t colOffset = 0; colOffset < nCols; colOffset += blockSize) {
-            for (size_t col = colOffset; col < colOffset + blockSize; ++col) {
-                size_t inputIdx = col * nRows + rowOffset;
-                for (size_t row = rowOffset; row < rowOffset + blockSize; ++row) {
-                    size_t newRow = col;
-                    size_t newCol = nRows - 1 - row;
-                    size_t idx = RowColToLinear(nCols, newRow, newCol);
-                    rotatedImage[idx] = image[inputIdx];
-                    inputIdx += 1;
-                }
-            }
-        }
-    }
-}
+#include "ippi.h"
 
-template <typename T>
-void RotateCCW(T* image, size_t nRows, size_t nCols, T* rotatedImage) {
-    size_t blockSize = std::min(std::min(nRows, nCols), kBlockSize);
-    #pragma omp parallel for num_threads(2)
-    for (int rowOffset = 0; rowOffset < nRows; rowOffset += blockSize) {
-        for (size_t colOffset = 0; colOffset < nCols; colOffset += blockSize) {
-            for (size_t col = colOffset; col < colOffset + blockSize; ++col) {
-                size_t inputIdx = col * nRows + rowOffset;
-                for (size_t row = rowOffset; row < rowOffset + blockSize; ++row) {
-                    size_t newRow = nCols - 1 - col;
-                    size_t newCol = row;
-                    size_t idx = RowColToLinear(nCols, newRow, newCol);
-                    rotatedImage[idx] = image[inputIdx];
-                    inputIdx += 1;
-                }
-            }
-        }
-    }
-}
+void RotateCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage);
+void RotateCCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage);
 
-template <typename T>
-void FlipHorizontal(T* image, size_t nRows, size_t nCols, T* flippedImage) {
-    size_t offset = 0;
-    for (size_t col = 0; col < nCols; ++col) {
-        for (size_t row = 0; row < nRows; ++row) {
-            size_t newRow = row;
-            size_t newCol = nCols - 1 - col;
-            size_t idx = RowColToLinear(nRows, newRow, newCol);
-            flippedImage[idx] = image[offset];
-            offset += 1;
-        }
-    }
-}
+void FlipHorizontal(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* flippedImage);
+void FlipVertical(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* flippedImage);
 
-template <typename T>
-void FlipVertical(T* image, size_t nRows, size_t nCols, T* flippedImage) {
-    size_t offset = 0;
-    for (size_t col = 0; col < nCols; ++col) {
-        for (size_t row = 0; row < nRows; ++row) {
-            size_t newRow = nRows - 1 - row;
-            size_t newCol = col;
-            size_t idx = RowColToLinear(nRows, newRow, newCol);
-            flippedImage[idx] = image[offset];
-            offset += 1;
-        }
-    }
-}
+void CropImage(const std::uint16_t* image, size_t nRows, size_t nCols, size_t outputNRows, size_t outputNCols, std::uint16_t* croppedImage);
+void BinImage(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* binnedImage, const int binFactor);
 
-inline size_t RowColToLinear(size_t nRows, size_t row, size_t col) {
-    return (col * nRows + row);
-}
+enum ImageProcessingTypes {
+    kRotateCW,
+    kRotateCCW,
+    kFlipHorizontal,
+    kFlipVertical,
+    kCrop,
+    kBin
+};
+
+class ImageProcessingDescriptor {
+public:
+    virtual ImageProcessingTypes getType() const = 0;
+};
+
+class IPDRotateCW : public ImageProcessingDescriptor {
+public:
+    ImageProcessingTypes getType() const override { return kRotateCW; }
+};
+
+class IPDRotateCCW : public ImageProcessingDescriptor {
+public:
+    ImageProcessingTypes getType() const override { return kRotateCCW; }
+};
+
+class IPDRotateFlipHorizontal : public ImageProcessingDescriptor {
+public:
+    ImageProcessingTypes getType() const override { return kFlipHorizontal; }
+};
+
+class IPDRotateFlipVertical : public ImageProcessingDescriptor {
+public:
+    ImageProcessingTypes getType() const override { return kFlipVertical; }
+};
+
+class IPDBin : public ImageProcessingDescriptor {
+public:
+    IPDBin(int binFactorRHS) : binFactor(binFactorRHS) {}
+    ImageProcessingTypes getType() const override { return kBin; }
+    int binFactor;
+};
+
+class IPDCrop : public ImageProcessingDescriptor {
+public:
+    IPDCrop(size_t nRowsRHS, size_t nColsRHS) : nRows(nRowsRHS), nCols(nColsRHS) {}
+    ImageProcessingTypes getType() const override { return kCrop; }
+    size_t nRows, nCols;
+};
 
 #endif

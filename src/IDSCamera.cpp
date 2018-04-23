@@ -1,3 +1,5 @@
+#ifdef WITH_IDS
+
 #include "IDSCamera.h"
 
 IDSCamera::IDSCamera(HIDS camHandle) :
@@ -190,3 +192,5 @@ void IDSCamera::_setDefaults() {
 		throw std::runtime_error("unable to set hot pixel correction sensitivity");
 	}
 }
+
+#endif

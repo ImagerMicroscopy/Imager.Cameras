@@ -9,6 +9,11 @@
 #include <mutex>
 #include <future>
 
+#include "ReaderWriterQueue/atomicops.h"
+#include "ReaderWriterQueue/readerwriterqueue.h"
+
+#include "ImageProcessingUtils.h"
+
 class BaseCameraClass {
 public:
 	enum AcquisitionMode {
@@ -62,14 +67,18 @@ private:
     std::vector<uint16_t>* _performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int,int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const;
     void _cropImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const std::pair<int, int>& outputSize) const;
     void _binImage(const std::vector<std::uint16_t>& input, const std::pair<int, int>& inputSize, std::vector<std::uint16_t>& output, const int binFactor) const;
-    bool _accumulateIntoAverage(const std::vector<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const;
+    bool _accumulateIntoAverage(const std::shared_ptr<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const;
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
+    void _imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
+                                moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue, std::uint16_t* outputBuffer, const size_t nImagesInOutputBuffer);
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
 	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
     virtual bool _waitForNewImageWithTimeout(int timeoutMillis);
 	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
+
+    std::shared_ptr<std::uint16_t> _doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
 
     bool _haveImageCrop;
     std::pair<int, int> _croppedImageSize;
@@ -77,7 +86,8 @@ private:
     int _binFactor;
 
 	std::string _asyncErrorStr;
-	volatile int _asyncWantAbort;
+	volatile bool _asyncWantAbort;
+    volatile bool _processingAsyncHasError;
 	int _asyncNImagesStored;
 	std::vector<int> _imageIndicesWaitingToBeCopied;
 	std::mutex _imageIndicesMutex;
