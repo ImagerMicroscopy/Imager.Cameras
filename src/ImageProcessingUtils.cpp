@@ -6,16 +6,16 @@
 
 void RotateCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage) {
     IppiSize roiSize = { (int)nRows, (int)nCols };
-    ippiTranspose_16u_C1R(image, nCols * sizeof(std::uint16_t), rotatedImage, nRows * sizeof(std::uint16_t), roiSize);
+    ippiTranspose_16u_C1R(image, nRows * sizeof(std::uint16_t), rotatedImage, nCols * sizeof(std::uint16_t), roiSize);
     roiSize = { (int)nCols, (int)nRows };
-    ippiMirror_16u_C1IR(rotatedImage, nRows * sizeof(std::uint16_t), roiSize, ippAxsVertical);
+    ippiMirror_16u_C1IR(rotatedImage, nCols * sizeof(std::uint16_t), roiSize, ippAxsVertical);
 }
 
 void RotateCCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage) {
     IppiSize roiSize = { (int)nRows, (int)nCols };
-    ippiTranspose_16u_C1R(image, nCols * sizeof(std::uint16_t), rotatedImage, nRows * sizeof(std::uint16_t), roiSize);
+    ippiTranspose_16u_C1R(image, nRows * sizeof(std::uint16_t), rotatedImage, nCols * sizeof(std::uint16_t), roiSize);
     roiSize = { (int)nCols, (int)nRows };
-    ippiMirror_16u_C1IR(rotatedImage, nRows * sizeof(std::uint16_t), roiSize, ippAxsHorizontal);
+    ippiMirror_16u_C1IR(rotatedImage, nCols * sizeof(std::uint16_t), roiSize, ippAxsHorizontal);
 }
 
 void FlipHorizontal(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* flippedImage) {
