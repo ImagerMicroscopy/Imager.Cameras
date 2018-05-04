@@ -1,3 +1,5 @@
+#include "SCConfigure.h"
+
 #ifdef WITH_IDS
 
 #include "IDSCamera.h"
