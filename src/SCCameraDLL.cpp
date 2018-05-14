@@ -365,7 +365,7 @@ int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, 
 		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if (bufferSizeinBytes < requiredBufferSize)
 			return GENERIC_ERROR;
-		camPtr->acquireImages(nImages, nImagesToAverage, buffer);
+		camPtr->acquireImages(nImages, nImagesToAverage, nImages, buffer);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
@@ -373,7 +373,7 @@ int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, 
 	return 0;
 }
 
-int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes) {
+int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -381,14 +381,7 @@ int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint1
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		std::pair<int, int> size = camPtr->getActualImageSize();
-		uint64_t imageSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
-		if ((bufferSizeinBytes == 0) || ((bufferSizeinBytes % imageSize) != 0))
-			return BUFFER_SIZE_MUST_BE_MULTIPLE_OF_IMAGE_SIZE;
-		int nImagesInBuffer = bufferSizeinBytes / imageSize;
-		if (nImagesInBuffer < 2)
-			return TOO_FEW_IMAGES_IN_BUFFER;
-		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, nImagesToAverage, buffer, nImagesInBuffer);
+		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, nImagesToAverage, -1);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
@@ -396,20 +389,45 @@ int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint1
 	return 0;
 }
 
-int GetIndexOfLastImageAsyncAcquired(char* cameraName, int* indexOfLastImageAcquired) {
-	if (!gHaveInit)
-		return NO_INIT;
+std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*indexOfLastImageAcquired = camPtr->getIndexOfLastImageAsyncAcquired();
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
+int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols) {
+    if (!gHaveInit)
+        return NO_INIT;
+
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<std::uint16_t> imageData;
+        std::tie(imageData, *nRows, *nCols) = camPtr->getOldestImageAsyncAcquired();
+        *imagePtr = imageData.get();
+        if (imageData.get() != nullptr) {
+            gImagesInFlight.push_back(imageData);
+        }
+    }
+    catch (...) {
+        return GENERIC_ERROR;
+    }
+    return 0;
+}
+
+void ReleaseImageData(uint16_t* imagePtr) {
+    if (!gHaveInit)
+        return;
+
+    try {
+        std::shared_ptr<std::uint16_t> imageData;
+        auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [=](const std::shared_ptr<std::uint16_t>& ptr) -> bool {
+            return (ptr.get() == imagePtr);
+        });
+        if (it == gImagesInFlight.end()) {
+            throw std::runtime_error("trying to release unknown image pointer");
+        }
+        gImagesInFlight.erase(it);
+    }
+    catch (...) {
+    }
 }
 
 int AbortAsyncAcquisition(char* cameraName) {

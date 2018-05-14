@@ -45,16 +45,16 @@ public:
     void setBinningFactor(const int binningFactor);
     virtual int getBinningFactor() const;
 
-	void acquireImages(const int nImages, unsigned int nImagesToAverage, std::uint16_t* outputBuffer);
+	void acquireImages(const int nImages, unsigned int nImagesToAverage, const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer);
 
 	int getAsyncStatus();
-	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
+	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire);
 	bool wasAsyncAcquisitionStarted() const;
     bool isAsyncAcquisitionRunning() const;
     std::future_status waitForAsyncAcquisitionEnd(int timeoutMillis);
 	void abortAsyncAquisitionIfRunning();
 	int getNImagesAsyncAcquired();
-	int getIndexOfLastImageAsyncAcquired();
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int> getOldestImageAsyncAcquired();
 
 private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;
@@ -65,12 +65,12 @@ private:
     virtual void _derivedSetBinningFactor(const int binningFactor);
 
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
-    std::vector<uint16_t>* _performCroppingAndBinning(std::vector<std::uint16_t>& fullSensorImage, const std::pair<int,int>& sensorSize, std::vector<std::uint16_t>& croppedImage, std::vector<std::uint16_t>& desiredImage) const;
     bool _accumulateIntoAverage(const std::shared_ptr<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const;
 
-    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer);
+    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire);
     void _imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
-                                moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue, std::uint16_t* outputBuffer, const size_t nImagesInOutputBuffer);
+                                moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue);
+    void _clearAvailableImagesQueue();
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
 	virtual bool _derivedNewAsyncAcquisitionImageAvailable() = 0;
@@ -89,8 +89,7 @@ private:
 	volatile bool _asyncWantAbort;
     volatile bool _processingAsyncHasError;
 	int _asyncNImagesStored;
-	std::vector<int> _imageIndicesWaitingToBeCopied;
-	std::mutex _imageIndicesMutex;
+    moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int>> _availableImagesQueue;
     std::future<void> _asyncWorkerFuture;
 };
 

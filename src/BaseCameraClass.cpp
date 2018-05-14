@@ -113,24 +113,28 @@ int BaseCameraClass::getBinningFactor() const {
     }
 }
 
-void BaseCameraClass::acquireImages(const int nImages, const unsigned int nImagesToAverage, std::uint16_t* outputBuffer) {
-	startAsyncAcquisition(AcqFillAndStop, nImagesToAverage, outputBuffer, nImages);
-    for (;;) {
-        std::future_status status = waitForAsyncAcquisitionEnd(100);
-        if (status == std::future_status::ready) {
-            _asyncWorkerFuture.get();
-            if (!_asyncErrorStr.empty()) {
-                throw std::runtime_error(_asyncErrorStr);
-            } else {
-                return;
-            }
-        }
+void BaseCameraClass::acquireImages(const int nImages, const unsigned int nImagesToAverage, const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer) {
+	startAsyncAcquisition(AcqFillAndStop, nImagesToAverage, nImagesToAcquire);
+    size_t offsetInBytes = 0;
+    for (int nImagesAcquired = 0; nImagesAcquired < nImagesToAcquire; ) {
         #ifdef WITH_IGOR
         if (SpinProcess()) {
             abortAsyncAquisitionIfRunning();
             return;
         }
         #endif
+
+        std::shared_ptr<std::uint16_t> imageData;
+        int nRows, nCols;
+        std::tie(imageData, nRows, nCols) = getOldestImageAsyncAcquired();
+        if (imageData.get() == nullptr) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+        size_t nBytesInImage = nRows * nCols * sizeof(std::uint16_t);
+        memcpy(reinterpret_cast<std::uint8_t*>(outputBuffer) + offsetInBytes, imageData.get(), nBytesInImage);
+        offsetInBytes += nBytesInImage;
+        nImagesAcquired += 1;
 	}
 }
 
@@ -145,15 +149,15 @@ int BaseCameraClass::getAsyncStatus() {
 	}
 }
 
-int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
+int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire) {
     abortAsyncAquisitionIfRunning();
 	_asyncErrorStr.clear();
 	_asyncWantAbort = false;
 	_asyncNImagesStored = 0;
-	_imageIndicesWaitingToBeCopied.clear();
+    _clearAvailableImagesQueue();
 
     _asyncWorkerFuture = std::async(std::launch::async, [=]() {
-		_asyncAcquisitionWorker(acqMode, nImagesToAverage, outputBuffer, nImagesInBuffer);
+		_asyncAcquisitionWorker(acqMode, nImagesToAverage, nImagesToAcquire);
 	});
 
 	return 0;
@@ -185,18 +189,18 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
     return _asyncNImagesStored;
 }
 
-int BaseCameraClass::getIndexOfLastImageAsyncAcquired() {
-    if (!_asyncErrorStr.empty()) {
-        throw std::runtime_error(_asyncErrorStr);
+std::tuple<std::shared_ptr<std::uint16_t>, int, int> BaseCameraClass::getOldestImageAsyncAcquired() {
+
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int> result;
+    bool haveImage = _availableImagesQueue.try_dequeue(result);
+    if (!haveImage) {
+        if (!isAsyncAcquisitionRunning()) {
+            throw std::runtime_error("waiting for new image but no acquisition running");
+        } else {
+            result = std::tuple<std::shared_ptr<std::uint16_t>, int, int>(std::shared_ptr<std::uint16_t>(), 0, 0);
+        }
     }
-    std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
-    if (_imageIndicesWaitingToBeCopied.empty()) {
-        return -1;
-    } else {
-        int index = _imageIndicesWaitingToBeCopied.front();
-        _imageIndicesWaitingToBeCopied.erase(_imageIndicesWaitingToBeCopied.begin());
-        return index;
-    }
+    return result;
 }
 
 std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
@@ -242,7 +246,7 @@ bool BaseCameraClass::_accumulateIntoAverage(const std::shared_ptr<std::uint16_t
     return (nImagesAccumulated == (nImagesToAccumulate - 1));   // return truth that we are done accumulating for this image
 }
 
-void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, std::uint16_t* outputBuffer, int nImagesInBuffer) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire) {
     auto desiredImageSize = getActualImageSize();
     auto sensorSize = getSensorSize();
     auto inputImageSize = (_usesSoftwareCroppingAndBinning()) ? sensorSize : desiredImageSize;
@@ -265,7 +269,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
         moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> processingQueue;
         _processingAsyncHasError = false;
         std::future<void> imageProcessingFuture = std::async(std::launch::async, [&]() {
-            _imageProcessingWorker(inputImageSize.first, inputImageSize.second, imageProcessingDescriptors, processingQueue, outputBuffer, nImagesInBuffer);
+            _imageProcessingWorker(inputImageSize.first, inputImageSize.second, imageProcessingDescriptors, processingQueue);
         });
         CleanupRunner ipRunner([&]() {
             processingQueue.enqueue(std::shared_ptr<std::uint16_t>());
@@ -312,7 +316,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
                 processingQueue.enqueue(theImage);
 				_asyncNImagesStored += 1;
 				
-				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesInBuffer)) {
+				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesToAcquire)) {
 					return;
 				}
 			}
@@ -329,10 +333,8 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 }
 
 void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
-                                             moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue, std::uint16_t* outputBuffer, const size_t nImagesInOutputBuffer) {
+                                             moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue) {
     try {
-        size_t indexOfNextImage = 0;
-
         std::shared_ptr<std::uint16_t> inputImage;
         for (; ; ) {
             queue.wait_dequeue(inputImage);
@@ -350,23 +352,22 @@ void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nC
                 outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
             }
 
-            memcpy(outputBuffer + indexOfNextImage * nOutputRows * nOutputCols, outputImage.get(), nOutputRows * nOutputCols * sizeof(std::uint16_t));
-            {
-                std::lock_guard<std::mutex> lock(this->_imageIndicesMutex);
-                if (_imageIndicesWaitingToBeCopied.size() == nImagesInOutputBuffer) {
-                    // buffer overflow
-                    _imageIndicesWaitingToBeCopied.clear();
-                }
-                _imageIndicesWaitingToBeCopied.push_back(indexOfNextImage);
-            }
-
-            indexOfNextImage = (indexOfNextImage + 1) % nImagesInOutputBuffer;
+            std::tuple<std::shared_ptr<std::uint16_t>, int, int> imageData(outputImage, nOutputRows, nOutputCols);
+            _availableImagesQueue.enqueue(imageData);
         }
     }
     catch (...) {
         _processingAsyncHasError = true;
         return;
     }
+}
+
+void BaseCameraClass::_clearAvailableImagesQueue() {
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int> dummy;
+    bool hadValue = false;
+    do {
+        hadValue = _availableImagesQueue.try_dequeue(dummy);
+    } while (hadValue);
 }
 
 bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {

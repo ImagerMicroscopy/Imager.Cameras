@@ -52,8 +52,9 @@ extern "C" {
 
 	LIBSPEC int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes);
 
-	LIBSPEC int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes);
-	LIBSPEC int GetIndexOfLastImageAsyncAcquired(char* cameraName, int* indexOfLastImageAcquired);
+	LIBSPEC int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage);
+    LIBSPEC int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols);
+    LIBSPEC void ReleaseImageData(uint16_t* imagePtr);
 	LIBSPEC int AbortAsyncAcquisition(char* cameraName);
 #ifdef __cplusplus
 }
