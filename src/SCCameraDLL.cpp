@@ -391,7 +391,7 @@ int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage) {
 
 std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 
-int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols) {
+int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
     if (!gHaveInit)
         return NO_INIT;
 
@@ -400,7 +400,7 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRow
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
         std::shared_ptr<std::uint16_t> imageData;
-        std::tie(imageData, *nRows, *nCols) = camPtr->getOldestImageAsyncAcquired();
+        std::tie(imageData, *nRows, *nCols, *timeStamp) = camPtr->getOldestImageAsyncAcquired();
         *imagePtr = imageData.get();
         if (imageData.get() != nullptr) {
             gImagesInFlight.push_back(imageData);

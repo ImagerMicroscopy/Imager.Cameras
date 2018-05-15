@@ -54,7 +54,7 @@ public:
     std::future_status waitForAsyncAcquisitionEnd(int timeoutMillis);
 	void abortAsyncAquisitionIfRunning();
 	int getNImagesAsyncAcquired();
-    std::tuple<std::shared_ptr<std::uint16_t>, int, int> getOldestImageAsyncAcquired();
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
 
 private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;
@@ -69,7 +69,7 @@ private:
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire);
     void _imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
-                                moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue);
+                                moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue);
     void _clearAvailableImagesQueue();
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
@@ -79,17 +79,21 @@ private:
 
     std::shared_ptr<std::uint16_t> _doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
 
+    std::uint64_t _getTimeStamp() const;
+
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _imageOrientationOps;
     bool _haveImageCrop;
     std::pair<int, int> _croppedImageSize;
     bool _haveBinning;
     int _binFactor;
 
+    std::uint64_t _acquisitionStartTimeStamp;
+    std::uint64_t _performanceCounterFrequency;
 	std::string _asyncErrorStr;
 	volatile bool _asyncWantAbort;
     volatile bool _processingAsyncHasError;
 	int _asyncNImagesStored;
-    moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int>> _availableImagesQueue;
+    moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> _availableImagesQueue;
     std::future<void> _asyncWorkerFuture;
 };
 

@@ -3,6 +3,8 @@
 
 #include <chrono>
 
+#include "Windows.h"
+
 #ifdef WITH_IGOR
 #include "XOPStandardHeaders.h"
 #endif
@@ -29,6 +31,9 @@ BaseCameraClass::BaseCameraClass() :
     _haveImageCrop(false)
   , _haveBinning(false)
 {
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    _performanceCounterFrequency = freq.QuadPart;
 }
 
 BaseCameraClass::~BaseCameraClass() {
@@ -126,7 +131,8 @@ void BaseCameraClass::acquireImages(const int nImages, const unsigned int nImage
 
         std::shared_ptr<std::uint16_t> imageData;
         int nRows, nCols;
-        std::tie(imageData, nRows, nCols) = getOldestImageAsyncAcquired();
+        double timeStamp;
+        std::tie(imageData, nRows, nCols, timeStamp) = getOldestImageAsyncAcquired();
         if (imageData.get() == nullptr) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
             continue;
@@ -155,6 +161,8 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int
 	_asyncWantAbort = false;
 	_asyncNImagesStored = 0;
     _clearAvailableImagesQueue();
+
+    _acquisitionStartTimeStamp = _getTimeStamp();
 
     _asyncWorkerFuture = std::async(std::launch::async, [=]() {
 		_asyncAcquisitionWorker(acqMode, nImagesToAverage, nImagesToAcquire);
@@ -189,15 +197,15 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
     return _asyncNImagesStored;
 }
 
-std::tuple<std::shared_ptr<std::uint16_t>, int, int> BaseCameraClass::getOldestImageAsyncAcquired() {
+std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::getOldestImageAsyncAcquired() {
 
-    std::tuple<std::shared_ptr<std::uint16_t>, int, int> result;
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> result;
     bool haveImage = _availableImagesQueue.try_dequeue(result);
     if (!haveImage) {
         if (!isAsyncAcquisitionRunning()) {
             throw std::runtime_error("waiting for new image but no acquisition running");
         } else {
-            result = std::tuple<std::shared_ptr<std::uint16_t>, int, int>(std::shared_ptr<std::uint16_t>(), 0, 0);
+            result = std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>();
         }
     }
     return result;
@@ -266,13 +274,13 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
             imageProcessingDescriptors.push_back(pd);
         }
 
-        moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> processingQueue;
+        moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> processingQueue;
         _processingAsyncHasError = false;
         std::future<void> imageProcessingFuture = std::async(std::launch::async, [&]() {
             _imageProcessingWorker(inputImageSize.first, inputImageSize.second, imageProcessingDescriptors, processingQueue);
         });
         CleanupRunner ipRunner([&]() {
-            processingQueue.enqueue(std::shared_ptr<std::uint16_t>());
+            processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>());
             imageProcessingFuture.get();
         });
 
@@ -300,6 +308,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 
             bool haveImage = _waitForNewImageWithTimeout(100);
             if (haveImage) {
+                std::uint64_t acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
                 std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(inputImageSize);
                 _derivedStoreNewImageInBuffer(theImage.get(), inputImageSize.first * inputImageSize.second * sizeof(std::uint16_t));
 
@@ -313,7 +322,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
                     nImagesAccumulatedInAvg = 0;
                 }
 
-                processingQueue.enqueue(theImage);
+                processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
 				_asyncNImagesStored += 1;
 				
 				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesToAcquire)) {
@@ -333,11 +342,15 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 }
 
 void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
-                                             moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::uint16_t>> &queue) {
+                                             moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue) {
     try {
         std::shared_ptr<std::uint16_t> inputImage;
+        double timeStamp;
+        std::pair<std::shared_ptr<std::uint16_t>, double> queuedData;
+
         for (; ; ) {
-            queue.wait_dequeue(inputImage);
+            queue.wait_dequeue(queuedData);
+            std::tie(inputImage, timeStamp) = queuedData;
             if (inputImage.get() == nullptr) {
                 return;
             }
@@ -351,8 +364,7 @@ void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nC
                 inputImage = outputImage;
                 outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
             }
-
-            std::tuple<std::shared_ptr<std::uint16_t>, int, int> imageData(outputImage, nOutputRows, nOutputCols);
+            std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData(outputImage, nOutputRows, nOutputCols, timeStamp);
             _availableImagesQueue.enqueue(imageData);
         }
     }
@@ -363,7 +375,7 @@ void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nC
 }
 
 void BaseCameraClass::_clearAvailableImagesQueue() {
-    std::tuple<std::shared_ptr<std::uint16_t>, int, int> dummy;
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> dummy;
     bool hadValue = false;
     do {
         hadValue = _availableImagesQueue.try_dequeue(dummy);
@@ -441,4 +453,10 @@ std::shared_ptr<std::uint16_t> BaseCameraClass::_doProcessingStep(std::shared_pt
             throw std::logic_error("no processing in _doProcessingStep()");
             break;
     }
+}
+
+std::uint64_t BaseCameraClass::_getTimeStamp() const {
+    LARGE_INTEGER ts;
+    QueryPerformanceCounter(&ts);
+    return ts.QuadPart;
 }
