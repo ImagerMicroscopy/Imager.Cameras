@@ -198,17 +198,16 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
 }
 
 std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::getOldestImageAsyncAcquired() {
-
-    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> result;
-    bool haveImage = _availableImagesQueue.try_dequeue(result);
-    if (!haveImage) {
-        if (!isAsyncAcquisitionRunning()) {
-            throw std::runtime_error("waiting for new image but no acquisition running");
-        } else {
-            result = std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>();
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
+    for ( ; ; ) {
+        bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(500));
+        if (haveImage) {
+            return imageData;
+        }
+        if (!haveImage && !isAsyncAcquisitionRunning()) {
+                throw std::runtime_error("waiting for new image but no acquisition running");
         }
     }
-    return result;
 }
 
 std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
