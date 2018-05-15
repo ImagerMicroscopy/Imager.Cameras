@@ -307,7 +307,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 
             bool haveImage = _waitForNewImageWithTimeout(100);
             if (haveImage) {
-                std::uint64_t acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
+                double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
                 std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(inputImageSize);
                 _derivedStoreNewImageInBuffer(theImage.get(), inputImageSize.first * inputImageSize.second * sizeof(std::uint16_t));
 
