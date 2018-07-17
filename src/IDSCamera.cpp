@@ -20,7 +20,7 @@ void IDSCamera::setExposureTime(const double exposureTime) {
     double desiredFrameRate = 1.0 / exposureTime;
     double actualFrameRate = 0.0;
     is_SetFrameRate(_camHandle, desiredFrameRate, &actualFrameRate);
-    double reqExposureTime = 0.0; // If 0 is passed, the exposure time is set to the maximum value of 1/frame rate.
+    double reqExposureTime = exposureTime; // If 0 is passed, the exposure time is set to the maximum value of 1/frame rate.
     is_Exposure(_camHandle, IS_EXPOSURE_CMD_SET_EXPOSURE, &reqExposureTime, sizeof(reqExposureTime));
 }
 

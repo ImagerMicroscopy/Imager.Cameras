@@ -6,6 +6,13 @@
 
 #include "Hamamatsu/dcamprop.h"
 
+enum HamamatsuPropIDs {
+	PropEMMode = BaseCameraClass::FirstAvailablePropertyID,
+	PropReadoutSpeed,
+	PropTemperatureSetPoint,
+	PropCoolerOn
+};
+
 HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_camHandle(camHandle),
 	_camWaitHandle(nullptr)
@@ -41,6 +48,46 @@ HamamatsuCamera::~HamamatsuCamera() {
 
 std::string HamamatsuCamera::getIdentifierStr() const {
 	return _camName;
+}
+
+std::vector<CameraProperty> HamamatsuCamera::getCameraProperties() {
+	std::vector<CameraProperty> properties = getRequiredProperties();
+
+	if (_propertyIsSupported(_camHandle, DCAM_IDPROP_CCDMODE)) {
+		properties.push_back(getSetEMMode(GetProperty, std::string()));
+	}
+	if (_propertyIsSupported(_camHandle, DCAM_IDPROP_READOUTSPEED)) {
+		properties.push_back(getSetReadoutSpeed(GetProperty, std::string()));
+	}
+	if (_propertyIsSupported(_camHandle, DCAM_IDPROP_SENSORCOOLER)) {
+		properties.push_back(getSetCoolerOn(GetProperty, std::string()));
+	}
+	if (_propertyIsSupported(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET)) {
+		properties.push_back(getSetTemperatureSetPoint(GetProperty, 0.0));
+	}
+	return properties;
+}
+
+void HamamatsuCamera::setCameraProperty(const CameraProperty& prop) {
+	if (setIfRequiredProperty(prop) == true) {
+		return;
+	}
+	switch (prop.getPropertyType()) {
+		case PropEMMode:
+			getSetEMMode(SetProperty, prop.getCurrentOption());
+			break;
+		case PropReadoutSpeed:
+			getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
+			break;
+		case PropTemperatureSetPoint:
+			getSetTemperatureSetPoint(SetProperty, prop.getValue());
+			break;
+		case PropCoolerOn:
+			getSetCoolerOn(SetProperty, prop.getCurrentOption());
+			break;
+		default:
+			throw std::runtime_error("setting unrecognized option");
+	}
 }
 
 void HamamatsuCamera::setExposureTime(const double exposureTime) {
@@ -90,6 +137,67 @@ int HamamatsuCamera::getBinningFactor() const {
             throw std::runtime_error("unknown hamamatsu binning factor");
             break;
     }
+}
+
+CameraProperty HamamatsuCamera::getSetEMMode(GetOrSetProperty getOrSet, const std::string & mode) {
+	static const char* kEMMode = "EM-CCD";
+	static const char* kCCDMode = "CCD";
+	if (getOrSet == SetProperty) {
+		if (mode == kEMMode) {
+			_setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD);
+		} else if (mode == kCCDMode) {
+			_setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__NORMALCCD);
+		}
+	}
+	CameraProperty prop(PropEMMode, kEMMode);
+	double currentSetting = _getPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE);
+	std::string currentSettingStr = (currentSetting == DCAMPROP_CCDMODE__EMCCD) ? kEMMode : kCCDMode;
+	prop.setDiscrete(currentSettingStr, { kEMMode, kCCDMode });
+	return prop;
+}
+
+CameraProperty HamamatsuCamera::getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string & mode) {
+	if (getOrSet == SetProperty) {
+		double value = mode.at(0) - 48;
+		_setPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED, value);
+	}
+
+	int minVal, maxVal;
+	std::tie(minVal, maxVal) = _getPropertyLimits(_camHandle, DCAM_IDPROP_READOUTSPEED);
+	std::vector<std::string> allowedSpeeds;
+	for (int i = minVal; i <= maxVal; i += 1) {
+		allowedSpeeds.emplace_back(1, (char)i + 48);
+	}
+	CameraProperty prop(PropReadoutSpeed, "Readout speed");
+	prop.setDiscrete(std::string(1, (char)_getPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED) + 48), allowedSpeeds);
+	return prop;
+}
+
+CameraProperty HamamatsuCamera::getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint) {
+	if (getOrSet == SetProperty) {
+		_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, setPoint, true);
+	}
+	CameraProperty prop(PropTemperatureSetPoint, "Temperature setpoint");
+	prop.setNumeric(_getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET));
+	return prop;
+}
+
+CameraProperty HamamatsuCamera::getSetCoolerOn(GetOrSetProperty getOrSet, const std::string & mode) {
+	static const char* kCoolerOn = "ON";
+	static const char* kCoolerOff = "OFF";
+	if (getOrSet == SetProperty) {
+		if (mode == kCoolerOn) {
+			_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, DCAMPROP_SENSORCOOLER__ON);
+		} else if (mode == kCoolerOff) {
+			_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, DCAMPROP_SENSORCOOLER__OFF);
+		} else {
+			throw std::runtime_error("unknown argument to getSetCoolerOn()");
+		}
+	}
+	const char* actual = (_getPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER) == DCAMPROP_SENSORCOOLER__ON) ? kCoolerOn : kCoolerOff;
+	CameraProperty prop(PropCoolerOn, "Cooler");
+	prop.setDiscrete(actual, { kCoolerOn, kCoolerOff });
+	return prop;
 }
 
 void HamamatsuCamera::_derivedSetTemperature(const double temperature) {
@@ -249,6 +357,17 @@ std::string HamamatsuCamera::_getDCAMString(HDCAM camHandle, int stringID) const
 		throw std::runtime_error("error getting dcam string");
 	}
 	return std::string(buf);
+}
+
+bool HamamatsuCamera::_propertyIsSupported(HDCAM camHandle, int propertyID) const {
+	DCAMPROP_ATTR attr = { 0 };
+	attr.cbSize = sizeof(attr);
+	attr.iProp = propertyID;
+	DCAMERR err = dcamprop_getattr(camHandle, &attr);
+	if (err != DCAMERR_SUCCESS) {
+		throw std::runtime_error("error querying if property is supported");
+	}
+	return (attr.attribute & DCAMPROP_ATTR_WRITABLE);
 }
 
 double HamamatsuCamera::_getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors) const {

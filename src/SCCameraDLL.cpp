@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 
+#include "CameraPropertiesEncoding.h"
 #include "ImageProcessingUtils.h"
 
 CameraManager* gCameraManager = nullptr;
@@ -63,6 +64,52 @@ int ListConnectedCameraNames(char** namesPtr) {
         namesPtr[MAX_CAMERA_NAME_LENGTH] = 0;
     }
     return cameraIdentifiers.size();
+}
+
+LIBSPEC int GetCameraOptions(char * cameraName, char ** encodedOptionsPtr) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		*encodedOptionsPtr = nullptr;
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		std::vector<CameraProperty> properties = camPtr->getCameraProperties();
+		std::vector<std::string> encodedProps;
+		for (const auto& p : properties) {
+			encodedProps.push_back(p.encodeAsJSONObject());
+		}
+		nlohmann::json object;
+		object["properties"] = encodedProps;
+		std::string serialized = object.dump();
+		*encodedOptionsPtr = new char[serialized.size() + 1];
+		memcpy(encodedOptionsPtr, serialized.data(), serialized.size() + 1);
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
+LIBSPEC void ReleaseOptionsData(char* data) {
+	delete[] data;
+}
+
+LIBSPEC int SetCameraOption(char * cameraName, char * encodedOption) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		camPtr->setCameraProperty(CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)));
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
 }
 
 int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {

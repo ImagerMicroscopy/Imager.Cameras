@@ -8,10 +8,12 @@
 #include <thread>
 #include <mutex>
 #include <future>
+#include <vector>
 
 #include "ReaderWriterQueue/atomicops.h"
 #include "ReaderWriterQueue/readerwriterqueue.h"
 
+#include "CameraPropertiesEncoding.h"
 #include "ImageProcessingUtils.h"
 
 class BaseCameraClass {
@@ -20,10 +22,21 @@ public:
 		AcqFreeRunMode,
 		AcqFillAndStop
 	};
+
+	enum RequiredCameraPropertyIDs {
+		ReqPropExposureTime,
+		ReqPropCropping,
+		ReqPropBinning,
+		FirstAvailablePropertyID
+	};
+
 	BaseCameraClass();
 	virtual ~BaseCameraClass();
 
 	virtual std::string getIdentifierStr() const = 0;
+
+	virtual std::vector<CameraProperty> getCameraProperties() = 0;
+	virtual void setCameraProperty(const CameraProperty& prop) = 0;
 
 	virtual void setExposureTime(const double exposureTime) = 0;
 	virtual void setEMGain(const double emGain) = 0;
@@ -55,6 +68,10 @@ public:
 	void abortAsyncAquisitionIfRunning();
 	int getNImagesAsyncAcquired();
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
+
+protected:
+	std::vector<CameraProperty> getRequiredProperties();
+	bool setIfRequiredProperty(const CameraProperty& prop);
 
 private:
 	virtual void _derivedSetTemperature(const double temperature) = 0;

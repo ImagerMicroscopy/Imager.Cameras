@@ -210,6 +210,68 @@ std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::ge
     }
 }
 
+std::vector<CameraProperty> BaseCameraClass::getRequiredProperties() {
+	std::vector<CameraProperty> properties;
+	// exposure time
+	{
+		CameraProperty prop(BaseCameraClass::ReqPropExposureTime, "Exposure time");
+		prop.setNumeric(getExposureTime());
+		properties.push_back(prop);
+	}
+	// cropping
+	{
+		int first, second;
+		std::vector<std::string> strCropSizes;
+		auto cropSizes = getSupportedCropSizes();
+		for (const auto& size : cropSizes) {
+			char buf[128];
+			sprintf(buf, "%dx%d", size.first, size.second);
+			strCropSizes.emplace_back(buf);
+		}
+		std::tie(first, second) = getActualImageSize();
+		first *= getBinningFactor();
+		second *= getBinningFactor();
+		char actual[128];
+		sprintf(actual, "%dx%d", first, second);
+		CameraProperty prop(BaseCameraClass::ReqPropCropping, "Sensor crop");
+		prop.setDiscrete(actual, strCropSizes);
+		properties.push_back(prop);
+	}
+	// binning
+	CameraProperty prop(BaseCameraClass::ReqPropBinning, "Binning");
+	prop.setDiscrete(std::string(1, (char)getBinningFactor() + 48), { "1", "2", "4" });
+
+	return properties;
+}
+
+bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
+	int propertyCode = prop.getPropertyCode();
+	switch (propertyCode) {
+		case ReqPropExposureTime:
+			setExposureTime(prop.getValue());
+			break;
+		case ReqPropCropping:
+		{
+			int first, second;
+			if (sscanf(prop.getCurrentOption().c_str(), "%dx%d", &first, &second) != 2) {
+				throw std::runtime_error("decoding cropping from invalid string");
+			}
+			setImageCrop(std::pair<int, int>(first, second));
+			break;
+		}
+		case ReqPropBinning:
+		{
+			int binFactor = (char)prop.getCurrentOption().at(0) - 48;
+			setBinningFactor(binFactor);
+			break;
+		}
+		default:
+			return false;
+			break;
+	}
+	return true;
+}
+
 std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
     double currentGain = getEMGain();
     double minGain = 0.0;
@@ -312,12 +374,18 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
                 _derivedStoreNewImageInBuffer(theImage.get(), inputImageSize.first * inputImageSize.second * sizeof(std::uint16_t));
 
                 if (needAveraging) {
-                    bool done = _accumulateIntoAverage(theImage, avgImage, nImagesAccumulatedInAvg, nImagesToAverage);
+                    std::uint16_t* imagePtr = theImage.get();
+                    for (int i = 0; i < avgImage.size(); i += 1) {
+                        avgImage[i] += imagePtr[i];
+                    }
                     nImagesAccumulatedInAvg += 1;
-                    if (!done) {
+                    if (nImagesAccumulatedInAvg < nImagesToAverage) {
                         continue;
                     }
-                    memcpy(theImage.get(), avgImage.data(), avgImage.size() * sizeof(std::uint16_t));
+                    for (int i = 0; i < avgImage.size(); i += 1) {
+                        imagePtr[i] = (avgImage[i] / nImagesToAverage);
+                    }
+                    memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
                     nImagesAccumulatedInAvg = 0;
                 }
 

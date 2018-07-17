@@ -15,6 +15,9 @@ public:
 
 	std::string getIdentifierStr() const override { return std::string("ZZ__DummyCam"); };
 
+	std::vector<CameraProperty> getCameraProperties() override;
+	void setCameraProperty(const CameraProperty& prop) override;
+
 	void setExposureTime(const double exposureTime) override;
 	void setEMGain(const double emGain) override { _emGain = emGain; };
 

@@ -32,6 +32,9 @@ extern "C" {
 
 	LIBSPEC int ListConnectedCameraNames(char** namesPtr);
 
+	LIBSPEC int GetCameraOptions(char* cameraName, char** encodedOptionsPtr);
+	LIBSPEC void ReleaseOptionsData(char* data);
+	LIBSPEC int SetCameraOption(char* cameraName, char* encodedOption);
     LIBSPEC int SetImageOrientation(char* cameraName, int* orientationOps, int nOps);
 	LIBSPEC int GetImageDimensions(char *cameraName, int* rows, int* cols);
     LIBSPEC int GetAllowedCropSizes(char* cameraName, int* nRowsPtr, int* nColsPtr, int nEntriesInBuffers, int* nCropSizesReturned);

@@ -16,6 +16,22 @@ DummyCamera::DummyCamera() :
 
 }
 
+std::vector<CameraProperty> DummyCamera::getCameraProperties() {
+	std::vector<CameraProperty> properties = getRequiredProperties();
+
+	return properties;
+}
+
+void DummyCamera::setCameraProperty(const CameraProperty& prop) {
+	if (setIfRequiredProperty(prop) == true) {
+		return;
+	}
+	switch (prop.getPropertyType()) {
+		default:
+			throw std::runtime_error("setting unrecognized option");
+	}
+}
+
 void DummyCamera::setExposureTime(const double exposureTime) {
 	auto sensorSize = getSensorSize();
 	auto currentSize = getActualImageSize();

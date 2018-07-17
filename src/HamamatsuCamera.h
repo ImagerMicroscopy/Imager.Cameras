@@ -13,10 +13,18 @@ const int kHamamatsuImagesInBuffer = 15;
 
 class HamamatsuCamera : public BaseCameraClass {
 public:
+	enum GetOrSetProperty {
+		GetProperty,
+		SetProperty
+	};
+
 	HamamatsuCamera(HDCAM camHandle);
 	~HamamatsuCamera();
 
 	std::string getIdentifierStr() const override;
+
+	std::vector<CameraProperty> getCameraProperties() override;
+	void setCameraProperty(const CameraProperty& prop) override;
 
 	void setExposureTime(const double exposureTime) override;
 	void setEMGain(const double emGain) override;
@@ -31,6 +39,11 @@ public:
     int getBinningFactor() const override;
 
 private:
+	CameraProperty getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
+	CameraProperty getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
+
 	void _derivedSetTemperature(const double temperature) override;
 	std::pair<double, double> _derivedGetEMGainRange() override;
 	void _setCoolerOn(const bool on) override;
@@ -47,6 +60,7 @@ private:
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
 	std::string _getDCAMString(HDCAM camHandle, int stringID) const;
+	bool _propertyIsSupported(HDCAM camHandle, int propertyID) const;
 	double _getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors = false) const;
 	void _setPropertyValue(HDCAM camHandle, int propertyID, double value, bool ignoreErrors = false) const;
 	std::pair<double, double> _getPropertyLimits(HDCAM camHandle, int propertyID) const;
