@@ -26,9 +26,16 @@ double CameraProperty::getValue() const {
 
 std::string CameraProperty::getCurrentOption() const {
 	if (_propertyType != PropertyDiscrete) {
-		throw std::runtime_error("fetching numeric from discrete");
+		throw std::runtime_error("fetching discrete from numeric");
 	}
 	return _currentOption;
+}
+
+const std::vector<std::string>& CameraProperty::getAvailableOptions() const {
+	if (_propertyType != PropertyDiscrete) {
+		throw std::runtime_error("fetching discrete from numeric");
+	}
+	return _availableOptions;
 }
 
 nlohmann::json CameraProperty::encodeAsJSONObject() const {

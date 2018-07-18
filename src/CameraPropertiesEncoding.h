@@ -28,6 +28,7 @@ public:
 	int getPropertyCode() const { return _propertyCode; }
 	double getValue() const;
 	std::string getCurrentOption() const;
+	const std::vector<std::string>& getAvailableOptions() const;
 
 	nlohmann::json encodeAsJSONObject() const;
 	static CameraProperty decodeFromJSONObject(const nlohmann::json& encoded);

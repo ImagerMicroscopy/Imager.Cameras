@@ -18,6 +18,14 @@ public:
 		SetProperty
 	};
 
+	enum HamamatsuPropIDs {
+		PropEMMode = BaseCameraClass::FirstAvailablePropertyID,
+		PropEMGain,
+		PropReadoutSpeed,
+		PropTemperatureSetPoint,
+		PropCoolerOn
+	};
+
 	HamamatsuCamera(HDCAM camHandle);
 	~HamamatsuCamera();
 
@@ -39,10 +47,11 @@ public:
     int getBinningFactor() const override;
 
 private:
-	CameraProperty getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);
-	CameraProperty getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
-	CameraProperty getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
-	CameraProperty getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetEMGain(GetOrSetProperty getOrSet, const double value);
+	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
+	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
 
 	void _derivedSetTemperature(const double temperature) override;
 	std::pair<double, double> _derivedGetEMGainRange() override;

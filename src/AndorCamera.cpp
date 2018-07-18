@@ -10,13 +10,13 @@
 #include "AndorCamera.h"
 #include "Exceptions.h"
 #include "Utils.h"
-#include "Andor/ATMCD32D.H"
 
 #ifdef WITH_IGOR
 	#include "XOPStandardHeaders.h"
 #endif
-
 AndorCamera::AndorCamera() :
+	_horizontalReadoutSpeedIndex(0),
+	_verticalReadoutSpeedIndex(0),
 	_temperatureSetpoint(0)
 {
 	int err = Initialize(nullptr);
@@ -36,6 +36,49 @@ std::string AndorCamera::getIdentifierStr() const {
 	char buf[MAX_PATH];
 	GetHeadModel(buf);
 	return std::string(buf);
+}
+
+std::vector<CameraProperty> AndorCamera::getCameraProperties() {
+	std::vector<CameraProperty> properties = getRequiredProperties();
+
+	if (_hasEMGain()) {
+		properties.push_back(_getSetEMGain(GetProperty, 0.0));
+	}
+	if (_hasFrameTransferMode()) {
+		properties.push_back(_getSetFrameTransferMode(GetProperty, std::string()));
+	}
+	properties.push_back(_getSetHorizontalReadoutSpeeds(GetProperty, std::string()));
+	properties.push_back(_getSetCoolerOn(GetProperty, std::string()));
+	properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
+	return properties;
+}
+
+void AndorCamera::setCameraProperty(const CameraProperty& prop) {
+	if (setIfRequiredProperty(prop) == true) {
+		return;
+	}
+	switch (prop.getPropertyType()) {
+		case PropEMGain:
+			_getSetEMGain(SetProperty, prop.getValue());
+			break;
+		case PropFrameTransferMode:
+			_getSetFrameTransferMode(SetProperty, prop.getCurrentOption());
+			break;
+		case PropVerticalReadoutSpeed:
+			_getSetVerticalReadoutSpeeds(SetProperty, prop.getCurrentOption());
+			break;
+		case PropHorizontalReadoutSpeed:
+			_getSetHorizontalReadoutSpeeds(SetProperty, prop.getCurrentOption());
+			break;
+		case PropTemperatureSetPoint:
+			_getSetTemperatureSetPoint(SetProperty, prop.getValue());
+			break;
+		case PropCoolerOn:
+			_getSetCoolerOn(SetProperty, prop.getCurrentOption());
+			break;
+		default:
+			throw std::runtime_error("setting unrecognized option");
+	}
 }
 
 void AndorCamera::setExposureTime(const double exposureTime) {
@@ -92,6 +135,152 @@ std::pair<int, int> AndorCamera::getSensorSize() const {
 	return std::pair<int, int>(nRows, nCols);
 }
 
+AndorCapabilities AndorCamera::_getCapabilities() const {
+	AndorCapabilities caps;
+	caps.ulSize = sizeof(caps);
+	if (GetCapabilities(&caps) != DRV_SUCCESS) {
+		throw std::runtime_error("can't query caps");
+	}
+	return caps;
+}
+
+bool AndorCamera::_hasFrameTransferMode() const {
+	auto caps = _getCapabilities();
+	return (caps.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
+}
+
+bool AndorCamera::_hasEMGain() const {
+	auto caps = _getCapabilities();
+	return (caps.ulEMGainCapability & 0x0F);
+}
+
+CameraProperty AndorCamera::_getSetFrameTransferMode(GetOrSetProperty getOrSet, const std::string & mode) {
+	static const char* kFTOn = "On";
+	static const char* kFTOff = "Off";
+	if (getOrSet == SetProperty) {
+		if (mode == kFTOn) {
+			SetFrameTransferMode(1);
+		} else if (mode == kFTOff) {
+			SetFrameTransferMode(0);
+		} else {
+			throw std::runtime_error("unknown frame transfer mode specifier");
+		}
+	}
+	
+	CameraProperty prop(PropFrameTransferMode, "Frame transfer");
+	const char* currentOption = (_frameTransferModeOn) ? kFTOn : kFTOff;
+	prop.setDiscrete(currentOption, { kFTOff, kFTOn });
+	return prop;
+}
+
+CameraProperty AndorCamera::_getSetEMGain(GetOrSetProperty getOrSet, const double setPoint) {
+	if (getOrSet == SetProperty) {
+		SetEMCCDGain(setPoint);
+	}
+	CameraProperty prop(PropEMGain, "EM Gain");
+	int gain = 0;
+	GetEMCCDGain(&gain);
+	prop.setNumeric(gain);
+	return prop;
+}
+
+CameraProperty AndorCamera::_getSetHorizontalReadoutSpeeds(GetOrSetProperty getOrSet, const std::string& mode) {
+	static std::vector<std::string> availableSpeeds;
+	if (availableSpeeds.empty()) {
+		int nSpeeds = 0;
+		int result = GetNumberHSSpeeds(0, 0, &nSpeeds);
+		if (result != DRV_SUCCESS) {
+			throw std::runtime_error("error getting number of horizontal readout speeds");
+		}
+		for (int i = 0; i < nSpeeds; i += 1) {
+			float speed = 0.0f;
+			int result = GetHSSpeed(0, 0, i, &speed);
+			char buf[128];
+			sprintf(buf, "%f MHz", speed);
+			availableSpeeds.emplace_back(buf);
+		}
+	}
+
+	if (getOrSet == SetProperty) {
+		auto it = std::find(availableSpeeds.cbegin(), availableSpeeds.cend(), mode);
+		if (it == availableSpeeds.cend()) throw std::runtime_error("couldn't find HS speed");
+		int theIndex = it - availableSpeeds.cbegin();
+		SetHSSpeed(0, theIndex);
+		_horizontalReadoutSpeedIndex = theIndex;
+	}
+	CameraProperty prop(PropHorizontalReadoutSpeed, "Horizontal readout speed");
+	prop.setDiscrete(availableSpeeds.at(_horizontalReadoutSpeedIndex), availableSpeeds);
+	return prop;
+}
+
+CameraProperty AndorCamera::_getSetVerticalReadoutSpeeds(GetOrSetProperty getOrSet, const std::string& mode) {
+	static std::vector<std::string> availableSpeeds;
+	if (availableSpeeds.empty()) {
+		int nSpeeds = 0;
+		int result = GetNumberVSSpeeds(&nSpeeds);
+		if (result != DRV_SUCCESS) {
+			throw std::runtime_error("error getting number of horizontal readout speeds");
+		}
+		int maxIndex = 0;
+		float dummy = 0.0f;
+		result = GetFastestRecommendedVSSpeed(&maxIndex, &dummy);
+		if (result) throw std::runtime_error("error getting fastest V readout speed");
+		for (int i = 0; i < maxIndex; i += 1) {
+			float speed = 0.0f;
+			int result = GetVSSpeed(i, &speed);
+			char buf[128];
+			sprintf(buf, "%f MHz", speed);
+			availableSpeeds.emplace_back(buf);
+		}
+	}
+
+	if (getOrSet == SetProperty) {
+		auto it = std::find(availableSpeeds.cbegin(), availableSpeeds.cend(), mode);
+		if (it == availableSpeeds.cend()) throw std::runtime_error("couldn't find VS speed");
+		int theIndex = it - availableSpeeds.cbegin();
+		int result = SetVSSpeed(theIndex);
+		if (result) throw std::runtime_error("error setting V readout speed");
+		_verticalReadoutSpeedIndex = theIndex;
+	}
+	CameraProperty prop(PropVerticalReadoutSpeed, "Vertical readout speed");
+	prop.setDiscrete(availableSpeeds.at(_verticalReadoutSpeedIndex), availableSpeeds);
+	return prop;
+}
+
+CameraProperty AndorCamera::_getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint) {
+	if (getOrSet == SetProperty) {
+		int minTemp, maxTemp;
+		int tempSetpoint = setPoint;
+		GetTemperatureRange(&minTemp, &maxTemp);
+		tempSetpoint = std::min(std::max(tempSetpoint, minTemp), maxTemp);
+		SetTemperature(tempSetpoint);
+		_temperatureSetpoint = tempSetpoint;
+	}
+	CameraProperty prop(PropTemperatureSetPoint, "Temperature setpoint");
+	prop.setNumeric(_temperatureSetpoint);
+	return prop;
+}
+
+CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std::string & mode) {
+	static const char* kOn = "On";
+	static const char* kOff = "Off";
+	if (getOrSet == SetProperty) {
+		if (mode == kOn) {
+			CoolerON();
+		} else if (mode == kOff) {
+			CoolerOFF();
+		} else {
+			throw std::runtime_error("unknown cooler mode specifier");
+		}
+	}
+	int coolerStatus = 0;
+	IsCoolerOn(&coolerStatus);
+	CameraProperty prop(PropCoolerOn, "Cooler");
+	const char* currentOption = (coolerStatus) ? kOn : kOff;
+	prop.setDiscrete(currentOption, { kOff, kOn });
+	return prop;
+}
+
 void AndorCamera::_derivedSetTemperature(const double temperature) {
 	int minTemp, maxTemp;
 	int tempSetpoint = std::round(temperature);
@@ -135,6 +324,8 @@ void AndorCamera::_setCoolerOn(const bool on) {
 void AndorCamera::_setDefaults() {
 	int result;
 
+	CoolerOFF();
+
 	result = SetReadMode(4);					// set image mode
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
@@ -149,6 +340,7 @@ void AndorCamera::_setDefaults() {
 	result = SetFrameTransferMode(1);			// enable frame transfer
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	_frameTransferModeOn = true;
 
 	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
 	if (result != DRV_SUCCESS)
@@ -159,12 +351,18 @@ void AndorCamera::_setDefaults() {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	result = SetEMGainMode(0);					// EM Gain is controlled by DAC settings in the range 0-255
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	//if (result != DRV_SUCCESS)
+	//	throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	result = SetOutputAmplifier(0);				// use EMCCD gain register
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	//if (result != DRV_SUCCESS)
+	//	throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	// select fastest horizontal and vertical readout speeds
+	CameraProperty prop = _getSetHorizontalReadoutSpeeds(GetProperty, std::string());
+	_getSetHorizontalReadoutSpeeds(SetProperty, prop.getAvailableOptions().at(prop.getAvailableOptions().size() - 1));
+	prop = _getSetVerticalReadoutSpeeds(GetProperty, std::string());
+	_getSetVerticalReadoutSpeeds(SetProperty, prop.getAvailableOptions().at(prop.getAvailableOptions().size() - 1));
 
 	int nGains;									// preamp gain
 	result = GetNumberPreAmpGains(&nGains);
@@ -190,18 +388,6 @@ void AndorCamera::_setDefaults() {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	setExposureTime(50.0e-3);
-}
-
-void AndorCamera::_selectFastestRecommendedReadoutSpeed() {
-	int index;
-	float speed;
-	int result = GetFastestRecommendedVSSpeed(&index, &speed);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	result = SetVSSpeed(index);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
 }
 
 std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
