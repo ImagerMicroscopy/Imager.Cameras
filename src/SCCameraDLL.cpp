@@ -76,7 +76,7 @@ LIBSPEC int GetCameraOptions(char * cameraName, char ** encodedOptionsPtr) {
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
 		std::vector<CameraProperty> properties = camPtr->getCameraProperties();
-		std::vector<std::string> encodedProps;
+		std::vector<nlohmann::json> encodedProps;
 		for (const auto& p : properties) {
 			encodedProps.push_back(p.encodeAsJSONObject());
 		}
@@ -84,7 +84,7 @@ LIBSPEC int GetCameraOptions(char * cameraName, char ** encodedOptionsPtr) {
 		object["properties"] = encodedProps;
 		std::string serialized = object.dump();
 		*encodedOptionsPtr = new char[serialized.size() + 1];
-		memcpy(encodedOptionsPtr, serialized.data(), serialized.size() + 1);
+		memcpy(*encodedOptionsPtr, serialized.data(), serialized.size() + 1);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
@@ -165,242 +165,7 @@ int GetImageDimensions(char *cameraName, int* rows, int* cols) {
     return 0;
 }
 
-int GetAllowedCropSizes(char* cameraName, int* nRowsPtr, int* nColsPtr, int nEntriesInBuffers, int* nCropSizesReturned) {
-    if (!gHaveInit)
-        return NO_INIT;
-
-    try {
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
-        std::vector<std::pair<int, int>> cropSizes = camPtr->getSupportedCropSizes();
-        *nCropSizesReturned = 0;
-        for (int i = 0; i < std::min((size_t)nEntriesInBuffers, cropSizes.size()); i += 1) {
-            nRowsPtr[i] = cropSizes.at(i).first;
-            nColsPtr[i] = cropSizes.at(i).second;
-            *nCropSizesReturned += 1;
-        }
-    }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
-    return 0;
-}
-
-int SetCropSize(char* cameraName, int nRows, int nCols) {
-    if (!gHaveInit)
-        return NO_INIT;
-
-    try {
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
-        camPtr->setImageCrop(std::pair<int, int>(nRows, nCols));
-    }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
-    return 0;
-}
-
-int GetAllowedBinningFactors(char* cameraName, int* binningFactors, int nEntriesInBuffer, int* nBinningFactorsReturned) {
-    if (!gHaveInit)
-        return NO_INIT;
-
-    try {
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
-        std::vector<int> binFactors = camPtr->getSupportedBinningFactors();
-        *nBinningFactorsReturned = 0;
-        for (int i = 0; i < std::min((size_t)nEntriesInBuffer, binFactors.size()); i += 1) {
-            binningFactors[i] = binFactors.at(i);
-            *nBinningFactorsReturned += 1;
-        }
-    }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
-    return 0;
-}
-
-int SetBinningFactor(char* cameraName, int binningFactor) {
-    if (!gHaveInit)
-        return NO_INIT;
-
-    try {
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
-        camPtr->setBinningFactor(binningFactor);
-    }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
-    return 0;
-}
-
-int GetBinningFactor(char* cameraName, int* binningFactor) {
-    if (!gHaveInit)
-        return NO_INIT;
-
-    try {
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
-        *binningFactor = camPtr->getBinningFactor();
-    }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
-    return 0;
-}
-
-int SetEMGain(char *cameraName, double emGain) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->setEMGain(emGain);
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int ReadEMGain(char* cameraName, double* emGain) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*emGain = camPtr->getEMGain();
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int ReadEMGainRange(char* cameraName, double* minGain, double* maxGain) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->getAllowableEMGains(minGain, maxGain);
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int SetIntegrationTime(char* cameraName, double exposureTime) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->setExposureTime(exposureTime);
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int ReadIntegrationTime(char* cameraName, double* exposureTime) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*exposureTime = camPtr->getExposureTime();
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int ReadIntegrationTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->getAllowableExposureTimes(minExposureTime, maxExposureTime);
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int SetTemperatureSetpoint(char* cameraName, double temperature) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->setTemperature(temperature);
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int ReadCurrentTemperature(char* cameraName, double* temperature) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*temperature = camPtr->getTemperature();
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int ReadTemperatureSetpoint(char* cameraName, double* temperature) {
-	if (!gHaveInit)
-		return NO_INIT;
-
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*temperature = camPtr->getTemperatureSetpoint();
-	}
-	catch (...) {
-		return GENERIC_ERROR;
-	}
-	return 0;
-}
-
-int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes) {
+int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -412,6 +177,7 @@ int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, 
 		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if (bufferSizeinBytes < requiredBufferSize)
 			return GENERIC_ERROR;
+		unsigned int nImagesToAverage = 1;
 		camPtr->acquireImages(nImages, nImagesToAverage, nImages, buffer);
 	}
 	catch (...) {
@@ -420,7 +186,7 @@ int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, 
 	return 0;
 }
 
-int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage) {
+int StartAsyncAcquisition(char* cameraName) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -428,6 +194,7 @@ int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
+		unsigned int nImagesToAverage = 1;
 		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, nImagesToAverage, -1);
 	}
 	catch (...) {

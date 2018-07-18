@@ -37,25 +37,10 @@ extern "C" {
 	LIBSPEC int SetCameraOption(char* cameraName, char* encodedOption);
     LIBSPEC int SetImageOrientation(char* cameraName, int* orientationOps, int nOps);
 	LIBSPEC int GetImageDimensions(char *cameraName, int* rows, int* cols);
-    LIBSPEC int GetAllowedCropSizes(char* cameraName, int* nRowsPtr, int* nColsPtr, int nEntriesInBuffers, int* nCropSizesReturned);
-    LIBSPEC int SetCropSize(char* cameraName, int nRows, int nCols);
-    LIBSPEC int GetAllowedBinningFactors(char* cameraName, int* binningFactors, int nEntriesInBuffer, int* nBinningFactorsReturned);
-    LIBSPEC int SetBinningFactor(char* cameraName, int binningFactor);
-    LIBSPEC int GetBinningFactor(char* cameraName, int* binningFactor);
+    
+	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes);
 
-	LIBSPEC int SetEMGain(char *cameraName, double emGain);
-	LIBSPEC int ReadEMGain(char* cameraName, double* emGain);
-	LIBSPEC int ReadEMGainRange(char* cameraName, double* minGain, double* maxGain);
-	LIBSPEC int SetIntegrationTime(char* cameraName, double exposureTime);
-	LIBSPEC int ReadIntegrationTime(char* cameraName, double* exposureTime);
-	LIBSPEC int ReadIntegrationTimeRange(char* cameraName, double* minExposureTime, double* maxExposureTime);
-	LIBSPEC int SetTemperatureSetpoint(char* cameraName, double temperature);
-	LIBSPEC int ReadCurrentTemperature(char* cameraName, double* temperature);
-	LIBSPEC int ReadTemperatureSetpoint(char* cameraName, double* temperature);
-
-	LIBSPEC int AcquireImages(char* cameraName, int nImages, unsigned int nImagesToAverage, uint16_t* buffer, uint64_t bufferSizeinBytes);
-
-	LIBSPEC int StartAsyncAcquisition(char* cameraName, unsigned int nImagesToAverage);
+	LIBSPEC int StartAsyncAcquisition(char* cameraName);
     LIBSPEC int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp);
     LIBSPEC void ReleaseImageData(uint16_t* imagePtr);
 	LIBSPEC int AbortAsyncAcquisition(char* cameraName);

@@ -238,8 +238,11 @@ std::vector<CameraProperty> BaseCameraClass::getRequiredProperties() {
 		properties.push_back(prop);
 	}
 	// binning
-	CameraProperty prop(BaseCameraClass::ReqPropBinning, "Binning");
-	prop.setDiscrete(std::string(1, (char)getBinningFactor() + 48), { "1", "2", "4" });
+	{
+		CameraProperty prop(BaseCameraClass::ReqPropBinning, "Binning");
+		prop.setDiscrete(std::string(1, (char)getBinningFactor() + 48), { "1", "2", "4" });
+		properties.push_back(prop);
+	}
 
 	return properties;
 }
