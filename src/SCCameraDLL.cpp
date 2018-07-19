@@ -147,24 +147,6 @@ int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
     return 0;
 }
 
-int GetImageDimensions(char *cameraName, int* rows, int* cols) {
-    if (!gHaveInit)
-        return NO_INIT;
-
-    try {
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
-        std::pair<int, int> size = camPtr->getActualImageSize();
-        *rows = size.first;
-        *cols = size.second;
-    }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
-    return 0;
-}
-
 std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 
 int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows, int* nCols) {
