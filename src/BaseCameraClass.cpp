@@ -153,7 +153,7 @@ std::vector<CameraProperty> BaseCameraClass::getRequiredProperties() {
 	// exposure time
 	{
 		CameraProperty prop(BaseCameraClass::ReqPropExposureTime, "Exposure time");
-		prop.setNumeric(getExposureTime());
+		prop.setNumeric(_getExposureTime());
 		properties.push_back(prop);
 	}
 	// cropping
@@ -189,7 +189,7 @@ bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
 	int propertyCode = prop.getPropertyCode();
 	switch (propertyCode) {
 		case ReqPropExposureTime:
-			setExposureTime(prop.getValue());
+			_setExposureTime(prop.getValue());
 			break;
 		case ReqPropCropping:
 		{

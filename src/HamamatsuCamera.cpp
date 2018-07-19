@@ -86,14 +86,6 @@ void HamamatsuCamera::setCameraProperty(const CameraProperty& prop) {
 	}
 }
 
-void HamamatsuCamera::setExposureTime(const double exposureTime) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME, exposureTime);
-}
-
-double HamamatsuCamera::getExposureTime() const {
-	return _getPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME);
-}
-
 std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
     std::pair<int, int> size;
     size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
@@ -187,6 +179,14 @@ CameraProperty HamamatsuCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const
 	CameraProperty prop(PropCoolerOn, "Cooler");
 	prop.setDiscrete(actual, { kCoolerOn, kCoolerOff });
 	return prop;
+}
+
+void HamamatsuCamera::_setExposureTime(const double exposureTime) {
+	_setPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME, exposureTime);
+}
+
+double HamamatsuCamera::_getExposureTime() const {
+	return _getPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME);
 }
 
 void HamamatsuCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {

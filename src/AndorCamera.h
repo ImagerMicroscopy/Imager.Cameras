@@ -30,10 +30,6 @@ public:
 	std::vector<CameraProperty> getCameraProperties() override;
 	void setCameraProperty(const CameraProperty& prop) override;
 
-	void setExposureTime(const double exposureTime) override;
-
-	double getExposureTime() const override;
-
 private:
 	std::pair<int, int> _getSensorSize() const override;
 	AndorCapabilities _getCapabilities() const;
@@ -45,6 +41,9 @@ private:
 	CameraProperty _getSetVerticalReadoutSpeeds(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
+
+	void _setExposureTime(const double exposureTime) override;
+	double _getExposureTime() const override;
 
 	void _setDefaults();
 	std::string _andorErrorCodeToMessage(int errorCode) const;

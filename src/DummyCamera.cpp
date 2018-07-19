@@ -32,7 +32,7 @@ void DummyCamera::setCameraProperty(const CameraProperty& prop) {
 	}
 }
 
-void DummyCamera::setExposureTime(const double exposureTime) {
+void DummyCamera::_setExposureTime(const double exposureTime) {
 	auto sensorSize = _getSensorSize();
 	auto currentSize = getActualImageSize();
 	double minExposureTime = 50e-3 / (sensorSize.first * sensorSize.second / (currentSize.first * currentSize.second));
@@ -57,7 +57,7 @@ void DummyCamera::_derivedStartAsyncAcquisition() {
         _imagesQueue.pop();
     }
 	_timerThread = std::thread([=]() {
-		std::int64_t exposureTimeMillis = this->getExposureTime() * 1000.0;
+		std::int64_t exposureTimeMillis = this->_getExposureTime() * 1000.0;
 		for (;;) {
 			if (this->_abortTimerThread)
 				return;

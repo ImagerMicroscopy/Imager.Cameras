@@ -81,22 +81,6 @@ void AndorCamera::setCameraProperty(const CameraProperty& prop) {
 	}
 }
 
-void AndorCamera::setExposureTime(const double exposureTime) {
-	int result = SetExposureTime(static_cast<float>(exposureTime));
-	if ((result != DRV_SUCCESS) && (result != DRV_P1INVALID)) {
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	}
-}
-
-double AndorCamera::getExposureTime() const {
-	float exposureTime, accumulate, kinetic;
-	int result = GetAcquisitionTimings(&exposureTime, &accumulate, &kinetic);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	return exposureTime;
-}
-
 std::pair<int, int> AndorCamera::_getSensorSize() const {
 	int nRows, nCols;
 	int result = GetDetector(&nCols, &nRows);	// TODO: incorrect for cropped sensors?
@@ -252,6 +236,22 @@ CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std
 	return prop;
 }
 
+void AndorCamera::_setExposureTime(const double exposureTime) {
+	int result = SetExposureTime(static_cast<float>(exposureTime));
+	if ((result != DRV_SUCCESS) && (result != DRV_P1INVALID)) {
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	}
+}
+
+double AndorCamera::_getExposureTime() const {
+	float exposureTime, accumulate, kinetic;
+	int result = GetAcquisitionTimings(&exposureTime, &accumulate, &kinetic);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+
+	return exposureTime;
+}
+
 void AndorCamera::_setDefaults() {
 	int result;
 
@@ -318,7 +318,7 @@ void AndorCamera::_setDefaults() {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	setExposureTime(50.0e-3);
+	_setExposureTime(50.0e-3);
 }
 
 std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {

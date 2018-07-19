@@ -18,12 +18,10 @@ public:
 	std::vector<CameraProperty> getCameraProperties() override;
 	void setCameraProperty(const CameraProperty& prop) override;
 
-	void setExposureTime(const double exposureTime) override;
-
-	double getExposureTime() const override { return _exposureTime; };
-
 private:
 	std::pair<int, int> _getSensorSize() const override { return std::pair<int, int>(2048, 2048); };
+	void _setExposureTime(const double exposureTime) override;
+	double _getExposureTime() const override { return _exposureTime; };
     std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
 
 	void _derivedStartAsyncAcquisition() override;
