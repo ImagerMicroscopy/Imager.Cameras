@@ -93,6 +93,10 @@ std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
     return size;
 }
 
+double HamamatsuCamera::getFrameRate() const {
+	return _getPropertyValue(_camHandle, DCAM_IDPROP_INTERNALFRAMERATE);
+}
+
 int HamamatsuCamera::_getBinningFactor() const {
     int fact = _getPropertyValue(_camHandle, DCAM_IDPROP_BINNING);
     switch (fact) {

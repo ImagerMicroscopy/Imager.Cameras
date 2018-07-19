@@ -27,7 +27,7 @@ public:
 	};
 
 	HamamatsuCamera(HDCAM camHandle);
-	~HamamatsuCamera();
+	virtual ~HamamatsuCamera();
 
 	std::string getIdentifierStr() const override;
 
@@ -35,6 +35,7 @@ public:
 	void setCameraProperty(const CameraProperty& prop) override;
 
     std::pair<int, int> getActualImageSize() const override;
+	double getFrameRate() const override;
 
 private:
 	std::pair<int, int> _getSensorSize() const override { return _sensorSize; }

@@ -81,6 +81,14 @@ void AndorCamera::setCameraProperty(const CameraProperty& prop) {
 	}
 }
 
+double AndorCamera::getFrameRate() const {
+	float exposureTime, accumulate, kinetic;
+	int result = GetAcquisitionTimings(&exposureTime, &accumulate, &kinetic);
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	return (1.0 / kinetic);
+}
+
 std::pair<int, int> AndorCamera::_getSensorSize() const {
 	int nRows, nCols;
 	int result = GetDetector(&nCols, &nRows);	// TODO: incorrect for cropped sensors?

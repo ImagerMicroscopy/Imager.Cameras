@@ -32,6 +32,10 @@ void DummyCamera::setCameraProperty(const CameraProperty& prop) {
 	}
 }
 
+double DummyCamera::getFrameRate() const {
+	return (1.0 / _getExposureTime());
+}
+
 void DummyCamera::_setExposureTime(const double exposureTime) {
 	auto sensorSize = _getSensorSize();
 	auto currentSize = getActualImageSize();

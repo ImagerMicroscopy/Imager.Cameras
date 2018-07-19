@@ -39,6 +39,7 @@ public:
 	virtual void setCameraProperty(const CameraProperty& prop) = 0;
 	
     virtual std::pair<int, int> getActualImageSize() const;
+	virtual double getFrameRate() const = 0;
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
 
 	void acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer);

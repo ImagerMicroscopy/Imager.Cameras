@@ -11,12 +11,14 @@
 class DummyCamera : public BaseCameraClass {
 public:
 	DummyCamera();
-	~DummyCamera() { ; }
+	virtual ~DummyCamera() { ; }
 
 	std::string getIdentifierStr() const override { return std::string("ZZ__DummyCam"); };
 
 	std::vector<CameraProperty> getCameraProperties() override;
 	void setCameraProperty(const CameraProperty& prop) override;
+
+	double getFrameRate() const override;
 
 private:
 	std::pair<int, int> _getSensorSize() const override { return std::pair<int, int>(2048, 2048); };

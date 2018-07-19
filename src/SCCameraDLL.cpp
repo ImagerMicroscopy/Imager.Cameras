@@ -112,6 +112,22 @@ LIBSPEC int SetCameraOption(char * cameraName, char * encodedOption) {
 	return 0;
 }
 
+int GetFrameRate(char* cameraName, double* frameRate) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		*frameRate = camPtr->getFrameRate();
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
 int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
     try {
         std::shared_ptr<BaseCameraClass> camPtr;

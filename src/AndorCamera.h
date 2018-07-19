@@ -23,12 +23,14 @@ public:
 
 
 	AndorCamera();
-	~AndorCamera();
+	virtual ~AndorCamera();
 
 	std::string getIdentifierStr() const override;
 
 	std::vector<CameraProperty> getCameraProperties() override;
 	void setCameraProperty(const CameraProperty& prop) override;
+
+	double getFrameRate() const override;
 
 private:
 	std::pair<int, int> _getSensorSize() const override;
