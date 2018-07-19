@@ -40,25 +40,6 @@ BaseCameraClass::~BaseCameraClass() {
     abortAsyncAquisitionIfRunning();
 }
 
-void BaseCameraClass::setTemperature(const double temperature) {
-    _derivedSetTemperature(temperature);
-    _setCoolerOn(temperature < 15.0);
-}
-
-void BaseCameraClass::getAllowableExposureTimes(double* minExposureTime, double* maxExposureTime) {
-    double currentExposureTime = getExposureTime();
-    setExposureTime(1.0e-6);
-    *minExposureTime = getExposureTime();
-    *maxExposureTime = 1.0;
-    setExposureTime(currentExposureTime);
-}
-
-void BaseCameraClass::getAllowableEMGains(double* minGain, double* maxGain) {
-    std::pair<double, double> range = _derivedGetEMGainRange();
-    *minGain = range.first;
-    *maxGain = range.second;
-}
-
 std::pair<int, int> BaseCameraClass::getActualImageSize() const {
     auto size = getSensorSize();
     if (_usesSoftwareCroppingAndBinning() && _haveImageCrop) {
@@ -273,15 +254,6 @@ bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
 			break;
 	}
 	return true;
-}
-
-std::pair<double, double> BaseCameraClass::_derivedGetEMGainRange() {
-    double currentGain = getEMGain();
-    double minGain = 0.0;
-    setEMGain(65000.0);
-    double maxGain = getEMGain();
-    setEMGain(currentGain);
-    return std::pair<double, double>(minGain, maxGain);
 }
 
 void BaseCameraClass::_derivedSetImageCrop(const std::pair<int, int>& crop) {

@@ -19,19 +19,12 @@ public:
 	void setCameraProperty(const CameraProperty& prop) override;
 
 	void setExposureTime(const double exposureTime) override;
-	void setEMGain(const double emGain) override { _emGain = emGain; };
 
 	double getExposureTime() const override { return _exposureTime; };
-	double getEMGain() const override { return _emGain; };
-	double getTemperature() const override;
-	double getTemperatureSetpoint() const override { return _temperature; };
 	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(2048, 2048); };
 
 private:
     std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
-
-	void _derivedSetTemperature(const double temperature) override { _temperature = temperature; }
-	void _setCoolerOn(const bool on) override { _coolerOn = on; }
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;

@@ -127,11 +127,6 @@ void CameraManager::discoverCameras() {
 	std::shared_ptr<BaseCameraClass> dummyCam(new DummyCamera());
 	_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(dummyCam->getIdentifierStr(), dummyCam));
 #endif
-
-	// start out without any cooling
-	for (const auto it : _availableCameras) {
-		it.second->setTemperature(25.0);
-	}
 }
 
 std::vector<std::string> CameraManager::getCameraIdentifiers() const {

@@ -39,13 +39,6 @@ void DummyCamera::setExposureTime(const double exposureTime) {
 	_exposureTime = clamp(exposureTime, minExposureTime, 500e-3);
 }
 
-double DummyCamera::getTemperature() const {
-	std::random_device rd;;
-	std::default_random_engine randEngine(rd());
-	std::uniform_real_distribution<double> uniformDist(-25.0, 25.0);
-	return uniformDist(rd);
-}
-
 std::shared_ptr<std::vector<uint16_t>> DummyCamera::_generateNewImage() {
     std::pair<int, int> sensorSize = getSensorSize();
     int nPixels = sensorSize.first * sensorSize.second;

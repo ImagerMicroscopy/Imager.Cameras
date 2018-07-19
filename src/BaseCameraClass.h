@@ -39,15 +39,8 @@ public:
 	virtual void setCameraProperty(const CameraProperty& prop) = 0;
 
 	virtual void setExposureTime(const double exposureTime) = 0;
-	virtual void setEMGain(const double emGain) = 0;
-	void setTemperature(const double temperature);
 
 	virtual double getExposureTime() const = 0;
-	virtual double getEMGain() const = 0;
-	void getAllowableExposureTimes(double* minExposureTime, double* maxExposureTime);
-	void getAllowableEMGains(double* minGain, double* maxGain);
-	virtual double getTemperature() const = 0;
-	virtual double getTemperatureSetpoint() const = 0;
 	
     virtual std::pair<int, int> getSensorSize() const = 0;
     virtual std::pair<int, int> getActualImageSize() const;
@@ -74,10 +67,6 @@ protected:
 	bool setIfRequiredProperty(const CameraProperty& prop);
 
 private:
-	virtual void _derivedSetTemperature(const double temperature) = 0;
-	virtual std::pair<double, double> _derivedGetEMGainRange();
-	virtual void _setCoolerOn(const bool on) = 0;
-
     virtual void _derivedSetImageCrop(const std::pair<int, int>& crop);
     virtual void _derivedSetBinningFactor(const int binningFactor);
 

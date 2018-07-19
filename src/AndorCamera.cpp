@@ -88,16 +88,6 @@ void AndorCamera::setExposureTime(const double exposureTime) {
 	}
 }
 
-void AndorCamera::setEMGain(const double emGain) {
-	std::pair<double, double> gainRange = _derivedGetEMGainRange();
-	int minGain = gainRange.first;
-	int maxGain = gainRange.second;
-	int requestedGain = clamp((int)requestedGain, minGain, maxGain);
-	int result = SetEMCCDGain(std::round(emGain));
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-}
-
 double AndorCamera::getExposureTime() const {
 	float exposureTime, accumulate, kinetic;
 	int result = GetAcquisitionTimings(&exposureTime, &accumulate, &kinetic);
@@ -105,25 +95,6 @@ double AndorCamera::getExposureTime() const {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	return exposureTime;
-}
-
-double AndorCamera::getEMGain() const {
-	int gain;
-	int result = GetEMCCDGain(&gain);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	return static_cast<double>(gain);
-}
-
-double AndorCamera::getTemperature() const {
-	int temperature;
-	int result = GetTemperature(&temperature);
-	if ((result != DRV_SUCCESS) && (result != DRV_TEMP_STABILIZED) && (result != DRV_TEMP_NOT_REACHED)
-		&& (result != DRV_TEMP_DRIFT) && (result != DRV_TEMP_NOT_STABILIZED) && (result != DRV_ACQUIRING))
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	return static_cast<double>(temperature);
 }
 
 std::pair<int, int> AndorCamera::getSensorSize() const {
@@ -279,46 +250,6 @@ CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std
 	const char* currentOption = (coolerStatus) ? kOn : kOff;
 	prop.setDiscrete(currentOption, { kOff, kOn });
 	return prop;
-}
-
-void AndorCamera::_derivedSetTemperature(const double temperature) {
-	int minTemp, maxTemp;
-	int tempSetpoint = std::round(temperature);
-
-	int result = GetTemperatureRange(&minTemp, &maxTemp);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	tempSetpoint = std::min(std::max(tempSetpoint, minTemp), maxTemp);
-
-	result = SetTemperature(tempSetpoint);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-
-	_temperatureSetpoint = tempSetpoint;
-}
-
-std::pair<double, double> AndorCamera::_derivedGetEMGainRange() {
-	int minGain, maxGain;
-	int result = GetEMGainRange(&minGain, &maxGain);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	return std::pair<double, double>(minGain, maxGain);
-}
-
-void AndorCamera::_setCoolerOn(const bool on) {
-	int result;
-	if (on) {
-		result = CoolerON();
-		if (result != DRV_SUCCESS)
-			throw std::runtime_error(_andorErrorCodeToMessage(result));
-		_coolerOn = true;
-	} else {
-		result = CoolerOFF();
-		if (result != DRV_SUCCESS)
-			throw std::runtime_error(_andorErrorCodeToMessage(result));
-		_coolerOn = false;
-	}
 }
 
 void AndorCamera::_setDefaults() {

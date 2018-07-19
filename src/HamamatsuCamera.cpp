@@ -90,24 +90,8 @@ void HamamatsuCamera::setExposureTime(const double exposureTime) {
 	_setPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME, exposureTime);
 }
 
-void HamamatsuCamera::setEMGain(const double emGain) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSITIVITY, emGain, true);
-}
-
 double HamamatsuCamera::getExposureTime() const {
 	return _getPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME);
-}
-
-double HamamatsuCamera::getEMGain() const {
-	return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSITIVITY);
-}
-
-double HamamatsuCamera::getTemperature() const {
-    return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURE, true);
-}
-
-double HamamatsuCamera::getTemperatureSetpoint() const {
-    return _getPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, true);
 }
 
 std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
@@ -203,19 +187,6 @@ CameraProperty HamamatsuCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const
 	CameraProperty prop(PropCoolerOn, "Cooler");
 	prop.setDiscrete(actual, { kCoolerOn, kCoolerOff });
 	return prop;
-}
-
-void HamamatsuCamera::_derivedSetTemperature(const double temperature) {
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET, temperature, true);
-}
-
-std::pair<double, double> HamamatsuCamera::_derivedGetEMGainRange() {
-	return std::pair<double, double>(0.0, 255.0);
-}
-
-void HamamatsuCamera::_setCoolerOn(const bool on) {
-	int action = on ? DCAMPROP_SENSORCOOLER__ON : DCAMPROP_SENSORCOOLER__OFF;
-	_setPropertyValue(_camHandle, DCAM_IDPROP_SENSORCOOLER, action, true);
 }
 
 void HamamatsuCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {

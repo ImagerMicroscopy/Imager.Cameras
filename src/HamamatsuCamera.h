@@ -35,12 +35,8 @@ public:
 	void setCameraProperty(const CameraProperty& prop) override;
 
 	void setExposureTime(const double exposureTime) override;
-	void setEMGain(const double emGain) override;
 
 	double getExposureTime() const override;
-	double getEMGain() const override;
-	double getTemperature() const override;
-	double getTemperatureSetpoint() const override;
 
 	std::pair<int, int> getSensorSize() const override { return _sensorSize; }
     std::pair<int, int> getActualImageSize() const override;
@@ -52,10 +48,6 @@ private:
 	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
 	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
-
-	void _derivedSetTemperature(const double temperature) override;
-	std::pair<double, double> _derivedGetEMGainRange() override;
-	void _setCoolerOn(const bool on) override;
 
     void _derivedSetImageCrop(const std::pair<int, int>& crop) override;
     void _derivedSetBinningFactor(const int binningFactor) override;

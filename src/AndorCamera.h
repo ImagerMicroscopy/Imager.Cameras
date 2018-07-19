@@ -31,12 +31,8 @@ public:
 	void setCameraProperty(const CameraProperty& prop) override;
 
 	void setExposureTime(const double exposureTime) override;
-	void setEMGain(const double emGain) override;
 
 	double getExposureTime() const override;
-	double getEMGain() const override;
-	double getTemperature() const override;
-	double getTemperatureSetpoint() const override { return _temperatureSetpoint; };
 	std::pair<int, int> getSensorSize() const override;
 
 private:
@@ -50,9 +46,6 @@ private:
 	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
 
-	void _derivedSetTemperature(const double temperature) override;
-	std::pair<double, double> _derivedGetEMGainRange() override;
-	void _setCoolerOn(const bool on) override;
 	void _setDefaults();
 	std::string _andorErrorCodeToMessage(int errorCode) const;
 
