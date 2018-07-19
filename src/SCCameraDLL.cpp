@@ -165,7 +165,9 @@ int GetImageDimensions(char *cameraName, int* rows, int* cols) {
     return 0;
 }
 
-int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t bufferSizeinBytes) {
+std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
+
+int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows, int* nCols) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -173,11 +175,12 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		std::pair<int, int> size = camPtr->getActualImageSize();
-		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
-		if (bufferSizeinBytes < requiredBufferSize)
-			return GENERIC_ERROR;
-		camPtr->acquireImages(nImages, buffer);
+		std::tie(*nRows, *nCols) = camPtr->getActualImageSize();
+		size_t nPixels = (size_t)*nRows * (size_t)*nCols * (size_t)nImages;
+		std::shared_ptr<std::uint16_t> buffer(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
+		gImagesInFlight.push_back(buffer);
+		*bufferPtr = buffer.get();
+		camPtr->acquireImages(nImages, *bufferPtr);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
@@ -200,8 +203,6 @@ int StartAsyncAcquisition(char* cameraName) {
 	}
 	return 0;
 }
-
-std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 
 int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
     if (!gHaveInit)
