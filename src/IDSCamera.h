@@ -12,23 +12,39 @@ const int kIDSImagesInBuffer = 15;
 
 class IDSCamera : public BaseCameraClass {
 public:
+	enum GetOrSetProperty {
+		GetProperty,
+		SetProperty
+	};
+
+	enum IDSPropIDs {
+		PropGainBoost = BaseCameraClass::FirstAvailablePropertyID,
+		PropHardwareGain,
+		PropReadoutSpeed,
+		PropTemperatureSetPoint,
+		PropCoolerOn
+	};
+
     IDSCamera(HIDS camHandle);
     ~IDSCamera();
 
     std::string getIdentifierStr() const override;
 
-    void setExposureTime(const double exposureTime) override;
-    void setEMGain(const double emGain) override;
+	std::vector<CameraProperty> getCameraProperties() override;
+	void setCameraProperty(const CameraProperty& prop) override;
 
-    double getExposureTime() const override;
-    double getEMGain() const override;
-    double getTemperature() const override;
-    double getTemperatureSetpoint() const override;
-    std::pair<int, int> _getSensorSize() const override;
+	double getFrameRate() const override;
 
 private:
-    void _derivedSetTemperature(const double temperature) override { ; }
-    void _setCoolerOn(const bool on) override { ; }
+	std::pair<int, int> _getSensorSize() const override;
+	double _getExposureTime() const override;
+	void _setExposureTime(const double exposureTime) override;
+
+	CameraProperty _getSetGainBoost(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetHardwareGain(GetOrSetProperty getOrSet, const double value);
+
+	bool _haveGainBoost() const;
+	bool _haveHotPixelCorrection() const;
 
     void _derivedStartAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
