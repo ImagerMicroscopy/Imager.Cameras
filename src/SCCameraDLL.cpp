@@ -177,8 +177,7 @@ int AcquireImages(char* cameraName, int nImages, uint16_t* buffer, uint64_t buff
 		uint64_t requiredBufferSize = (uint64_t)size.first * (uint64_t)size.second * sizeof(uint16_t);
 		if (bufferSizeinBytes < requiredBufferSize)
 			return GENERIC_ERROR;
-		unsigned int nImagesToAverage = 1;
-		camPtr->acquireImages(nImages, nImagesToAverage, nImages, buffer);
+		camPtr->acquireImages(nImages, buffer);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
@@ -194,8 +193,7 @@ int StartAsyncAcquisition(char* cameraName) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		unsigned int nImagesToAverage = 1;
-		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, nImagesToAverage, -1);
+		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, -1);
 	}
 	catch (...) {
 		return GENERIC_ERROR;

@@ -51,10 +51,10 @@ public:
     void setBinningFactor(const int binningFactor);
     virtual int getBinningFactor() const;
 
-	void acquireImages(const int nImages, unsigned int nImagesToAverage, const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer);
+	void acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer);
 
 	int getAsyncStatus();
-	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire);
+	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
 	bool wasAsyncAcquisitionStarted() const;
     bool isAsyncAcquisitionRunning() const;
     std::future_status waitForAsyncAcquisitionEnd(int timeoutMillis);
@@ -71,9 +71,8 @@ private:
     virtual void _derivedSetBinningFactor(const int binningFactor);
 
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
-    bool _accumulateIntoAverage(const std::shared_ptr<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const;
 
-    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire);
+    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
     void _imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
                                 moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue);
     void _clearAvailableImagesQueue();

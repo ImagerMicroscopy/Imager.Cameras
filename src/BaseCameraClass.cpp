@@ -99,8 +99,8 @@ int BaseCameraClass::getBinningFactor() const {
     }
 }
 
-void BaseCameraClass::acquireImages(const int nImages, const unsigned int nImagesToAverage, const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer) {
-	startAsyncAcquisition(AcqFillAndStop, nImagesToAverage, nImagesToAcquire);
+void BaseCameraClass::acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer) {
+	startAsyncAcquisition(AcqFillAndStop, nImagesToAcquire);
     size_t offsetInBytes = 0;
     for (int nImagesAcquired = 0; nImagesAcquired < nImagesToAcquire; ) {
         #ifdef WITH_IGOR
@@ -136,7 +136,7 @@ int BaseCameraClass::getAsyncStatus() {
 	}
 }
 
-int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire) {
+int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
     abortAsyncAquisitionIfRunning();
 	_asyncErrorStr.clear();
 	_asyncWantAbort = false;
@@ -146,7 +146,7 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int
     _acquisitionStartTimeStamp = _getTimeStamp();
 
     _asyncWorkerFuture = std::async(std::launch::async, [=]() {
-		_asyncAcquisitionWorker(acqMode, nImagesToAverage, nImagesToAcquire);
+		_asyncAcquisitionWorker(acqMode, nImagesToAcquire);
 	});
 
 	return 0;
@@ -266,37 +266,12 @@ void BaseCameraClass::_derivedSetBinningFactor(const int binningFactor) {
     _haveBinning = (_binFactor != 1);
 }
 
-bool BaseCameraClass::_accumulateIntoAverage(const std::shared_ptr<std::uint16_t>& inputImage, std::vector <std::uint32_t>& averageImage, const int nImagesAccumulated, const int nImagesToAccumulate) const {
-    if (nImagesToAccumulate <= 0) {
-        throw std::runtime_error("averaging <= 0 images");
-    }
-
-    if (nImagesAccumulated == 0) {
-        memset(averageImage.data(), 0, averageImage.size() * sizeof(std::uint32_t));
-    }
-
-    const std::uint16_t* imagePtr = inputImage.get();
-    if (nImagesAccumulated == (nImagesToAccumulate - 1)) {
-        for (size_t i = 0; i < averageImage.size(); i += 1) {
-            averageImage[i] += imagePtr[i];
-            averageImage[i] /= nImagesToAccumulate;
-        }
-    } else {
-        for (size_t i = 0; i < averageImage.size(); i += 1) {
-            averageImage[i] += imagePtr[i];
-        }
-    }
-
-    return (nImagesAccumulated == (nImagesToAccumulate - 1));   // return truth that we are done accumulating for this image
-}
-
-void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAverage, unsigned int nImagesToAcquire) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
     auto desiredImageSize = getActualImageSize();
     auto sensorSize = getSensorSize();
     auto inputImageSize = (_usesSoftwareCroppingAndBinning()) ? sensorSize : desiredImageSize;
     bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
     bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);
-    bool needAveraging = nImagesToAverage > 1;
 
 	try {
         std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
@@ -320,18 +295,10 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
             imageProcessingFuture.get();
         });
 
-		std::vector<std::uint32_t> avgImage;
-		if (needAveraging) {
-			avgImage.resize(inputImageSize.first * inputImageSize.second);
-			memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
-		}
-
 		_derivedStartAsyncAcquisition();
         CleanupRunner runner([&]() {
             this->_derivedAbortAsyncAcquisition();
         });
-
-		std::uint32_t nImagesAccumulatedInAvg = 0;
 
 		for ( ; ;) {
 			if (this->_asyncWantAbort) {
@@ -347,22 +314,6 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
                 double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
                 std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(inputImageSize);
                 _derivedStoreNewImageInBuffer(theImage.get(), inputImageSize.first * inputImageSize.second * sizeof(std::uint16_t));
-
-                if (needAveraging) {
-                    std::uint16_t* imagePtr = theImage.get();
-                    for (int i = 0; i < avgImage.size(); i += 1) {
-                        avgImage[i] += imagePtr[i];
-                    }
-                    nImagesAccumulatedInAvg += 1;
-                    if (nImagesAccumulatedInAvg < nImagesToAverage) {
-                        continue;
-                    }
-                    for (int i = 0; i < avgImage.size(); i += 1) {
-                        imagePtr[i] = (avgImage[i] / nImagesToAverage);
-                    }
-                    memset(avgImage.data(), 0, avgImage.size() * sizeof(avgImage[0]));
-                    nImagesAccumulatedInAvg = 0;
-                }
 
                 processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
 				_asyncNImagesStored += 1;
