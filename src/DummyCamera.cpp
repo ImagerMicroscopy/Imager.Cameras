@@ -33,14 +33,14 @@ void DummyCamera::setCameraProperty(const CameraProperty& prop) {
 }
 
 void DummyCamera::setExposureTime(const double exposureTime) {
-	auto sensorSize = getSensorSize();
+	auto sensorSize = _getSensorSize();
 	auto currentSize = getActualImageSize();
 	double minExposureTime = 50e-3 / (sensorSize.first * sensorSize.second / (currentSize.first * currentSize.second));
 	_exposureTime = clamp(exposureTime, minExposureTime, 500e-3);
 }
 
 std::shared_ptr<std::vector<uint16_t>> DummyCamera::_generateNewImage() {
-    std::pair<int, int> sensorSize = getSensorSize();
+    std::pair<int, int> sensorSize = _getSensorSize();
     int nPixels = sensorSize.first * sensorSize.second;
     std::shared_ptr<std::vector<uint16_t>> buf(new std::vector<uint16_t>(nPixels));
     uint16_t* vecPtr = buf->data();
@@ -87,7 +87,7 @@ bool DummyCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 void DummyCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
 	int nPixelsInBuf = nBytes / sizeof(std::uint16_t);
-    std::pair<int, int> sensorSize = getSensorSize();
+    std::pair<int, int> sensorSize = _getSensorSize();
     int nPixels = sensorSize.first * sensorSize.second;
     if (nPixels != nPixelsInBuf) {
         throw std::runtime_error("_derivedStoreNewImageInBuffer() with incorrect buffer size");

@@ -97,7 +97,7 @@ double AndorCamera::getExposureTime() const {
 	return exposureTime;
 }
 
-std::pair<int, int> AndorCamera::getSensorSize() const {
+std::pair<int, int> AndorCamera::_getSensorSize() const {
 	int nRows, nCols;
 	int result = GetDetector(&nCols, &nRows);	// TODO: incorrect for cropped sensors?
 	if (result != DRV_SUCCESS)
@@ -261,7 +261,7 @@ void AndorCamera::_setDefaults() {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	std::pair<int, int> sensorSize = getSensorSize();	// use the full chip, no binning
+	std::pair<int, int> sensorSize = _getSensorSize();	// use the full chip, no binning
 	result = SetImage(1, 1, 1, sensorSize.second, 1, sensorSize.first);
 
 	result = SetAcquisitionMode(3);				// set kinetics mode

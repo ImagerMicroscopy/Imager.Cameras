@@ -42,7 +42,6 @@ public:
 
 	virtual double getExposureTime() const = 0;
 	
-    virtual std::pair<int, int> getSensorSize() const = 0;
     virtual std::pair<int, int> getActualImageSize() const;
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
     std::vector<std::pair<int, int>> getSupportedCropSizes() const;
@@ -67,6 +66,7 @@ protected:
 	bool setIfRequiredProperty(const CameraProperty& prop);
 
 private:
+	virtual std::pair<int, int> _getSensorSize() const = 0;
     virtual void _derivedSetImageCrop(const std::pair<int, int>& crop);
     virtual void _derivedSetBinningFactor(const int binningFactor);
 

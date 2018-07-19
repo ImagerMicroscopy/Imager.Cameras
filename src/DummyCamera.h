@@ -21,9 +21,9 @@ public:
 	void setExposureTime(const double exposureTime) override;
 
 	double getExposureTime() const override { return _exposureTime; };
-	std::pair<int, int> getSensorSize() const override { return std::pair<int, int>(2048, 2048); };
 
 private:
+	std::pair<int, int> _getSensorSize() const override { return std::pair<int, int>(2048, 2048); };
     std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
 
 	void _derivedStartAsyncAcquisition() override;

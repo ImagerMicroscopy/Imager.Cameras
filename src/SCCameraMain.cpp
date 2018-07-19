@@ -288,7 +288,7 @@ ExecuteSCAcquireCameraImages(SCAcquireCameraImagesRuntimeParamsPtr p)
 		nImages = std::abs(nImages);
 		if (nImages == 0)
 			nImages = 25;	// arbitrary default
-		std::pair<int, int> chipDimensions = camPtr->getSensorSize();
+		std::pair<int, int> chipDimensions = camPtr->_getSensorSize();
 		// allocate image storage
 		waveHndl waveH;
 		CountInt dimensionSizes[MAX_DIMENSIONS + 1];

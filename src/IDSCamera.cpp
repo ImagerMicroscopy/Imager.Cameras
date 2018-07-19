@@ -63,7 +63,7 @@ double IDSCamera::getTemperatureSetpoint() const {
     return 0.0;
 }
 
-std::pair<int, int> IDSCamera::getSensorSize() const {
+std::pair<int, int> IDSCamera::_getSensorSize() const {
     IS_RECT rect;
     int err = is_AOI(_camHandle, IS_AOI_IMAGE_GET_AOI, &rect, sizeof(rect));
     if (err != IS_SUCCESS) {
@@ -74,7 +74,7 @@ std::pair<int, int> IDSCamera::getSensorSize() const {
 
 void IDSCamera::_derivedStartAsyncAcquisition() {
     int err;
-    std::pair<int, int> sensorSize = getSensorSize();
+    std::pair<int, int> sensorSize = _getSensorSize();
     int nPixelsInImage = sensorSize.first * sensorSize.second;
 
     _frameBuffer.resize(nPixelsInImage * kIDSImagesInBuffer);

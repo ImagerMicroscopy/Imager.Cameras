@@ -113,7 +113,7 @@ double PhotometricsCamera::getTemperatureSetpoint() const {
 	return (static_cast<double>(setpoint) / 100.0);
 }
 
-std::pair<int, int> PhotometricsCamera::getSensorSize() const {
+std::pair<int, int> PhotometricsCamera::_getSensorSize() const {
 	int err;
 	std::uint16_t nRows, nCols;
 	err = pl_get_param(_pvcamHandle, PARAM_PAR_SIZE, ATTR_CURRENT, &nRows);
@@ -221,7 +221,7 @@ std::string PhotometricsCamera::getPVCAMErrorMessage() {
 
 void PhotometricsCamera::_derivedStartAsyncAcquisition() {
 	int err = 0;
-	std::pair<int, int> chipSize = this->getSensorSize();
+	std::pair<int, int> chipSize = this->_getSensorSize();
 	rgn_type region = { 0, chipSize.second - 1, 1, 0, chipSize.first - 1, 1 };
 	int scaledExposureTime = _requestedExposureTime * 1.0e3;
 	std::uint32_t nBytesInImage;

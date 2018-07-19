@@ -24,7 +24,7 @@ public:
     double getEMGain() const override;
     double getTemperature() const override;
     double getTemperatureSetpoint() const override;
-    std::pair<int, int> getSensorSize() const override;
+    std::pair<int, int> _getSensorSize() const override;
 
 private:
     void _derivedSetTemperature(const double temperature) override { ; }

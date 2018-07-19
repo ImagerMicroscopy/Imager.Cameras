@@ -41,7 +41,7 @@ BaseCameraClass::~BaseCameraClass() {
 }
 
 std::pair<int, int> BaseCameraClass::getActualImageSize() const {
-    auto size = getSensorSize();
+    auto size = _getSensorSize();
     if (_usesSoftwareCroppingAndBinning() && _haveImageCrop) {
         size = _croppedImageSize;
     }
@@ -58,7 +58,7 @@ void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<I
 
 std::vector<std::pair<int, int>> BaseCameraClass::getSupportedCropSizes() const {
     int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
-    std::pair<int, int> sensorSize = getSensorSize();
+    std::pair<int, int> sensorSize = _getSensorSize();
     std::vector<std::pair<int, int>> result;
     for (int s : cropDimensions) {
         std::pair<int, int> croppedSize(s, s);
@@ -258,7 +258,7 @@ bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
 
 void BaseCameraClass::_derivedSetImageCrop(const std::pair<int, int>& crop) {
     _croppedImageSize = crop;
-    _haveImageCrop = (_croppedImageSize != getSensorSize());
+    _haveImageCrop = (_croppedImageSize != _getSensorSize());
 }
 
 void BaseCameraClass::_derivedSetBinningFactor(const int binningFactor) {
@@ -268,7 +268,7 @@ void BaseCameraClass::_derivedSetBinningFactor(const int binningFactor) {
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
     auto desiredImageSize = getActualImageSize();
-    auto sensorSize = getSensorSize();
+    auto sensorSize = _getSensorSize();
     auto inputImageSize = (_usesSoftwareCroppingAndBinning()) ? sensorSize : desiredImageSize;
     bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
     bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);

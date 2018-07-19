@@ -33,9 +33,9 @@ public:
 	void setExposureTime(const double exposureTime) override;
 
 	double getExposureTime() const override;
-	std::pair<int, int> getSensorSize() const override;
 
 private:
+	std::pair<int, int> _getSensorSize() const override;
 	AndorCapabilities _getCapabilities() const;
 	bool _hasFrameTransferMode() const;
 	bool _hasEMGain() const;

@@ -190,7 +190,7 @@ CameraProperty HamamatsuCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const
 }
 
 void HamamatsuCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {
-    auto sensorSize = getSensorSize();
+    auto sensorSize = _getSensorSize();
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHPOS, 0);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVPOS, 0);
     int rowOffset = (sensorSize.first - crop.first) / 2;
