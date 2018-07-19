@@ -56,49 +56,6 @@ void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<I
     _imageOrientationOps = ops;
 }
 
-std::vector<std::pair<int, int>> BaseCameraClass::getSupportedCropSizes() const {
-    int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
-    std::pair<int, int> sensorSize = _getSensorSize();
-    std::vector<std::pair<int, int>> result;
-    for (int s : cropDimensions) {
-        std::pair<int, int> croppedSize(s, s);
-        if ((croppedSize.first < sensorSize.first) && (croppedSize.second < sensorSize.second)) {
-            result.push_back(croppedSize);
-        }
-    }
-    result.push_back(sensorSize);
-    return result;
-}
-
-void BaseCameraClass::setImageCrop(const std::pair<int, int>& crop) {
-    auto supportedCropSizes = getSupportedCropSizes();
-    auto it = std::find(supportedCropSizes.cbegin(), supportedCropSizes.cend(), crop);
-    if (it != supportedCropSizes.cend()) {
-        _derivedSetImageCrop(crop);
-    }
-}
-
-std::vector<int> BaseCameraClass::getSupportedBinningFactors() const {
-    std::vector<int> binningFactors = { 1, 2, 4 };
-    return binningFactors;
-}
-
-void BaseCameraClass::setBinningFactor(const int binningFactor) {
-    auto supportedBinningFactors = getSupportedBinningFactors();
-    auto it = std::find(supportedBinningFactors.cbegin(), supportedBinningFactors.cend(), binningFactor);
-    if (it != supportedBinningFactors.cend()) {
-        _derivedSetBinningFactor(binningFactor);
-    }
-}
-
-int BaseCameraClass::getBinningFactor() const {
-    if (_haveBinning) {
-        return _binFactor;
-    } else {
-        return 1;
-    }
-}
-
 void BaseCameraClass::acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer) {
 	startAsyncAcquisition(AcqFillAndStop, nImagesToAcquire);
     size_t offsetInBytes = 0;
@@ -203,25 +160,25 @@ std::vector<CameraProperty> BaseCameraClass::getRequiredProperties() {
 	{
 		int first, second;
 		std::vector<std::string> strCropSizes;
-		auto cropSizes = getSupportedCropSizes();
+		auto cropSizes = _getSupportedCropSizes();
 		for (const auto& size : cropSizes) {
 			char buf[128];
 			sprintf(buf, "%dx%d", size.first, size.second);
 			strCropSizes.emplace_back(buf);
 		}
 		std::tie(first, second) = getActualImageSize();
-		first *= getBinningFactor();
-		second *= getBinningFactor();
+		first *= _getBinningFactor();
+		second *= _getBinningFactor();
 		char actual[128];
 		sprintf(actual, "%dx%d", first, second);
-		CameraProperty prop(BaseCameraClass::ReqPropCropping, "Sensor crop");
+		CameraProperty prop(BaseCameraClass::ReqPropCropping, "Sensor cropping");
 		prop.setDiscrete(actual, strCropSizes);
 		properties.push_back(prop);
 	}
 	// binning
 	{
 		CameraProperty prop(BaseCameraClass::ReqPropBinning, "Binning");
-		prop.setDiscrete(std::string(1, (char)getBinningFactor() + 48), { "1", "2", "4" });
+		prop.setDiscrete(std::string(1, (char)_getBinningFactor() + 48), { "1", "2", "4" });
 		properties.push_back(prop);
 	}
 
@@ -240,13 +197,13 @@ bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
 			if (sscanf(prop.getCurrentOption().c_str(), "%dx%d", &first, &second) != 2) {
 				throw std::runtime_error("decoding cropping from invalid string");
 			}
-			setImageCrop(std::pair<int, int>(first, second));
+			_setImageCrop(std::pair<int, int>(first, second));
 			break;
 		}
 		case ReqPropBinning:
 		{
 			int binFactor = (char)prop.getCurrentOption().at(0) - 48;
-			setBinningFactor(binFactor);
+			_setBinningFactor(binFactor);
 			break;
 		}
 		default:
@@ -254,6 +211,49 @@ bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
 			break;
 	}
 	return true;
+}
+
+std::vector<std::pair<int, int>> BaseCameraClass::_getSupportedCropSizes() const {
+	int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
+	std::pair<int, int> sensorSize = _getSensorSize();
+	std::vector<std::pair<int, int>> result;
+	for (int s : cropDimensions) {
+		std::pair<int, int> croppedSize(s, s);
+		if ((croppedSize.first < sensorSize.first) && (croppedSize.second < sensorSize.second)) {
+			result.push_back(croppedSize);
+		}
+	}
+	result.push_back(sensorSize);
+	return result;
+}
+
+void BaseCameraClass::_setImageCrop(const std::pair<int, int>& crop) {
+	auto supportedCropSizes = _getSupportedCropSizes();
+	auto it = std::find(supportedCropSizes.cbegin(), supportedCropSizes.cend(), crop);
+	if (it != supportedCropSizes.cend()) {
+		_derivedSetImageCrop(crop);
+	}
+}
+
+std::vector<int> BaseCameraClass::_getSupportedBinningFactors() const {
+	std::vector<int> binningFactors = { 1, 2, 4 };
+	return binningFactors;
+}
+
+void BaseCameraClass::_setBinningFactor(const int binningFactor) {
+	auto supportedBinningFactors = _getSupportedBinningFactors();
+	auto it = std::find(supportedBinningFactors.cbegin(), supportedBinningFactors.cend(), binningFactor);
+	if (it != supportedBinningFactors.cend()) {
+		_derivedSetBinningFactor(binningFactor);
+	}
+}
+
+int BaseCameraClass::_getBinningFactor() const {
+	if (_haveBinning) {
+		return _binFactor;
+	} else {
+		return 1;
+	}
 }
 
 void BaseCameraClass::_derivedSetImageCrop(const std::pair<int, int>& crop) {

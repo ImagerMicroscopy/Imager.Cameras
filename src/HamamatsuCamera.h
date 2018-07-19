@@ -39,10 +39,10 @@ public:
 	double getExposureTime() const override;
 
     std::pair<int, int> getActualImageSize() const override;
-    int getBinningFactor() const override;
 
 private:
 	std::pair<int, int> _getSensorSize() const override { return _sensorSize; }
+	int _getBinningFactor() const override;
 	CameraProperty _getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetEMGain(GetOrSetProperty getOrSet, const double value);
 	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);

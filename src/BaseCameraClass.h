@@ -44,11 +44,6 @@ public:
 	
     virtual std::pair<int, int> getActualImageSize() const;
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
-    std::vector<std::pair<int, int>> getSupportedCropSizes() const;
-    void setImageCrop(const std::pair<int, int>& crop);
-    std::vector<int> getSupportedBinningFactors() const;
-    void setBinningFactor(const int binningFactor);
-    virtual int getBinningFactor() const;
 
 	void acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer);
 
@@ -66,10 +61,15 @@ protected:
 	bool setIfRequiredProperty(const CameraProperty& prop);
 
 private:
+	std::vector<std::pair<int, int>> _getSupportedCropSizes() const;
+	void _setImageCrop(const std::pair<int, int>& crop);
+	std::vector<int> _getSupportedBinningFactors() const;
+	void _setBinningFactor(const int binningFactor);
+	virtual int _getBinningFactor() const;
+
 	virtual std::pair<int, int> _getSensorSize() const = 0;
     virtual void _derivedSetImageCrop(const std::pair<int, int>& crop);
     virtual void _derivedSetBinningFactor(const int binningFactor);
-
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
