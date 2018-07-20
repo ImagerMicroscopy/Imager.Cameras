@@ -20,9 +20,10 @@ public:
 	enum IDSPropIDs {
 		PropGainBoost = BaseCameraClass::FirstAvailablePropertyID,
 		PropHardwareGain,
-		PropReadoutSpeed,
-		PropTemperatureSetPoint,
-		PropCoolerOn
+		PropPixelClock,
+		PropHotPixelCorrection,
+		PropAdaptiveHotPixelCorrectionMode,
+		PropAdaptiveHotPixelSensitivity,
 	};
 
     IDSCamera(HIDS camHandle);
@@ -42,6 +43,10 @@ private:
 
 	CameraProperty _getSetGainBoost(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetHardwareGain(GetOrSetProperty getOrSet, const double value);
+	CameraProperty _getSetPixelClock(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetHotPixelCorrection(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetAdaptiveHotPixelCorrectionMode(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetAdaptiveHotPixelCorrectionSensitivity(GetOrSetProperty getOrSet, const double value);
 
 	bool _haveGainBoost() const;
 	bool _haveHotPixelCorrection() const;
@@ -55,6 +60,7 @@ private:
     void _setDefaults();
 
     HIDS _camHandle;
+	std::vector<std::pair<int, std::string>> _supportedPixelClocks;
     std::vector<std::uint16_t> _frameBuffer;
     std::vector<char*> _frameBufferPointers;
     std::vector<int> _frameBufferIDs;
