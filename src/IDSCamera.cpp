@@ -155,7 +155,9 @@ CameraProperty IDSCamera::_getSetPixelClock(GetOrSetProperty getOrSet, const std
 		});
 		if (it == _supportedPixelClocks.cend()) throw std::runtime_error("can't find required pixel clock");
 		int reqClockSpeed = it->first;
+		double currentExposureTime = _getExposureTime();
 		is_PixelClock(_camHandle, IS_PIXELCLOCK_CMD_SET, &reqClockSpeed, sizeof(reqClockSpeed));
+		_setExposureTime(currentExposureTime);	// work around issue where exposure time isn't updated correctly by the SDK
 	}
 
 	int currentClock = 0;
