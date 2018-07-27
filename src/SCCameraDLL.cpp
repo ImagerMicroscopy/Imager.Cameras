@@ -164,6 +164,7 @@ int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
 }
 
 std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
+std::mutex gImagesInFlightMutex;
 
 int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows, int* nCols) {
 	if (!gHaveInit)
@@ -176,7 +177,10 @@ int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows
 		std::tie(*nRows, *nCols) = camPtr->getActualImageSize();
 		size_t nPixels = (size_t)*nRows * (size_t)*nCols * (size_t)nImages;
 		std::shared_ptr<std::uint16_t> buffer(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
-		gImagesInFlight.push_back(buffer);
+		{
+			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+			gImagesInFlight.push_back(buffer);
+		}
 		*bufferPtr = buffer.get();
 		camPtr->acquireImages(nImages, *bufferPtr);
 	}
@@ -213,7 +217,10 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRow
         std::shared_ptr<std::uint16_t> imageData;
         std::tie(imageData, *nRows, *nCols, *timeStamp) = camPtr->getOldestImageAsyncAcquired();
         *imagePtr = imageData.get();
-        gImagesInFlight.push_back(imageData);
+		{
+			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+			gImagesInFlight.push_back(imageData);
+		}
     }
     catch (...) {
         return GENERIC_ERROR;
@@ -227,13 +234,16 @@ void ReleaseImageData(uint16_t* imagePtr) {
 
     try {
         std::shared_ptr<std::uint16_t> imageData;
-        auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [=](const std::shared_ptr<std::uint16_t>& ptr) -> bool {
-            return (ptr.get() == imagePtr);
-        });
-        if (it == gImagesInFlight.end()) {
-            throw std::runtime_error("trying to release unknown image pointer");
-        }
-        gImagesInFlight.erase(it);
+		{
+			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+			auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [=](const std::shared_ptr<std::uint16_t>& ptr) -> bool {
+				return (ptr.get() == imagePtr);
+			});
+			if (it == gImagesInFlight.end()) {
+				throw std::runtime_error("trying to release unknown image pointer");
+			}
+			gImagesInFlight.erase(it);
+		}
     }
     catch (...) {
     }
