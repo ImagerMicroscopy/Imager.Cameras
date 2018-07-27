@@ -57,7 +57,7 @@ void AndorCamera::setCameraProperty(const CameraProperty& prop) {
 	if (setIfRequiredProperty(prop) == true) {
 		return;
 	}
-	switch (prop.getPropertyType()) {
+	switch (prop.getPropertyCode()) {
 		case PropEMGain:
 			_getSetEMGain(SetProperty, prop.getValue());
 			break;
@@ -122,9 +122,15 @@ CameraProperty AndorCamera::_getSetFrameTransferMode(GetOrSetProperty getOrSet, 
 	static const char* kFTOff = "Off";
 	if (getOrSet == SetProperty) {
 		if (mode == kFTOn) {
-			SetFrameTransferMode(1);
+			int result = SetFrameTransferMode(1);
+			if (result == DRV_SUCCESS) {
+				_frameTransferModeOn = true;
+			}
 		} else if (mode == kFTOff) {
-			SetFrameTransferMode(0);
+			int result = SetFrameTransferMode(0);
+			if (result == DRV_SUCCESS) {
+				_frameTransferModeOn = false;
+			}
 		} else {
 			throw std::runtime_error("unknown frame transfer mode specifier");
 		}
@@ -187,7 +193,7 @@ CameraProperty AndorCamera::_getSetVerticalReadoutSpeeds(GetOrSetProperty getOrS
 		int maxIndex = 0;
 		float dummy = 0.0f;
 		result = GetFastestRecommendedVSSpeed(&maxIndex, &dummy);
-		if (result) throw std::runtime_error("error getting fastest V readout speed");
+		if (result != DRV_SUCCESS) throw std::runtime_error("error getting fastest V readout speed");
 		for (int i = 0; i < maxIndex; i += 1) {
 			float speed = 0.0f;
 			int result = GetVSSpeed(i, &speed);
@@ -202,7 +208,7 @@ CameraProperty AndorCamera::_getSetVerticalReadoutSpeeds(GetOrSetProperty getOrS
 		if (it == availableSpeeds.cend()) throw std::runtime_error("couldn't find VS speed");
 		int theIndex = it - availableSpeeds.cbegin();
 		int result = SetVSSpeed(theIndex);
-		if (result) throw std::runtime_error("error setting V readout speed");
+		if (result != DRV_SUCCESS) throw std::runtime_error("error setting V readout speed");
 		_verticalReadoutSpeedIndex = theIndex;
 	}
 	CameraProperty prop(PropVerticalReadoutSpeed, "Vertical readout speed");
@@ -216,8 +222,10 @@ CameraProperty AndorCamera::_getSetTemperatureSetPoint(GetOrSetProperty getOrSet
 		int tempSetpoint = setPoint;
 		GetTemperatureRange(&minTemp, &maxTemp);
 		tempSetpoint = std::min(std::max(tempSetpoint, minTemp), maxTemp);
-		SetTemperature(tempSetpoint);
-		_temperatureSetpoint = tempSetpoint;
+		int result = SetTemperature(tempSetpoint);
+		if (result == DRV_SUCCESS) {
+			_temperatureSetpoint = tempSetpoint;
+		}
 	}
 	CameraProperty prop(PropTemperatureSetPoint, "Temperature setpoint");
 	prop.setNumeric(_temperatureSetpoint);
@@ -276,10 +284,8 @@ void AndorCamera::_setDefaults() {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	result = SetFrameTransferMode(1);			// enable frame transfer
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	_frameTransferModeOn = true;
+	result = SetFrameTransferMode(0);			// disable frame transfer
+	_frameTransferModeOn = false;
 
 	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
 	if (result != DRV_SUCCESS)
