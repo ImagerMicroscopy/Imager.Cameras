@@ -345,7 +345,7 @@ bool HamamatsuCamera::_propertyIsSupported(HDCAM camHandle, int propertyID) cons
 	attr.iProp = propertyID;
 	DCAMERR err = dcamprop_getattr(camHandle, &attr);
 	if (err != DCAMERR_SUCCESS) {
-		throw std::runtime_error("error querying if property is supported");
+		return false;
 	}
 	return (attr.attribute & DCAMPROP_ATTR_WRITABLE);
 }
