@@ -124,8 +124,9 @@ void CameraManager::discoverCameras() {
 #endif
 
 #ifdef WITH_DUMMYCAM
-	std::shared_ptr<BaseCameraClass> dummyCam(new DummyCamera());
-	_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(dummyCam->getIdentifierStr(), dummyCam));
+	_availableCameras.emplace("DummyCam1", new DummyCamera());
+	_availableCameras.emplace("DummyCam2", new DummyCamera());
+
 #endif
 }
 
