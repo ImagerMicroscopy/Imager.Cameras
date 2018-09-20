@@ -29,10 +29,6 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
-	if (_camWaitHandle != nullptr) {
-		dcamwait_close(_camWaitHandle);
-		_camWaitHandle = nullptr;
-	}
 	if (_camHandle != nullptr) {
 		dcamdev_close(_camHandle);
 		_camHandle = nullptr;
@@ -267,6 +263,10 @@ void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
 	DCAMERR err = dcamcap_stop(_camHandle);
 	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("couldn't abort async acq");
+	}
+	if (_camWaitHandle != nullptr) {
+		dcamwait_close(_camWaitHandle);
+		_camWaitHandle = nullptr;
 	}
 
     dcambuf_release(_camHandle);
