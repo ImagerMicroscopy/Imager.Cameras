@@ -46,9 +46,7 @@ public:
 
 	int getAsyncStatus();
 	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
-	bool wasAsyncAcquisitionStarted() const;
     bool isAsyncAcquisitionRunning() const;
-    std::future_status waitForAsyncAcquisitionEnd(int timeoutMillis);
 	void abortAsyncAquisitionIfRunning();
 	int getNImagesAsyncAcquired();
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();

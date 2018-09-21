@@ -36,7 +36,7 @@ private:
 	bool _coolerOn;
 	double _temperature;
 	std::thread _timerThread;
-	bool _abortTimerThread;
+	volatile bool _abortTimerThread;
     std::mutex _imagesQueueMutex;
     std::queue<std::shared_ptr<std::vector<uint16_t>>> _imagesQueue;
 	std::uint16_t _frameCounter;

@@ -109,25 +109,15 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int
 	return 0;
 }
 
-bool BaseCameraClass::wasAsyncAcquisitionStarted() const {
+bool BaseCameraClass::isAsyncAcquisitionRunning() const {
     return (_asyncWorkerFuture.valid());
 }
 
-bool BaseCameraClass::isAsyncAcquisitionRunning() const {
-    return (wasAsyncAcquisitionStarted() && (_asyncWorkerFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout));
-}
-
-std::future_status BaseCameraClass::waitForAsyncAcquisitionEnd(int timeoutMillis) {
-    if (!wasAsyncAcquisitionStarted()) {
-        throw std::runtime_error("BaseCameraClass::waitForAsyncAcquisitionEnd() but no async acquisition has been started");
-    }
-    return _asyncWorkerFuture.wait_for(std::chrono::milliseconds(timeoutMillis));
-}
-
 void BaseCameraClass::abortAsyncAquisitionIfRunning() {
-    if (wasAsyncAcquisitionStarted()) {
+    if (isAsyncAcquisitionRunning()) {
         _asyncWantAbort = true;
-        _asyncWorkerFuture.get();
+		_asyncWorkerFuture.wait();
+		_asyncWorkerFuture.get();
     }
 }
 

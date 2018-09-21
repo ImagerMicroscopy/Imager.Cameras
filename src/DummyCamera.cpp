@@ -60,7 +60,7 @@ void DummyCamera::_derivedStartAsyncAcquisition() {
     while (!_imagesQueue.empty()) {
         _imagesQueue.pop();
     }
-	_timerThread = std::thread([=]() {
+ 	_timerThread = std::thread([=]() {
 		std::int64_t exposureTimeMillis = this->_getExposureTime() * 1000.0;
 		for (;;) {
 			if (this->_abortTimerThread)
@@ -74,6 +74,7 @@ void DummyCamera::_derivedStartAsyncAcquisition() {
 		}
 	});
 }
+
 void DummyCamera::_derivedAbortAsyncAcquisition() {
 	_abortTimerThread = true;
 	if (_timerThread.joinable()) {
@@ -83,6 +84,7 @@ void DummyCamera::_derivedAbortAsyncAcquisition() {
         _imagesQueue.pop();
     }
 }
+
 bool DummyCamera::_derivedNewAsyncAcquisitionImageAvailable() {
     {
         std::lock_guard<std::mutex> guard(_imagesQueueMutex);
