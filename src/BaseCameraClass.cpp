@@ -82,17 +82,6 @@ void BaseCameraClass::acquireImages(const unsigned int nImagesToAcquire, std::ui
 	}
 }
 
-int BaseCameraClass::getAsyncStatus() {
-	if (!_asyncErrorStr.empty()) {
-		return -1;
-	}
-    if (!isAsyncAcquisitionRunning()) {
-		return 0;
-	} else {
-		return 1;
-	}
-}
-
 int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
     abortAsyncAquisitionIfRunning();
 	_asyncErrorStr.clear();
@@ -102,7 +91,7 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int
 
     _acquisitionStartTimeStamp = _getTimeStamp();
 
-    _asyncWorkerFuture = std::async(std::launch::async, [=]() {
+	_asyncWorkerFuture = std::async(std::launch::async, [=]() {
 		_asyncAcquisitionWorker(acqMode, nImagesToAcquire);
 	});
 
@@ -114,11 +103,12 @@ bool BaseCameraClass::isAsyncAcquisitionRunning() const {
 }
 
 void BaseCameraClass::abortAsyncAquisitionIfRunning() {
-    if (isAsyncAcquisitionRunning()) {
-        _asyncWantAbort = true;
+	std::lock_guard<std::mutex> lock(_asyncAbortMutex);
+	if (isAsyncAcquisitionRunning()) {
+		_asyncWantAbort = true;
 		_asyncWorkerFuture.wait();
 		_asyncWorkerFuture.get();
-    }
+	}
 }
 
 int BaseCameraClass::getNImagesAsyncAcquired() {
@@ -282,6 +272,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
         });
         CleanupRunner ipRunner([&]() {
             processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>());
+			imageProcessingFuture.wait();
             imageProcessingFuture.get();
         });
 
