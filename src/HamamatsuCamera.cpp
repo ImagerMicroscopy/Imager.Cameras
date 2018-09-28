@@ -10,7 +10,14 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_camHandle(camHandle),
 	_camWaitHandle(nullptr)
 {
-	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL);// +" (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
+	std::string fullName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL);
+	auto pos = fullName.find(' ');
+	if (pos != std::string::npos) {
+		_camName = fullName.substr(0, pos);
+	}
+	else {
+		_camName = fullName;
+	}
 	
 	_setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD, true);
 
