@@ -375,7 +375,7 @@ double HamamatsuCamera::_getPropertyValue(HDCAM camHandle, int propertyID, bool 
 
 void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double value, bool ignoreErrors) const {
 	DCAMERR err = dcamprop_setvalue(camHandle, propertyID, value);
-	if ((err != DCAMERR_SUCCESS) && !ignoreErrors) {
+	if ((err != DCAMERR_SUCCESS) && (err != DCAMERR_BUSY) && (err != DCAMERR_NOTSTABLE) && !ignoreErrors) {
 		throw std::runtime_error("error setting dcam property value");
 	}
 }
