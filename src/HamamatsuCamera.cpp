@@ -10,7 +10,7 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	_camHandle(camHandle),
 	_camWaitHandle(nullptr)
 {
-	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL) + " (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
+	_camName = _getDCAMString(_camHandle, DCAM_IDSTR_MODEL);// +" (" + _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID) + ")";
 	
 	_setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD, true);
 
@@ -25,7 +25,7 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, _sensorSize.second);
 
 	_setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY, DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE);
-	_setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__EXPOSURE);
+	_setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__EXPOSURE, true);
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
@@ -64,9 +64,12 @@ void HamamatsuCamera::setCameraProperty(const CameraProperty& prop) {
 	if (setIfRequiredProperty(prop) == true) {
 		return;
 	}
-	switch (prop.getPropertyType()) {
+	switch (prop.getPropertyCode()) {
 		case PropEMMode:
 			_getSetEMMode(SetProperty, prop.getCurrentOption());
+			break;
+		case PropEMGain:
+			_getSetEMGain(SetProperty, prop.getValue());
 			break;
 		case PropReadoutSpeed:
 			_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
@@ -341,10 +344,10 @@ std::string HamamatsuCamera::_getDCAMString(HDCAM camHandle, int stringID) const
 
 bool HamamatsuCamera::_propertyIsSupported(HDCAM camHandle, int propertyID) const {
 	DCAMPROP_ATTR attr = { 0 };
-	attr.cbSize = sizeof(attr);
+	attr.cbSize = sizeof(DCAMPROP_ATTR);
 	attr.iProp = propertyID;
 	DCAMERR err = dcamprop_getattr(camHandle, &attr);
-	if (err != DCAMERR_SUCCESS) {
+	if ((err != DCAMERR_SUCCESS) && (err != sizeof(DCAMPROP_ATTR))) {
 		return false;
 	}
 	return (attr.attribute & DCAMPROP_ATTR_WRITABLE);
@@ -373,9 +376,10 @@ void HamamatsuCamera::_setPropertyValue(HDCAM camHandle, int propertyID, double 
 std::pair<double, double> HamamatsuCamera::_getPropertyLimits(HDCAM camHandle, int propertyID) const {
 	DCAMERR err;
 	DCAMPROP_ATTR attr = { 0 };
+	attr.cbSize = sizeof(DCAMPROP_ATTR);
 	attr.iProp = propertyID;
 	err = dcamprop_getattr(camHandle, &attr);
-	if (err != DCAMERR_SUCCESS) {
+	if ((err != DCAMERR_SUCCESS) && (err != sizeof(DCAMPROP_ATTR))) {
 		throw std::runtime_error("error get dcam property limits");
 	}
 	return std::pair<double, double>(attr.valuemin, attr.valuemax);
