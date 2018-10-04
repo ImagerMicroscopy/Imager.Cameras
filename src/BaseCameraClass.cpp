@@ -59,7 +59,7 @@ void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<I
 void BaseCameraClass::acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer) {
 	startAsyncAcquisition(AcqFillAndStop, nImagesToAcquire);
     size_t offsetInBytes = 0;
-    for (int nImagesAcquired = 0; nImagesAcquired < nImagesToAcquire; ) {
+    for (int nImagesAcquired = 0; nImagesAcquired < nImagesToAcquire; nImagesAcquired += 1) {
         #ifdef WITH_IGOR
         if (SpinProcess()) {
             abortAsyncAquisitionIfRunning();
@@ -71,14 +71,9 @@ void BaseCameraClass::acquireImages(const unsigned int nImagesToAcquire, std::ui
         int nRows, nCols;
         double timeStamp;
         std::tie(imageData, nRows, nCols, timeStamp) = getOldestImageAsyncAcquired();
-        if (imageData.get() == nullptr) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            continue;
-        }
         size_t nBytesInImage = nRows * nCols * sizeof(std::uint16_t);
         memcpy(reinterpret_cast<std::uint8_t*>(outputBuffer) + offsetInBytes, imageData.get(), nBytesInImage);
         offsetInBytes += nBytesInImage;
-        nImagesAcquired += 1;
 	}
 }
 
