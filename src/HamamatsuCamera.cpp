@@ -237,32 +237,33 @@ void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 	
 	if (_frameBuffer.empty()) {
 		_frameBuffer.resize(nPixelsInImage * kHamamatsuImagesInBuffer);
-
-		std::uint16_t* bufferPtrs[kHamamatsuImagesInBuffer];
-		for (int i = 0; i < kHamamatsuImagesInBuffer; i++) {
-			bufferPtrs[i] = _frameBuffer.data() + i * nPixelsInImage;
-		}
-		DCAMBUF_ATTACH attachParams = { 0 };
-		attachParams.size = sizeof(attachParams);
-		attachParams.iKind = DCAMBUF_ATTACHKIND_FRAME;
-		attachParams.buffer = reinterpret_cast<void**>(&bufferPtrs);
-		attachParams.buffercount = kHamamatsuImagesInBuffer;
-		err = dcambuf_attach(_camHandle, &attachParams);
-		if (err != DCAMERR_SUCCESS) {
-			throw std::runtime_error("couldn't attach buffers");
-		}
 	}
 
-	if (_camWaitHandle == nullptr) {
-		DCAMWAIT_OPEN waitParams = { 0 };
-		waitParams.size = sizeof(DCAMWAIT_OPEN);
-		waitParams.hdcam = _camHandle;
-		err = dcamwait_open(&waitParams);
-		if (err != DCAMERR_SUCCESS) {
-			throw std::runtime_error("couldn't get wait handle");
-		}
-		_camWaitHandle = waitParams.hwait;
+	std::uint16_t* bufferPtrs[kHamamatsuImagesInBuffer];
+	for (int i = 0; i < kHamamatsuImagesInBuffer; i++) {
+		bufferPtrs[i] = _frameBuffer.data() + i * nPixelsInImage;
 	}
+	DCAMBUF_ATTACH attachParams = { 0 };
+	attachParams.size = sizeof(attachParams);
+	attachParams.iKind = DCAMBUF_ATTACHKIND_FRAME;
+	attachParams.buffer = reinterpret_cast<void**>(&bufferPtrs);
+	attachParams.buffercount = kHamamatsuImagesInBuffer;
+	err = dcambuf_attach(_camHandle, &attachParams);
+	if (err != DCAMERR_SUCCESS) {
+		throw std::runtime_error("couldn't attach buffers");
+	}
+
+	if (_camWaitHandle != nullptr) {
+		throw std::runtime_error("camWaitHandle is non-null");
+	}
+	DCAMWAIT_OPEN waitParams = { 0 };
+	waitParams.size = sizeof(DCAMWAIT_OPEN);
+	waitParams.hdcam = _camHandle;
+	err = dcamwait_open(&waitParams);
+	if (err != DCAMERR_SUCCESS) {
+		throw std::runtime_error("couldn't get wait handle");
+	}
+	_camWaitHandle = waitParams.hwait;
 
 	err = dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
 	if (err != DCAMERR_SUCCESS) {
@@ -276,10 +277,9 @@ void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
 	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("couldn't abort async acq");
 	}
-	if (_camWaitHandle != nullptr) {
-		dcamwait_close(_camWaitHandle);
-		_camWaitHandle = nullptr;
-	}
+	dcamwait_close(_camWaitHandle);
+	_camWaitHandle = nullptr;
+	dcambuf_release(_camHandle);
 }
 
 bool HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
