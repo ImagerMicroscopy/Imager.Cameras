@@ -98,7 +98,6 @@ bool BaseCameraClass::isAsyncAcquisitionRunning() const {
 }
 
 void BaseCameraClass::abortAsyncAquisitionIfRunning() {
-	std::lock_guard<std::mutex> lock(_asyncAbortMutex);
 	if (isAsyncAcquisitionRunning()) {
 		_asyncWantAbort = true;
 		_asyncWorkerFuture.wait();

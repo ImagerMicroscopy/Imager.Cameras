@@ -96,7 +96,6 @@ private:
 	int _asyncNImagesStored;
     moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> _availableImagesQueue;
     std::future<void> _asyncWorkerFuture;
-	std::mutex _asyncAbortMutex;
 };
 
 #endif
