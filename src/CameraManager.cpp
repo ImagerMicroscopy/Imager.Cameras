@@ -87,10 +87,13 @@ void CameraManager::discoverCameras() {
 	paraminit.size = sizeof(paraminit);
 	DCAMERR	dcamErr;
 	dcamErr = dcamapi_init( &paraminit );
-	if (dcamErr != DCAMERR_SUCCESS) {
-		throw std::runtime_error("can't initial DCAM api");
+	if ((dcamErr != DCAMERR_SUCCESS) && (dcamErr != DCAMERR_NOCAMERA)) {
+		throw std::runtime_error("can't initialize DCAM api");
 	}
 	int nCameras = paraminit.iDeviceCount;
+	if (dcamErr = DCAMERR_NOCAMERA) {
+		nCameras = 0;
+	}
 	for (int i = 0; i < nCameras; ++i) {
 		DCAMDEV_OPEN devOpen = { 0 };
 		devOpen.index = i;
