@@ -57,15 +57,31 @@ void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<I
 }
 
 std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleImage() {
-	std::shared_ptr<std::uint16_t> imageData;
-	int nRows, nCols;
-	double timeStamp;
-	
-	startAsyncAcquisition(AcqFillAndStop, 1);
-	std::tie(imageData, nRows, nCols, timeStamp) = getOldestImageAsyncAcquired();
 	abortAsyncAquisitionIfRunning();
-	
-	return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
+	if (!_hasCustomAcquireSingleImage()) {
+		std::shared_ptr<std::uint16_t> imageData;
+		int nRows, nCols;
+		double timeStamp;
+
+		startAsyncAcquisition(AcqFillAndStop, 1);
+		std::tie(imageData, nRows, nCols, timeStamp) = getOldestImageAsyncAcquired();
+		abortAsyncAquisitionIfRunning();
+
+		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
+	} else {
+		static std::vector<std::uint16_t> imageBuffer;
+		auto sensorSize = _getSensorSize();
+		if (imageBuffer.size() != sensorSize.first * sensorSize.second) {
+			imageBuffer.resize(sensorSize.first * sensorSize.second);
+		}
+		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
+		_derivedAcquireSingleImage(imageBuffer.data(), imageBuffer.size() * sizeof(std::uint16_t));
+
+		size_t nOutputRows, nOutputCols;
+		std::shared_ptr<std::uint16_t> imageData(imageBuffer.data(), [=](auto ptr) {; });
+		imageData = _processImage(sensorSize.first, sensorSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
+		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, (int)nOutputRows, (int)nOutputCols);
+	}
 }
 
 int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
@@ -235,20 +251,9 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
     auto desiredImageSize = getActualImageSize();
     auto sensorSize = _getSensorSize();
     auto inputImageSize = (_usesSoftwareCroppingAndBinning()) ? sensorSize : desiredImageSize;
-    bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
-    bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);
 
 	try {
-        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
-        if (needSoftwareCrop) {
-            imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_croppedImageSize.first, _croppedImageSize.second)));
-        }
-        if (needSoftwareBinning) {
-            imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_binFactor)));
-        }
-        for (const auto& pd : _imageOrientationOps) {
-            imageProcessingDescriptors.push_back(pd);
-        }
+		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
 
         moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> processingQueue;
         _processingAsyncHasError = false;
@@ -300,48 +305,6 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
 	}
 }
 
-void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-                                             moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue) {
-    try {
-        std::shared_ptr<std::uint16_t> inputImage;
-        double timeStamp;
-        std::pair<std::shared_ptr<std::uint16_t>, double> queuedData;
-
-        for (; ; ) {
-            queue.wait_dequeue(queuedData);
-            std::tie(inputImage, timeStamp) = queuedData;
-            if (inputImage.get() == nullptr) {
-                return;
-            }
-
-            size_t nInputRows = nRows, nInputCols = nCols;
-            size_t nOutputRows = nRows, nOutputCols = nCols;
-			std::shared_ptr<std::uint16_t> outputImage = _processImage(nInputRows, nInputCols, inputImage, processingDescriptors, nOutputRows, nOutputCols);
-            std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData(outputImage, nOutputRows, nOutputCols, timeStamp);
-            _availableImagesQueue.enqueue(imageData);
-        }
-    }
-    catch (...) {
-        _processingAsyncHasError = true;
-        return;
-    }
-}
-
-std::shared_ptr<std::uint16_t> BaseCameraClass::_processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-															  size_t& nOutputRows, size_t& nOutputCols) {
-	size_t nInputRows = nRows, nInputCols = nCols;
-	nOutputRows = nRows;
-	nOutputCols = nCols;
-	std::shared_ptr<std::uint16_t> outputImage = inputImage;
-	for (const auto& pd : processingDescriptors) {
-		nInputRows = nOutputRows;
-		nInputCols = nOutputCols;
-		inputImage = outputImage;
-		outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
-	}
-	return outputImage;
-}
-
 void BaseCameraClass::_clearAvailableImagesQueue() {
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> dummy;
     bool hadValue = false;
@@ -362,6 +325,65 @@ bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
+}
+
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getImageProcessingDescriptors() {
+	bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
+	bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);
+
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
+	if (needSoftwareCrop) {
+		imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_croppedImageSize.first, _croppedImageSize.second)));
+	}
+	if (needSoftwareBinning) {
+		imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_binFactor)));
+	}
+	for (const auto& pd : _imageOrientationOps) {
+		imageProcessingDescriptors.push_back(pd);
+	}
+	return imageProcessingDescriptors;
+}
+
+void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
+											 moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue) {
+	try {
+		std::shared_ptr<std::uint16_t> inputImage;
+		double timeStamp;
+		std::pair<std::shared_ptr<std::uint16_t>, double> queuedData;
+
+		for (; ; ) {
+			queue.wait_dequeue(queuedData);
+			std::tie(inputImage, timeStamp) = queuedData;
+			if (inputImage.get() == nullptr) {
+				return;
+			}
+
+			size_t nInputRows = nRows, nInputCols = nCols;
+			size_t nOutputRows = nRows, nOutputCols = nCols;
+			std::shared_ptr<std::uint16_t> outputImage = _processImage(nInputRows, nInputCols, inputImage, processingDescriptors, nOutputRows, nOutputCols);
+			std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData(outputImage, nOutputRows, nOutputCols, timeStamp);
+			_availableImagesQueue.enqueue(imageData);
+		}
+	}
+	catch (...) {
+		_processingAsyncHasError = true;
+		return;
+	}
+}
+
+std::shared_ptr<std::uint16_t> BaseCameraClass::_processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
+															  size_t& nOutputRows, size_t& nOutputCols) {
+	size_t nInputRows = nRows, nInputCols = nCols;
+	nOutputRows = nRows;
+	nOutputCols = nCols;
+	std::shared_ptr<std::uint16_t> outputImage = inputImage;
+	for (const auto& pd : processingDescriptors) {
+		nInputRows = nOutputRows;
+		nInputCols = nOutputCols;
+		inputImage = outputImage;
+		outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
+	}
+	return outputImage;
 }
 
 std::shared_ptr<std::uint16_t> BaseCameraClass::_doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, 

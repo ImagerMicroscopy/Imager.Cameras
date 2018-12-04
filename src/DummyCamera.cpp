@@ -55,6 +55,19 @@ std::shared_ptr<std::vector<uint16_t>> DummyCamera::_generateNewImage() {
     return buf;
 }
 
+void DummyCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
+	auto sensorSize = _getSensorSize();
+	int nPixels = sensorSize.first * sensorSize.second;
+	if (nBytes != nPixels * sizeof(std::uint16_t)) {
+		throw std::runtime_error("invalid buffer size to _derivedAcquireSingleImage()");
+	}
+
+	for (int i = 0; i < nPixels; i++) {
+		bufferForThisImage[i] = _frameCounter + i;
+	}
+	_frameCounter += 1;
+}
+
 void DummyCamera::_derivedStartAsyncAcquisition() {
 	_abortTimerThread = false;
     while (!_imagesQueue.empty()) {

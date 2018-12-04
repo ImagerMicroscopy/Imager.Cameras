@@ -26,6 +26,9 @@ private:
 	double _getExposureTime() const override { return _exposureTime; };
     std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
 
+	bool _hasCustomAcquireSingleImage() const override { return true; }
+	void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	bool _derivedNewAsyncAcquisitionImageAvailable() override;
