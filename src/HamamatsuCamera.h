@@ -9,7 +9,7 @@
 #include "windows.h"
 #include "Hamamatsu/dcamapi4.h"
 
-const int kHamamatsuImagesInBuffer = 15;
+const int kHamamatsuImagesInBuffer = 10;
 
 class HamamatsuCamera : public BaseCameraClass {
 public:
@@ -53,12 +53,18 @@ private:
 
     bool _usesSoftwareCroppingAndBinning() const override  { return false; };
 
+	bool _hasCustomAcquireSingleImage() const override { return true; }
+	void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	bool _waitForNewImageWithTimeout(int timeoutMillis) override;
 	bool _derivedNewAsyncAcquisitionImageAvailable() override;
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
+	void _attachBuffers(std::uint16_t** bufPtrs, int nBuffers);
+	void _initializeCamWaitHandle();
+	void _releaseCamWaitHandle();
 	std::string _getDCAMString(HDCAM camHandle, int stringID) const;
 	bool _propertyIsSupported(HDCAM camHandle, int propertyID) const;
 	double _getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors = false) const;
