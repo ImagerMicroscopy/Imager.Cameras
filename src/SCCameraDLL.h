@@ -39,7 +39,7 @@ extern "C" {
 
     LIBSPEC int SetImageOrientation(char* cameraName, int* orientationOps, int nOps);
     
-	LIBSPEC int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows, int* nCols);
+	LIBSPEC int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols);
 
 	LIBSPEC int StartAsyncAcquisition(char* cameraName);
     LIBSPEC int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp);

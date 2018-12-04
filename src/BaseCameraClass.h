@@ -42,7 +42,7 @@ public:
 	virtual double getFrameRate() const = 0;
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
 
-	void acquireImages(const unsigned int nImagesToAcquire, std::uint16_t* outputBuffer);
+	virtual std::tuple<std::shared_ptr<uint16_t>, int, int> acquireSingleImage();
 
 	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
     bool isAsyncAcquisitionRunning() const;
@@ -69,8 +69,10 @@ private:
     virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
-    void _imageProcessingWorker(const size_t nRows, const size_t nCols, std::vector<std::shared_ptr<ImageProcessingDescriptor>> processingDescriptors,
+    void _imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
                                 moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue);
+	std::shared_ptr<std::uint16_t> _processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
+												 size_t& nOutputRows, size_t& nOutputCols);
     void _clearAvailableImagesQueue();
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;

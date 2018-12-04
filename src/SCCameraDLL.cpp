@@ -166,7 +166,7 @@ int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
 std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 std::mutex gImagesInFlightMutex;
 
-int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows, int* nCols) {
+int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -174,15 +174,14 @@ int AcquireImages(char* cameraName, int nImages, uint16_t**bufferPtr, int* nRows
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		std::tie(*nRows, *nCols) = camPtr->getActualImageSize();
-		size_t nPixels = (size_t)*nRows * (size_t)*nCols * (size_t)nImages;
-		std::shared_ptr<std::uint16_t> buffer(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
+
+		std::shared_ptr<std::uint16_t> imageData;
+		std::tie(imageData, *nRows, *nCols) = camPtr->acquireSingleImage();
+		*imagePtr = imageData.get();
 		{
 			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
-			gImagesInFlight.push_back(buffer);
+			gImagesInFlight.push_back(imageData);
 		}
-		*bufferPtr = buffer.get();
-		camPtr->acquireImages(nImages, *bufferPtr);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
