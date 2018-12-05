@@ -407,10 +407,32 @@ std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 	return message;
 }
 
+void AndorCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
+	auto imageSize = getActualImageSize();
+	int nPixelsInImage = imageSize.first * imageSize.second;
+
+	if (nBytes != (nPixelsInImage * sizeof(std::uint16_t))) {
+		throw std::runtime_error("invalid number of bytes in _derivedAcquireSingleImage()");
+	}
+
+	int err = SetAcquisitionMode(1);	// single scan
+	if (err != DRV_SUCCESS) throw std::runtime_error("Can't set single scan mode");
+
+	err = StartAcquisition();
+	if (err != DRV_SUCCESS) throw std::runtime_error("Can't start single acquisition");
+	err = WaitForAcquisition();
+	if (err != DRV_SUCCESS) throw std::runtime_error("Error waiting for single acquisition");
+	err = GetMostRecentImage16(bufferForThisImage, nBytes / 2);
+	if (err != DRV_SUCCESS) throw std::runtime_error("Error calling GetMostRecentImage16() in single acquisition");
+}
+
 void AndorCamera::_derivedStartAsyncAcquisition() {
 	int result;
 	_numberOfImagesDelivered = 0;
 
+	result = SetAcquisitionMode(5);				// run till abort
+	if (result != DRV_SUCCESS)
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
 	result = SetKineticCycleTime(0.0);			// grab frames as fast as they come
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
