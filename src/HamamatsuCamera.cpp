@@ -247,10 +247,11 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 		throw std::runtime_error("couldn't start snap acq");
 	}
 
+	int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
 	DCAMWAIT_START waitParams = { 0 };
 	waitParams.size = sizeof(DCAMWAIT_START);
-	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
-	waitParams.timeout = DCAMWAIT_TIMEOUT_INFINITE;
+	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY | DCAMWAIT_CAPEVENT_STOPPED;
+	waitParams.timeout = waitMillis;
 	err = dcamwait_start(_camWaitHandle, &waitParams);
 	
 	_releaseCamWaitHandle();
