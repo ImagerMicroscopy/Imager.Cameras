@@ -71,11 +71,12 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
 	} else {
 		static std::vector<std::uint16_t> imageBuffer;
 		auto imageSize = getActualImageSize();
-		if (imageBuffer.size() < imageSize.first * imageSize.second) {
-			imageBuffer.resize(imageSize.first * imageSize.second);
+		int nPixels = imageSize.first * imageSize.second;
+		if (imageBuffer.size() < nPixels) {
+			imageBuffer.resize(nPixels);
 		}
 		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
-		_derivedAcquireSingleImage(imageBuffer.data(), imageBuffer.size() * sizeof(std::uint16_t));
+		_derivedAcquireSingleImage(imageBuffer.data(), nPixels * sizeof(std::uint16_t));
 
 		size_t nOutputRows, nOutputCols;
 		std::shared_ptr<std::uint16_t> imageData(imageBuffer.data(), [=](auto ptr) {; });
