@@ -70,16 +70,16 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
 		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
 	} else {
 		static std::vector<std::uint16_t> imageBuffer;
-		auto sensorSize = _getSensorSize();
-		if (imageBuffer.size() != sensorSize.first * sensorSize.second) {
-			imageBuffer.resize(sensorSize.first * sensorSize.second);
+		auto imageSize = getActualImageSize();
+		if (imageBuffer.size() < imageSize.first * imageSize.second) {
+			imageBuffer.resize(imageSize.first * imageSize.second);
 		}
 		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
 		_derivedAcquireSingleImage(imageBuffer.data(), imageBuffer.size() * sizeof(std::uint16_t));
 
 		size_t nOutputRows, nOutputCols;
 		std::shared_ptr<std::uint16_t> imageData(imageBuffer.data(), [=](auto ptr) {; });
-		imageData = _processImage(sensorSize.first, sensorSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
+		imageData = _processImage(imageSize.first, imageSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
 		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, (int)nOutputRows, (int)nOutputCols);
 	}
 }
