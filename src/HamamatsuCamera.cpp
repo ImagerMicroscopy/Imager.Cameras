@@ -236,7 +236,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 	DCAMERR err;
 
 	if (nBytes != nPixelsInImage * sizeof(std::uint16_t)) {
-		throw std::runtime_error("incorrect buffer dimensions ins _derivedAcquireSingleImage()");
+		throw std::runtime_error("incorrect buffer dimensions in _derivedAcquireSingleImage()");
 	}
 
 	_attachBuffers(&bufferForThisImage, 1);
@@ -250,13 +250,12 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 	int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
 	DCAMWAIT_START waitParams = { 0 };
 	waitParams.size = sizeof(DCAMWAIT_START);
-	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY | DCAMWAIT_CAPEVENT_STOPPED;
+	waitParams.eventmask = DCAMWAIT_CAPEVENT_STOPPED;
 	waitParams.timeout = waitMillis;
 	err = dcamwait_start(_camWaitHandle, &waitParams);
 	
 	_releaseCamWaitHandle();
 	dcambuf_release(_camHandle);
-
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
