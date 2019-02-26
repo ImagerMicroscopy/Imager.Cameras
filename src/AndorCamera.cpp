@@ -12,18 +12,20 @@
 #include "Utils.h"
 
 #ifdef WITH_IGOR
-	#include "XOPStandardHeaders.h"
+#include "XOPStandardHeaders.h"
 #endif
 AndorCamera::AndorCamera() :
 	_horizontalReadoutSpeedIndex(0),
 	_verticalReadoutSpeedIndex(0),
-	_temperatureSetpoint(0)
+	_temperatureSetpoint(0),
+	_desiredBinningFactor(1)
 {
 	int err = Initialize(nullptr);
 	if (err != DRV_SUCCESS)
 		throw std::runtime_error("No Andor camera");
 
 	_setDefaults();
+	_desiredCropSize = _getSensorSize();
 }
 
 AndorCamera::~AndorCamera() {
@@ -58,27 +60,34 @@ void AndorCamera::setCameraProperty(const CameraProperty& prop) {
 		return;
 	}
 	switch (prop.getPropertyCode()) {
-		case PropEMGain:
-			_getSetEMGain(SetProperty, prop.getValue());
-			break;
-		case PropFrameTransferMode:
-			_getSetFrameTransferMode(SetProperty, prop.getCurrentOption());
-			break;
-		case PropVerticalReadoutSpeed:
-			_getSetVerticalReadoutSpeeds(SetProperty, prop.getCurrentOption());
-			break;
-		case PropHorizontalReadoutSpeed:
-			_getSetHorizontalReadoutSpeeds(SetProperty, prop.getCurrentOption());
-			break;
-		case PropTemperatureSetPoint:
-			_getSetTemperatureSetPoint(SetProperty, prop.getValue());
-			break;
-		case PropCoolerOn:
-			_getSetCoolerOn(SetProperty, prop.getCurrentOption());
-			break;
-		default:
-			throw std::runtime_error("setting unrecognized option");
+	case PropEMGain:
+		_getSetEMGain(SetProperty, prop.getValue());
+		break;
+	case PropFrameTransferMode:
+		_getSetFrameTransferMode(SetProperty, prop.getCurrentOption());
+		break;
+	case PropVerticalReadoutSpeed:
+		_getSetVerticalReadoutSpeeds(SetProperty, prop.getCurrentOption());
+		break;
+	case PropHorizontalReadoutSpeed:
+		_getSetHorizontalReadoutSpeeds(SetProperty, prop.getCurrentOption());
+		break;
+	case PropTemperatureSetPoint:
+		_getSetTemperatureSetPoint(SetProperty, prop.getValue());
+		break;
+	case PropCoolerOn:
+		_getSetCoolerOn(SetProperty, prop.getCurrentOption());
+		break;
+	default:
+		throw std::runtime_error("setting unrecognized option");
 	}
+}
+
+std::pair<int, int> AndorCamera::getActualImageSize() const {
+	auto size = _desiredCropSize;
+	size.first /= _desiredBinningFactor;
+	size.second /= _desiredBinningFactor;
+	return size;
 }
 
 double AndorCamera::getFrameRate() const {
@@ -126,16 +135,18 @@ CameraProperty AndorCamera::_getSetFrameTransferMode(GetOrSetProperty getOrSet, 
 			if (result == DRV_SUCCESS) {
 				_frameTransferModeOn = true;
 			}
-		} else if (mode == kFTOff) {
+		}
+		else if (mode == kFTOff) {
 			int result = SetFrameTransferMode(0);
 			if (result == DRV_SUCCESS) {
 				_frameTransferModeOn = false;
 			}
-		} else {
+		}
+		else {
 			throw std::runtime_error("unknown frame transfer mode specifier");
 		}
 	}
-	
+
 	CameraProperty prop(PropFrameTransferMode, "Frame transfer");
 	const char* currentOption = (_frameTransferModeOn) ? kFTOn : kFTOff;
 	prop.setDiscrete(currentOption, { kFTOff, kFTOn });
@@ -238,9 +249,11 @@ CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std
 	if (getOrSet == SetProperty) {
 		if (mode == kOn) {
 			CoolerON();
-		} else if (mode == kOff) {
+		}
+		else if (mode == kOff) {
 			CoolerOFF();
-		} else {
+		}
+		else {
 			throw std::runtime_error("unknown cooler mode specifier");
 		}
 	}
@@ -268,6 +281,33 @@ double AndorCamera::_getExposureTime() const {
 	return exposureTime;
 }
 
+void AndorCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {
+	_desiredCropSize = crop;
+
+	_setCroppingAndBinning(_desiredCropSize, _desiredBinningFactor);
+}
+
+void AndorCamera::_derivedSetBinningFactor(const int binningFactor) {
+	_desiredBinningFactor = binningFactor;
+
+	_setCroppingAndBinning(_desiredCropSize, _desiredBinningFactor);
+}
+
+int AndorCamera::_getBinningFactor() const {
+	return _desiredBinningFactor;
+}
+
+void AndorCamera::_setCroppingAndBinning(const std::pair<int, int>& crop, const int binningFactor) {
+	std::pair<int, int> sensorSize = _getSensorSize();
+	int offsetX = (sensorSize.first - crop.first) / 2;
+	int offsetY = (sensorSize.second - crop.second) / 2;
+
+	int result = SetImage(binningFactor, binningFactor, offsetX + 1, offsetX + crop.first, offsetY + 1, offsetY + crop.second);
+	if (result != DRV_SUCCESS) {
+		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	}
+}
+
 void AndorCamera::_setDefaults() {
 	int result;
 
@@ -278,6 +318,8 @@ void AndorCamera::_setDefaults() {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	std::pair<int, int> sensorSize = _getSensorSize();	// use the full chip, no binning
+	_desiredCropSize = sensorSize;
+	_desiredBinningFactor = 1;
 	result = SetImage(1, 1, 1, sensorSize.second, 1, sensorSize.first);
 
 	result = SetAcquisitionMode(3);				// set kinetics mode
@@ -296,14 +338,14 @@ void AndorCamera::_setDefaults() {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	result = SetEMGainMode(0);					// EM Gain is controlled by DAC settings in the range 0-255
-	//if (result != DRV_SUCCESS)
-	//	throw std::runtime_error(_andorErrorCodeToMessage(result));
+												//if (result != DRV_SUCCESS)
+												//	throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	result = SetOutputAmplifier(0);				// use EMCCD gain register
-	//if (result != DRV_SUCCESS)
-	//	throw std::runtime_error(_andorErrorCodeToMessage(result));
+												//if (result != DRV_SUCCESS)
+												//	throw std::runtime_error(_andorErrorCodeToMessage(result));
 
-	// select fastest horizontal and vertical readout speeds
+												// select fastest horizontal and vertical readout speeds
 	CameraProperty prop = _getSetHorizontalReadoutSpeeds(GetProperty, std::string());
 	_getSetHorizontalReadoutSpeeds(SetProperty, prop.getAvailableOptions().at(prop.getAvailableOptions().size() - 1));
 	prop = _getSetVerticalReadoutSpeeds(GetProperty, std::string());
@@ -338,70 +380,70 @@ void AndorCamera::_setDefaults() {
 std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 	std::string message;
 	switch (errorCode) {
-		case DRV_SUCCESS:
-			message = "no error";
-			break;
-		case DRV_VXDNOTINSTALLED:
-			message = "VxD not loaded";
-			break;
-		case DRV_INIERROR:
-			message = "unable to load DETECTOR.INI";
-			break;
-		case DRV_COFERROR:
-			message = "unable to load *.COF";
-			break;
-		case DRV_FLEXERROR:
-			message = "unable to load *.RBF";
-			break;
-		case DRV_ERROR_ACK:
-			message = "unable to communicate with card";
-			break;
-		case DRV_ERROR_FILELOAD:
-			message = "unable to load *.COF or *.RBF files";
-			break;
-		case DRV_ERROR_PAGELOCK:
-			message = "unable to acquire lock on requested memory";
-			break;
-		case DRV_USBERROR:
-			message = "unable to detect USB device or not USB2.0";
-			break;
-		case DRV_ERROR_NOCAMERA:
-			message = "no camera found";
-			break;
-		case DRV_NOT_INITIALIZED:
-			message = "system not initialized";
-			break;
-		case DRV_ACQUIRING:
-			message = "acquisition in progress";
-			break;
-		case DRV_P1INVALID:
-			message = "parameter 1 invalid";	// context-specific
-			break;
-		case DRV_ACQUISITION_ERRORS:
-			message = "acquisition settings invalid";
-			break;
-		case DRV_INVALID_FILTER:
-			message = "filter not available for current acquisition";
-			break;
-		case DRV_BINNING_ERROR:
-			message = "range not multiple of current binning";
-			break;
-		case DRV_SPOOLSETUPERROR:
-			message = "error with spool settings";
-			break;
-		case DRV_TEMPERATURE_NOT_STABILIZED:
-			message = "temperature not stabilized";
-			break;
-		case DRV_TEMP_OFF:
-			message = "temperature is OFF";
-			break;
-		default:
-		{
-				   char buf[128];
-				   sprintf_s(buf, "andor error code %d", errorCode);
-				   message = buf;
-				   break;
-		}
+	case DRV_SUCCESS:
+		message = "no error";
+		break;
+	case DRV_VXDNOTINSTALLED:
+		message = "VxD not loaded";
+		break;
+	case DRV_INIERROR:
+		message = "unable to load DETECTOR.INI";
+		break;
+	case DRV_COFERROR:
+		message = "unable to load *.COF";
+		break;
+	case DRV_FLEXERROR:
+		message = "unable to load *.RBF";
+		break;
+	case DRV_ERROR_ACK:
+		message = "unable to communicate with card";
+		break;
+	case DRV_ERROR_FILELOAD:
+		message = "unable to load *.COF or *.RBF files";
+		break;
+	case DRV_ERROR_PAGELOCK:
+		message = "unable to acquire lock on requested memory";
+		break;
+	case DRV_USBERROR:
+		message = "unable to detect USB device or not USB2.0";
+		break;
+	case DRV_ERROR_NOCAMERA:
+		message = "no camera found";
+		break;
+	case DRV_NOT_INITIALIZED:
+		message = "system not initialized";
+		break;
+	case DRV_ACQUIRING:
+		message = "acquisition in progress";
+		break;
+	case DRV_P1INVALID:
+		message = "parameter 1 invalid";	// context-specific
+		break;
+	case DRV_ACQUISITION_ERRORS:
+		message = "acquisition settings invalid";
+		break;
+	case DRV_INVALID_FILTER:
+		message = "filter not available for current acquisition";
+		break;
+	case DRV_BINNING_ERROR:
+		message = "range not multiple of current binning";
+		break;
+	case DRV_SPOOLSETUPERROR:
+		message = "error with spool settings";
+		break;
+	case DRV_TEMPERATURE_NOT_STABILIZED:
+		message = "temperature not stabilized";
+		break;
+	case DRV_TEMP_OFF:
+		message = "temperature is OFF";
+		break;
+	default:
+	{
+		char buf[128];
+		sprintf_s(buf, "andor error code %d", errorCode);
+		message = buf;
+		break;
+	}
 	}
 
 	return message;
@@ -468,12 +510,13 @@ bool AndorCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 
 bool AndorCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-    if (_derivedNewAsyncAcquisitionImageAvailable()) {
-        return true;
-    } else {
-        WaitForAcquisitionTimeOut(timeoutMillis);
-        return _derivedNewAsyncAcquisitionImageAvailable();
-    }
+	if (_derivedNewAsyncAcquisitionImageAvailable()) {
+		return true;
+	}
+	else {
+		WaitForAcquisitionTimeOut(timeoutMillis);
+		return _derivedNewAsyncAcquisitionImageAvailable();
+	}
 }
 
 void AndorCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
