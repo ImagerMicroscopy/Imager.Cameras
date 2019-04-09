@@ -102,7 +102,11 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int
 }
 
 bool BaseCameraClass::isAsyncAcquisitionRunning() const {
-    return (_asyncWorkerFuture.valid());
+	if (!_asyncWorkerFuture.valid()) {
+		return false;
+	}
+	std::future_status status = _asyncWorkerFuture.wait_for(std::chrono::seconds(0));
+	return (status != std::future_status::ready);
 }
 
 void BaseCameraClass::abortAsyncAquisitionIfRunning() {
@@ -125,7 +129,11 @@ std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::ge
             return imageData;
         }
         if (!haveImage && !isAsyncAcquisitionRunning()) {
-                throw std::runtime_error("waiting for new image but no acquisition running");
+			if (!_asyncErrorStr.empty()) {
+				throw std::runtime_error(std::string("async worker found error: ") + _asyncErrorStr);
+			} else {
+				throw std::runtime_error("waiting for new image but no acquisition running");
+			}
         }
     }
 }
