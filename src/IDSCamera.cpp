@@ -22,7 +22,7 @@ std::string IDSCamera::getIdentifierStr() const {
     if (err != IS_SUCCESS) {
         throw std::runtime_error("unable to get IDS camera info");
     }
-    std::string idStr("IDS with serial number ");
+    std::string idStr("IDS_");
     idStr += std::string(camInfo.SerNo);
     return idStr;
 }
