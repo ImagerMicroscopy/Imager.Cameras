@@ -1,0 +1,300 @@
+#include "SCConfigure.h"
+
+#ifdef WITH_PCO
+
+#include "PCOCamera.h"
+
+#include "Hamamatsu/dcamprop.h"
+
+PCOCamera::PCOCamera(HANDLE camHandle) :
+	_camHandle(camHandle)
+  , _camDescription({ 0 })
+  , _nextBufferToReadIndex(-1)
+{
+	_fetchCameraInfo();
+	_initDefaults();
+}
+
+PCOCamera::~PCOCamera() {
+	for (auto waitH : _waitObjects) {
+		if (waitH != nullptr) {
+			CloseHandle(waitH);
+		}
+	}
+
+	if (_camHandle != nullptr) {
+		PCO_CloseCamera(_camHandle);
+		_camHandle = nullptr;
+	}
+}
+
+std::string PCOCamera::getIdentifierStr() const {
+	return _camName;
+}
+
+std::vector<CameraProperty> PCOCamera::getCameraProperties() {
+	std::vector<CameraProperty> properties = getRequiredProperties();
+
+	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
+	
+	return properties;
+}
+
+void PCOCamera::setCameraProperty(const CameraProperty& prop) {
+	if (setIfRequiredProperty(prop) == true) {
+		return;
+	}
+	switch (prop.getPropertyCode()) {
+		case PropReadoutSpeed:
+			_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
+			break;
+		default:
+			throw std::runtime_error("setting unrecognized option");
+	}
+}
+
+std::pair<int, int> PCOCamera::getActualImageSize() const {;
+	WORD hSize, vSize, maxHSize, maxVSize;
+	int pcoErr = PCO_GetSizes(_camHandle, &hSize, &vSize, &maxHSize, &maxVSize);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetSizes()");
+	}
+    return std::pair<int, int>(hSize, vSize);
+}
+
+double PCOCamera::getFrameRate() const {
+	DWORD dwDelay, dwExposure;
+	WORD wTimeBaseDelay, wTimeBaseExposure;
+	int pcoErr = PCO_GetDelayExposureTime(_camHandle, &dwDelay, &dwExposure, &wTimeBaseDelay, &wTimeBaseExposure);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetDelayExposureTime()");
+	}
+	double frameTime = _pcoTimeToSeconds(dwExposure, wTimeBaseExposure) + _pcoTimeToSeconds(dwDelay, wTimeBaseDelay);
+	return (1.0 / frameTime);
+}
+
+CameraProperty PCOCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string & mode) {
+	if (getOrSet == SetProperty) {
+		int pixelRate = _readoutSpeeds.at(mode);
+		int pcoErr = PCO_SetPixelRate(_camHandle, pixelRate);
+		if (pcoErr) {
+			throw std::runtime_error("Error calling PCO_SetPixelRate()");
+		}
+		pcoErr = PCO_ArmCamera(_camHandle);
+		if (pcoErr) {
+			throw std::runtime_error("Error calling PCO_ArmCamera()");
+		}
+	}
+
+	std::vector<std::string> allowedSpeeds;
+	for (const auto& s : _readoutSpeeds) {
+		allowedSpeeds.emplace_back(s.first);
+	}
+	DWORD currentRate;
+	int pcoErr = PCO_GetPixelRate(_camHandle, &currentRate);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetPixelRate()");
+	}
+	auto it = std::find_if(_readoutSpeeds.cbegin(), _readoutSpeeds.cend(), [=](const std::pair<std::string, int> p) {
+		return (p.second == currentRate);
+	});
+	if (it == _readoutSpeeds.cend()) {
+		throw std::runtime_error("Can't find pixel rate");
+	}
+	std::string currentSetting = it->first;
+
+	CameraProperty prop(PropReadoutSpeed, "Readout speed");
+	prop.setDiscrete(currentSetting, allowedSpeeds);
+	return prop;
+}
+
+void PCOCamera::_setExposureTime(const double exposureTime) {
+	int pcoErr = PCO_SetDelayExposureTime(_camHandle, 0, exposureTime * 1.0e6, 0, 0x0001);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_SetDelayExposureTime()");
+	}
+	pcoErr = PCO_ArmCamera(_camHandle);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_SetDelayExposureTime()");
+	}
+}
+
+double PCOCamera::_getExposureTime() const {
+	DWORD dwDelay, dwExposure;
+	WORD wTimeBaseDelay, wTimeBaseExposure;
+	int pcoErr = PCO_GetDelayExposureTime(_camHandle, &dwDelay, &dwExposure, &wTimeBaseDelay, &wTimeBaseExposure);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetDelayExposureTime()");
+	}
+	return _pcoTimeToSeconds(dwExposure, wTimeBaseExposure);
+}
+
+void PCOCamera::_derivedStartAsyncAcquisition() {
+	std::pair<int, int> imageSize = _getSensorSize();	// getActualImageSize();
+	int nPixelsInImage = imageSize.first * imageSize.second;
+
+	if (_frameBuffer.empty()) {
+		auto sensorSize = _getSensorSize();
+		_frameBuffer.resize(sensorSize.first * sensorSize.second * kPCOImagesInBuffer);
+	}
+	if (_waitObjects.empty()) {
+		_waitObjects.resize(kPCOImagesInBuffer);
+		for (auto& waitH : _waitObjects) {
+			waitH = CreateEventA(nullptr, FALSE, FALSE, nullptr);
+			if (waitH == nullptr) {
+				throw std::runtime_error("Can't create wait object");
+			}
+		}
+		_bufferStatuses.resize(kPCOImagesInBuffer);
+	}
+	for (auto& waitH : _waitObjects) {
+		ResetEvent(waitH);
+	}
+
+	int pcoErr = PCO_SetImageParameters(_camHandle, imageSize.first, imageSize.second, IMAGEPARAMETERS_READ_WHILE_RECORDING, nullptr, 0);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_SetImageParameters()");
+	}
+
+	pcoErr = PCO_SetRecordingState(_camHandle, 1);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_SetRecordingState()");
+	}
+
+	for (int i = 0; i < kPCOImagesInBuffer; i += 1) {
+		std::uint16_t* thisImagePtr = _frameBuffer.data() + i * nPixelsInImage;
+		pcoErr = PCO_AddBufferExtern(_camHandle, _waitObjects.at(i), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(i)));
+	}
+	_nextBufferToReadIndex = 0;
+
+	_numberOfImagesDelivered = 0;
+}
+
+void PCOCamera::_derivedAbortAsyncAcquisition() {
+	int pcoErr = PCO_CancelImages(_camHandle);
+	pcoErr = PCO_SetRecordingState(_camHandle, 0);
+}
+
+bool PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
+	int result = WaitForSingleObject(_waitObjects.at(_nextBufferToReadIndex), timeoutMillis);
+	if ((result != WAIT_OBJECT_0) && (result != WAIT_TIMEOUT)) {
+		throw std::runtime_error("Unexpected return in WaitForSingleObject()");
+	}
+	return (result == WAIT_OBJECT_0);
+}
+
+void PCOCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+	auto imageSize = _getSensorSize(); // getActualImageSize();
+	int nPixelsInImage = imageSize.first * imageSize.second;
+	int nBytesPerImage = nPixelsInImage * sizeof(std::uint16_t);
+	if (nBytes != nBytesPerImage) {
+		throw std::runtime_error("buffer of invalid size");
+	}
+
+	std::uint16_t* thisImagePtr = _frameBuffer.data() + _nextBufferToReadIndex * nPixelsInImage;
+	memcpy(bufferForThisImage, thisImagePtr, nBytesPerImage);
+	int pcoErr = PCO_AddBufferExtern(_camHandle, _waitObjects.at(_nextBufferToReadIndex), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(_nextBufferToReadIndex)));
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_AddBufferExtern()");
+	}
+
+	_nextBufferToReadIndex = (_nextBufferToReadIndex + 1) % kPCOImagesInBuffer;
+	_numberOfImagesDelivered += 1;
+}
+
+void PCOCamera::_fetchCameraInfo() {
+	_camDescription.wSize = sizeof(_camDescription);
+	int pcoErr = PCO_GetCameraDescription(_camHandle, &_camDescription);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetCameraDescription()");
+	}
+
+	PCO_General generalDescription = { 0 };
+	generalDescription.wSize = sizeof(generalDescription);
+	generalDescription.strCamType.wSize = sizeof(generalDescription.strCamType);
+	pcoErr = PCO_GetGeneral(_camHandle, &generalDescription);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetGeneral()");
+	}
+	PCO_CameraType camType = { 0 };
+	camType.wSize = sizeof(camType);
+	pcoErr = PCO_GetCameraType(_camHandle, &camType);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetCameraType()");
+	}
+
+	char camName[64];
+	pcoErr = PCO_GetCameraName(_camHandle, camName, sizeof(camName));
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetCameraName()");
+	}
+	char fullCamName[128];
+	sprintf(fullCamName, "%s_%d", camName, (int)(camType.dwSerialNumber));
+	_camName = fullCamName;
+
+	// sensor size
+	WORD xResAct, yResAct, xResMax, yResMax;
+	pcoErr = PCO_GetSizes(_camHandle, &xResAct, &yResAct, &xResMax, &yResMax);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetSizes()");
+	}
+	_sensorSize.first = xResMax;
+	_sensorSize.second = yResMax;
+
+	// readout speeds
+	for (int i = 0; i < 4; i += 1) {
+		int readoutSpeed = _camDescription.dwPixelRateDESC[i];
+		if (readoutSpeed == 0) {
+			continue;
+		}
+		char buf[64];
+		sprintf(buf, "%g MHz", (double)readoutSpeed / 1.0e6);
+		_readoutSpeeds.emplace(std::string(buf), readoutSpeed);
+	}
+}
+
+void PCOCamera::_initDefaults() {
+	PCO_SetRecordingState(_camHandle, 0);
+
+	int pcoErr = PCO_ResetSettingsToDefault(_camHandle);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_ResetSettingsToDefault()");
+	}
+
+	WORD metaDataSize, metaDataVersion;
+	pcoErr = PCO_SetMetaDataMode(_camHandle, 0, &metaDataSize, &metaDataVersion);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_SetMetaDataMode()");
+	}
+
+	pcoErr = PCO_ArmCamera(_camHandle);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_ArmCamera()");
+	}
+
+	DWORD cameraWarning, cameraError, cameraStatus;
+	pcoErr = PCO_GetCameraHealthStatus(_camHandle, &cameraWarning, &cameraError, &cameraStatus);
+	if (pcoErr) {
+		throw std::runtime_error("Error calling PCO_GetCameraHealthStatus()");
+	}
+}
+
+double PCOCamera::_pcoTimeToSeconds(DWORD time, DWORD timeBase) const {
+	double timeSeconds = time;
+	switch (timeBase) {
+		case 0x0000:
+			timeSeconds /= 1.0e9;
+			break;
+		case 0x0001:
+			timeSeconds /= 1.0e6;
+			break;
+		case 0x0002:
+			timeSeconds /= 1.0e3;
+			break;
+		default:
+			throw std::runtime_error("Unknown time base in _pcoTimeToSeconds()");
+	}
+	return timeSeconds;
+}
+
+#endif

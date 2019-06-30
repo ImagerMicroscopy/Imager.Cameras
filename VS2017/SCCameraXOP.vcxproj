@@ -237,7 +237,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippimt.lib;ippcoremt.lib;ippvmmt.lib;ippsmt.lib;dcamapi.lib;pvcam64.lib;atmcd64m.lib;uEye_api_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippimt.lib;ippcoremt.lib;ippvmmt.lib;ippsmt.lib;dcamapi.lib;pvcam64.lib;atmcd64m.lib;uEye_api_64.lib;SC2_Cam.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -341,7 +341,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\lib\win64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippimt.lib;ippcoremt.lib;ippvmmt.lib;ippsmt.lib;dcamapi.lib;pvcam64.lib;atmcd64m.lib;uEye_api_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippimt.lib;ippcoremt.lib;ippvmmt.lib;ippsmt.lib;dcamapi.lib;pvcam64.lib;atmcd64m.lib;uEye_api_64.lib;SC2_Cam.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <Profile>
       </Profile>
@@ -378,6 +378,7 @@
     <ClCompile Include="..\src\IDSCamera.cpp" />
     <ClCompile Include="..\src\ImageProcessingUtils.cpp" />
     <ClCompile Include="..\src\ImageRecycler.cpp" />
+    <ClCompile Include="..\src\PCOCamera.cpp" />
     <ClCompile Include="..\src\PhotometricsCamera.cpp" />
     <ClCompile Include="..\src\SCCameraDLL.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -401,6 +402,7 @@
     <ClInclude Include="..\src\IDSCamera.h" />
     <ClInclude Include="..\src\ImageProcessingUtils.h" />
     <ClInclude Include="..\src\ImageRecycler.h" />
+    <ClInclude Include="..\src\PCOCamera.h" />
     <ClInclude Include="..\src\PhotometricsCamera.h" />
     <ClInclude Include="..\src\SCCameraDLL.h" />
     <ClInclude Include="..\src\SCConfigure.h" />

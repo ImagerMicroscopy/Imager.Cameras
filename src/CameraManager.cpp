@@ -23,9 +23,17 @@
 #include "IDSCamera.h"
 #endif
 
+#ifdef WITH_PCO
+#include "windows.h"
+#include "PCO/SC2_SDKStructures.h"
+#include "PCO/SC2_CamExport.h"
+#endif
+
 #ifdef WITH_DUMMYCAM
 #include "DummyCamera.h"
 #endif
+
+#include "BaseCameraClass.h"
 
 CameraManager::CameraManager() {
 #ifdef WITH_PHOTOMETRICS
@@ -119,17 +127,27 @@ void CameraManager::discoverCameras() {
         HIDS camHandle = 0;
 		idsErr = is_InitCamera(&camHandle, nullptr);
         if (idsErr != IS_SUCCESS) {
-            throw std::runtime_error("unable to open IDS camera");
+
+			throw std::runtime_error("unable to open IDS camera");
         }
         std::shared_ptr<BaseCameraClass> idsCamera(new IDSCamera(camHandle));
         _availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(idsCamera->getIdentifierStr(), idsCamera));
     }
 #endif
 
+#ifdef WITH_PCO
+	for (; ; ) {
+		HANDLE pcoCamHandle = nullptr;
+		int pcoErr = PCO_OpenCamera(&pcoCamHandle, 0);
+		if (pcoCamHandle == nullptr) {
+			break;
+		}
+	}
+#endif
+
 #ifdef WITH_DUMMYCAM
 	_availableCameras.emplace("DummyCam1", new DummyCamera());
 	_availableCameras.emplace("DummyCam2", new DummyCamera());
-
 #endif
 }
 
@@ -156,7 +174,7 @@ std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
 }
 
 void CameraManager::abortRunningAcquisitions() {
-	for (auto it : _availableCameras) {
+	for (auto& it : _availableCameras) {
         it.second->abortAsyncAquisitionIfRunning();
 	}
 }
