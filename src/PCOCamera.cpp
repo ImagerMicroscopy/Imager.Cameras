@@ -4,8 +4,6 @@
 
 #include "PCOCamera.h"
 
-#include "Hamamatsu/dcamprop.h"
-
 PCOCamera::PCOCamera(HANDLE camHandle) :
 	_camHandle(camHandle)
   , _camDescription({ 0 })
@@ -53,24 +51,28 @@ void PCOCamera::setCameraProperty(const CameraProperty& prop) {
 	}
 }
 
-std::pair<int, int> PCOCamera::getActualImageSize() const {;
+/*std::pair<int, int> PCOCamera::getActualImageSize() const {;
 	WORD hSize, vSize, maxHSize, maxVSize;
 	int pcoErr = PCO_GetSizes(_camHandle, &hSize, &vSize, &maxHSize, &maxVSize);
 	if (pcoErr) {
 		throw std::runtime_error("Error calling PCO_GetSizes()");
 	}
     return std::pair<int, int>(hSize, vSize);
-}
+}*/
 
 double PCOCamera::getFrameRate() const {
-	DWORD dwDelay, dwExposure;
-	WORD wTimeBaseDelay, wTimeBaseExposure;
-	int pcoErr = PCO_GetDelayExposureTime(_camHandle, &dwDelay, &dwExposure, &wTimeBaseDelay, &wTimeBaseExposure);
+	DWORD time_s, time_ns;
+	int pcoErr = PCO_GetCOCRuntime(_camHandle, &time_s, &time_ns);
 	if (pcoErr) {
-		throw std::runtime_error("Error calling PCO_GetDelayExposureTime()");
+		throw std::runtime_error("Error calling PCO_GetCOCRuntime()");
 	}
-	double frameTime = _pcoTimeToSeconds(dwExposure, wTimeBaseExposure) + _pcoTimeToSeconds(dwDelay, wTimeBaseDelay);
-	return (1.0 / frameTime);
+	return (1.0 / (time_s + time_ns / 1.0e9));
+}
+
+std::string PCOCamera::pcoErrorAsString(const int errCode) {
+	char buf[512];
+	PCO_GetErrorTextSDK(errCode, buf, sizeof(buf));
+	return std::string(buf);
 }
 
 CameraProperty PCOCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string & mode) {
@@ -109,9 +111,13 @@ CameraProperty PCOCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const s
 }
 
 void PCOCamera::_setExposureTime(const double exposureTime) {
-	int pcoErr = PCO_SetDelayExposureTime(_camHandle, 0, exposureTime * 1.0e6, 0, 0x0001);
+	double minExposureSecs = _camDescription.dwMinExposureDESC / 1.0e9;
+	double maxExposureSecs = _camDescription.dwMaxExposureDESC / 1.0e3;
+	double clampedExpTime = std::min(std::max(exposureTime, minExposureSecs), maxExposureSecs);
+	int pcoErr = PCO_SetDelayExposureTime(_camHandle, 0, clampedExpTime * 1.0e6, 0, 0x0001);
 	if (pcoErr) {
-		throw std::runtime_error("Error calling PCO_SetDelayExposureTime()");
+		std::string errMsg = pcoErrorAsString(pcoErr);
+		throw std::runtime_error("Error calling PCO_SetDelayExposureTime(): " + pcoErrorAsString(pcoErr));
 	}
 	pcoErr = PCO_ArmCamera(_camHandle);
 	if (pcoErr) {
@@ -229,7 +235,7 @@ void PCOCamera::_fetchCameraInfo() {
 		throw std::runtime_error("Error calling PCO_GetCameraName()");
 	}
 	char fullCamName[128];
-	sprintf(fullCamName, "%s_%d", camName, (int)(camType.dwSerialNumber));
+	sprintf(fullCamName, "PCO_%d", (int)(camType.dwSerialNumber));
 	_camName = fullCamName;
 
 	// sensor size

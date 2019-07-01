@@ -1,6 +1,7 @@
 
 #include "SCConfigure.h"
 #include "CameraManager.h"
+#include "BaseCameraClass.h"
 
 #ifdef WITH_PHOTOMETRICS
 #include "PVCAM/master.h"
@@ -27,13 +28,12 @@
 #include "windows.h"
 #include "PCO/SC2_SDKStructures.h"
 #include "PCO/SC2_CamExport.h"
+#include "PCOCamera.h"
 #endif
 
 #ifdef WITH_DUMMYCAM
 #include "DummyCamera.h"
 #endif
-
-#include "BaseCameraClass.h"
 
 CameraManager::CameraManager() {
 #ifdef WITH_PHOTOMETRICS
@@ -139,9 +139,15 @@ void CameraManager::discoverCameras() {
 	for (; ; ) {
 		HANDLE pcoCamHandle = nullptr;
 		int pcoErr = PCO_OpenCamera(&pcoCamHandle, 0);
+		if (pcoErr) {
+			std::string errMessage = PCOCamera::pcoErrorAsString(pcoErr);
+			//throw std::runtime_error(errMessage);
+		}
 		if (pcoCamHandle == nullptr) {
 			break;
 		}
+		std::shared_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
+		_availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), pcoCamera));
 	}
 #endif
 

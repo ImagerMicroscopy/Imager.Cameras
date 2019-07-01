@@ -31,8 +31,10 @@ public:
 	std::vector<CameraProperty> getCameraProperties() override;
 	void setCameraProperty(const CameraProperty& prop) override;
 
-    std::pair<int, int> getActualImageSize() const override;
+    //std::pair<int, int> getActualImageSize() const override;
 	double getFrameRate() const override;
+
+	static std::string pcoErrorAsString(const int errCode);
 
 private:
 	std::pair<int, int> _getSensorSize() const override { return _sensorSize; }
