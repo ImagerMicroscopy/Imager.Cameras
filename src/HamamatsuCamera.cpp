@@ -18,6 +18,8 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	else {
 		_camName = fullName;
 	}
+	std::string serialNumber = _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID);
+	_camName += "_" + serialNumber.substr(5);
 	
 	_setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD, true);
 
