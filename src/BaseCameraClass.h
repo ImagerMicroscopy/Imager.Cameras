@@ -23,13 +23,6 @@ public:
 		AcqFillAndStop
 	};
 
-	enum RequiredCameraPropertyIDs {
-		ReqPropExposureTime,
-		ReqPropCropping,
-		ReqPropBinning,
-		FirstAvailablePropertyID
-	};
-
 	BaseCameraClass();
 	virtual ~BaseCameraClass();
 
@@ -38,7 +31,7 @@ public:
 	virtual std::vector<CameraProperty> getCameraProperties() = 0;
 	virtual void setCameraProperty(const CameraProperty& prop) = 0;
 	
-    virtual std::pair<int, int> getActualImageSize() const;
+    virtual std::pair<int, int> getActualImageSize() const = 0;
 	virtual double getFrameRate() const = 0;
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
 
@@ -50,23 +43,9 @@ public:
 	int getNImagesAsyncAcquired();
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
 
-protected:
-	std::vector<CameraProperty> getRequiredProperties();
-	bool setIfRequiredProperty(const CameraProperty& prop);
-
 private:
-	std::vector<std::pair<int, int>> _getSupportedCropSizes() const;
 	virtual void _setExposureTime(const double exposureTime) = 0;
 	virtual double _getExposureTime() const = 0;
-	void _setImageCrop(const std::pair<int, int>& crop);
-	std::vector<int> _getSupportedBinningFactors() const;
-	void _setBinningFactor(const int binningFactor);
-	virtual int _getBinningFactor() const;
-
-	virtual std::pair<int, int> _getSensorSize() const = 0;
-    virtual void _derivedSetImageCrop(const std::pair<int, int>& crop);
-    virtual void _derivedSetBinningFactor(const int binningFactor);
-    virtual bool _usesSoftwareCroppingAndBinning() const { return true; }
 
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
 	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
@@ -89,10 +68,6 @@ private:
     std::uint64_t _getTimeStamp() const;
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _imageOrientationOps;
-    bool _haveImageCrop;
-    std::pair<int, int> _croppedImageSize;
-    bool _haveBinning;
-    int _binFactor;
 
     std::uint64_t _acquisitionStartTimeStamp;
     std::uint64_t _performanceCounterFrequency;

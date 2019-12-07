@@ -28,8 +28,6 @@ private:
 };
 
 BaseCameraClass::BaseCameraClass() :
-    _haveImageCrop(false)
-  , _haveBinning(false)
 {
     LARGE_INTEGER freq;
     QueryPerformanceFrequency(&freq);
@@ -38,18 +36,6 @@ BaseCameraClass::BaseCameraClass() :
 
 BaseCameraClass::~BaseCameraClass() {
     abortAsyncAquisitionIfRunning();
-}
-
-std::pair<int, int> BaseCameraClass::getActualImageSize() const {
-    auto size = _getSensorSize();
-    if (_usesSoftwareCroppingAndBinning() && _haveImageCrop) {
-        size = _croppedImageSize;
-    }
-    if (_usesSoftwareCroppingAndBinning() && _haveBinning) {
-        size.first /= _binFactor;
-        size.second /= _binFactor;
-    }
-    return size;
 }
 
 void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops) {
@@ -69,12 +55,7 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
 
 		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
 	} else {
-		std::pair<int, int> imageSize;
-		if (_usesSoftwareCroppingAndBinning()) {
-			imageSize = _getSensorSize();
-		} else {
-			imageSize = getActualImageSize();
-		}
+		std::pair<int, int> imageSize = getActualImageSize();
 		int nPixels = imageSize.first * imageSize.second;
 		std::shared_ptr<std::uint16_t> imageData(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
 		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
@@ -139,128 +120,8 @@ std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::ge
     }
 }
 
-std::vector<CameraProperty> BaseCameraClass::getRequiredProperties() {
-	std::vector<CameraProperty> properties;
-	// exposure time
-	{
-		CameraProperty prop(BaseCameraClass::ReqPropExposureTime, "Exposure time");
-		prop.setNumeric(_getExposureTime());
-		properties.push_back(prop);
-	}
-	// cropping
-	{
-		int first, second;
-		std::vector<std::string> strCropSizes;
-		auto cropSizes = _getSupportedCropSizes();
-		for (const auto& size : cropSizes) {
-			char buf[128];
-			sprintf(buf, "%dx%d", size.first, size.second);
-			strCropSizes.emplace_back(buf);
-		}
-		std::tie(first, second) = getActualImageSize();
-		first *= _getBinningFactor();
-		second *= _getBinningFactor();
-		char actual[128];
-		sprintf(actual, "%dx%d", first, second);
-		CameraProperty prop(BaseCameraClass::ReqPropCropping, "Sensor cropping");
-		prop.setDiscrete(actual, strCropSizes);
-		properties.push_back(prop);
-	}
-	// binning
-	{
-		CameraProperty prop(BaseCameraClass::ReqPropBinning, "Binning");
-		prop.setDiscrete(std::string(1, (char)_getBinningFactor() + 48), { "1", "2", "4" });
-		properties.push_back(prop);
-	}
-
-	return properties;
-}
-
-bool BaseCameraClass::setIfRequiredProperty(const CameraProperty& prop) {
-	int propertyCode = prop.getPropertyCode();
-	switch (propertyCode) {
-		case ReqPropExposureTime:
-			_setExposureTime(prop.getValue());
-			break;
-		case ReqPropCropping:
-		{
-			int first, second;
-			if (sscanf(prop.getCurrentOption().c_str(), "%dx%d", &first, &second) != 2) {
-				throw std::runtime_error("decoding cropping from invalid string");
-			}
-			_setImageCrop(std::pair<int, int>(first, second));
-			break;
-		}
-		case ReqPropBinning:
-		{
-			int binFactor = (char)prop.getCurrentOption().at(0) - 48;
-			_setBinningFactor(binFactor);
-			break;
-		}
-		default:
-			return false;
-			break;
-	}
-	return true;
-}
-
-std::vector<std::pair<int, int>> BaseCameraClass::_getSupportedCropSizes() const {
-	int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
-	std::pair<int, int> sensorSize = _getSensorSize();
-	std::vector<std::pair<int, int>> result;
-	for (int s : cropDimensions) {
-		std::pair<int, int> croppedSize(s, s);
-		if ((croppedSize.first < sensorSize.first) && (croppedSize.second < sensorSize.second)) {
-			result.push_back(croppedSize);
-		}
-	}
-	result.push_back(sensorSize);
-	return result;
-}
-
-void BaseCameraClass::_setImageCrop(const std::pair<int, int>& crop) {
-	auto supportedCropSizes = _getSupportedCropSizes();
-	auto it = std::find(supportedCropSizes.cbegin(), supportedCropSizes.cend(), crop);
-	if (it != supportedCropSizes.cend()) {
-		_derivedSetImageCrop(crop);
-	}
-}
-
-std::vector<int> BaseCameraClass::_getSupportedBinningFactors() const {
-	std::vector<int> binningFactors = { 1, 2, 4 };
-	return binningFactors;
-}
-
-void BaseCameraClass::_setBinningFactor(const int binningFactor) {
-	auto supportedBinningFactors = _getSupportedBinningFactors();
-	auto it = std::find(supportedBinningFactors.cbegin(), supportedBinningFactors.cend(), binningFactor);
-	if (it != supportedBinningFactors.cend()) {
-		_derivedSetBinningFactor(binningFactor);
-	}
-}
-
-int BaseCameraClass::_getBinningFactor() const {
-	if (_haveBinning) {
-		return _binFactor;
-	} else {
-		return 1;
-	}
-}
-
-void BaseCameraClass::_derivedSetImageCrop(const std::pair<int, int>& crop) {
-    _croppedImageSize = crop;
-    _haveImageCrop = (_croppedImageSize != _getSensorSize());
-}
-
-void BaseCameraClass::_derivedSetBinningFactor(const int binningFactor) {
-    _binFactor = binningFactor;
-    _haveBinning = (_binFactor != 1);
-}
-
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
-    auto desiredImageSize = getActualImageSize();
-    auto sensorSize = _getSensorSize();
-    auto inputImageSize = (_usesSoftwareCroppingAndBinning()) ? sensorSize : desiredImageSize;
+    auto actualImageSize = getActualImageSize();
 
 	try {
 		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
@@ -268,7 +129,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
         moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> processingQueue;
         _processingAsyncHasError = false;
         std::future<void> imageProcessingFuture = std::async(std::launch::async, [&]() {
-            _imageProcessingWorker(inputImageSize.first, inputImageSize.second, imageProcessingDescriptors, processingQueue);
+            _imageProcessingWorker(actualImageSize.first, actualImageSize.second, imageProcessingDescriptors, processingQueue);
         });
         CleanupRunner ipRunner([&]() {
             processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>());
@@ -293,8 +154,8 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
             bool haveImage = _waitForNewImageWithTimeout(100);
             if (haveImage) {
                 double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
-                std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(inputImageSize);
-                _derivedStoreNewImageInBuffer(theImage.get(), inputImageSize.first * inputImageSize.second * sizeof(std::uint16_t));
+                std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(actualImageSize);
+                _derivedStoreNewImageInBuffer(theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
 
                 processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
 				_asyncNImagesStored += 1;
@@ -338,16 +199,7 @@ bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
 }
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getImageProcessingDescriptors() {
-	bool needSoftwareCrop = (_usesSoftwareCroppingAndBinning() && _haveImageCrop);
-	bool needSoftwareBinning = (_usesSoftwareCroppingAndBinning() && _haveBinning);
-
 	std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
-	if (needSoftwareCrop) {
-		imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_croppedImageSize.first, _croppedImageSize.second)));
-	}
-	if (needSoftwareBinning) {
-		imageProcessingDescriptors.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_binFactor)));
-	}
 	for (const auto& pd : _imageOrientationOps) {
 		imageProcessingDescriptors.push_back(pd);
 	}
