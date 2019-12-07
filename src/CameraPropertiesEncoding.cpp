@@ -69,3 +69,94 @@ CameraProperty CameraProperty::decodeFromJSONObject(const nlohmann::json& encode
 	}
 	return cameraProperty;
 }
+
+std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<std::pair<int,int>>& allowableCropping,
+												  const int currentBinning, const std::vector<int>& allowableBinning) {
+	std::vector<CameraProperty> properties;
+	// exposure time
+	{
+		CameraProperty prop(CameraProperty::ReqPropExposureTime, "Exposure time");
+		prop.setNumeric(currentExposureTime);
+		properties.push_back(prop);
+	}
+	// cropping
+	{
+		int first, second;
+		std::vector<std::string> strCropSizes;
+		auto cropSizes = allowableCropping;
+		for (const auto& size : cropSizes) {
+			char buf[128];
+			sprintf(buf, "%dx%d", size.first, size.second);
+			strCropSizes.emplace_back(buf);
+		}
+		std::tie(first, second) = currentCrop;
+		char actual[32];
+		sprintf(actual, "%dx%d", first, second);
+		CameraProperty prop(CameraProperty::ReqPropCropping, "Sensor cropping");
+		prop.setDiscrete(actual, strCropSizes);
+		properties.push_back(prop);
+	}
+	// binning
+	{
+		std::vector<std::string> binningStrs;
+		std::string currentBinningStr;
+		char buf[32];
+		sprintf(buf, "%d", currentBinning);
+		currentBinningStr = buf;
+		for (const int b : allowableBinning) {
+			sprintf(buf, "%d", b);
+			binningStrs.push_back(buf);
+		}
+		CameraProperty prop(CameraProperty::ReqPropBinning, "Binning");
+		prop.setDiscrete(currentBinningStr, binningStrs);
+		properties.push_back(prop);
+	}
+
+	return properties;
+}
+
+std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties) {
+	double exposureTime;
+	std::pair<int, int> cropping;
+	int binning;
+	bool haveExposureTime = false, haveCropping = false, haveBinning = false;
+
+	for (size_t i = properties.size() - 1; i >= 0; i += 1) {
+		const CameraProperty& prop = properties.at(i);
+		int propertyCode = prop.getPropertyCode();
+		switch (propertyCode) {
+			case CameraProperty::ReqPropExposureTime:
+				exposureTime = prop.getValue();
+				haveExposureTime = true;
+				break;
+			case CameraProperty::ReqPropCropping:
+			{
+				int first, second;
+				if (sscanf(prop.getCurrentOption().c_str(), "%dx%d", &first, &second) != 2) {
+					throw std::runtime_error("decoding cropping from invalid string");
+				}
+				cropping = std::make_pair(first, second);
+				haveCropping = true;
+				break;
+			}
+			case CameraProperty::ReqPropBinning:
+			{
+				if ((sscanf(prop.getCurrentOption().c_str(), "%d", &binning) != 1) || (binning <= 0)) {
+					throw std::runtime_error("decoding binning from invalid string");
+				}
+				haveBinning = true;
+				break;
+			}
+			default:
+				continue;
+				break;
+		}
+		properties.erase(properties.begin() + i);
+	}
+
+	if (!haveExposureTime || !haveCropping || !haveBinning) {
+		throw std::runtime_error("DecodeAndRemoveStandardProperties() but missing properties");
+	}
+
+	return std::make_tuple(exposureTime, cropping, binning);
+}

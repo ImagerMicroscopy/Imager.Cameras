@@ -14,6 +14,13 @@ public:
 		PropertyDiscrete
 	};
 
+	enum StandardCameraPropertyIDs {
+		ReqPropExposureTime,
+		ReqPropCropping,
+		ReqPropBinning,
+		FirstAvailablePropertyID
+	};
+
 	CameraProperty(const int propertyCode, const std::string& descriptor) :
 		_propertyCode(propertyCode),
 		_descriptor(descriptor),
@@ -42,5 +49,10 @@ private:
 	std::string _currentOption;
 	std::vector<std::string> _availableOptions;
 };
+
+std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<std::pair<int, int>>& allowableCropping,
+												  const int currentBinning, const std::vector<int>& allowableBinning);
+
+std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
 
 #endif
