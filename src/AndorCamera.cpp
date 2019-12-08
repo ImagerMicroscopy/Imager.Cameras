@@ -40,22 +40,6 @@ std::string AndorCamera::getIdentifierStr() const {
 	return std::string(buf);
 }
 
-std::vector<CameraProperty> AndorCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()),
-																   _desiredBinningFactor, StandardBinningOptions());
-
-	if (_hasEMGain()) {
-		properties.push_back(_getSetEMGain(GetProperty, 0.0));
-	}
-	if (_hasFrameTransferMode()) {
-		properties.push_back(_getSetFrameTransferMode(GetProperty, std::string()));
-	}
-	properties.push_back(_getSetHorizontalReadoutSpeeds(GetProperty, std::string()));
-	properties.push_back(_getSetCoolerOn(GetProperty, std::string()));
-	properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
-	return properties;
-}
-
 std::pair<int, int> AndorCamera::getActualImageSize() const {
 	auto size = _desiredCropSize;
 	size.first /= _desiredBinningFactor;
@@ -71,6 +55,21 @@ double AndorCamera::getFrameRate() const {
 	return (1.0 / kinetic);
 }
 
+std::vector<CameraProperty> AndorCamera::_derivedGetCameraProperties() {
+	std::vector<CameraProperty> properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()),
+		_desiredBinningFactor, StandardBinningOptions());
+
+	if (_hasEMGain()) {
+		properties.push_back(_getSetEMGain(GetProperty, 0.0));
+	}
+	if (_hasFrameTransferMode()) {
+		properties.push_back(_getSetFrameTransferMode(GetProperty, std::string()));
+	}
+	properties.push_back(_getSetHorizontalReadoutSpeeds(GetProperty, std::string()));
+	properties.push_back(_getSetCoolerOn(GetProperty, std::string()));
+	properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
+	return properties;
+}
 
 void AndorCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
 	std::vector<CameraProperty> propsCopy(properties);

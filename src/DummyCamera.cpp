@@ -18,10 +18,6 @@ DummyCamera::DummyCamera() :
 	_currentCropping = _getSensorSize();
 }
 
-std::vector<CameraProperty> DummyCamera::getCameraProperties() {
-	return GetStandardProperties(_getExposureTime(), _getCurrentCropping(), StandardCroppingOptions(_getSensorSize()), _getCurrentBinning(), StandardBinningOptions());
-}
-
 std::pair<int, int> DummyCamera::getActualImageSize() const {
 	auto crop = _getCurrentCropping();
 	crop.first /= _getCurrentBinning();
@@ -33,6 +29,9 @@ double DummyCamera::getFrameRate() const {
 	return (1.0 / _getExposureTime());
 }
 
+std::vector<CameraProperty> DummyCamera::_derivedGetCameraProperties() {
+	return GetStandardProperties(_getExposureTime(), _getCurrentCropping(), StandardCroppingOptions(_getSensorSize()), _getCurrentBinning(), StandardBinningOptions());
+}
 
 void DummyCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
 	double exposureTime = -1.0;

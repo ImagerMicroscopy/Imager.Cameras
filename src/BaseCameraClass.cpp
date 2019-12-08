@@ -37,6 +37,10 @@ BaseCameraClass::~BaseCameraClass() {
     abortAsyncAquisitionIfRunning();
 }
 
+std::vector<CameraProperty> BaseCameraClass::getCameraProperties() {
+	return _derivedGetCameraProperties();
+}
+
 void BaseCameraClass::setCameraProperties(const std::vector<CameraProperty>& properties) {
 	if (isAsyncAcquisitionRunning()) {
 		throw std::runtime_error("BaseCameraClass::setCameraProperties() but acquisition running");
@@ -206,6 +210,7 @@ bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getImageProcessingDescriptors() {
 	std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
+	imageProcessingDescriptors = _derivedGetAdditionalImageProcessingDescriptors();
 	for (const auto& pd : _imageOrientationOps) {
 		imageProcessingDescriptors.push_back(pd);
 	}

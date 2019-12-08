@@ -32,15 +32,6 @@ std::string PCOCamera::getIdentifierStr() const {
 	return _camName;
 }
 
-std::vector<CameraProperty> PCOCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties;
-	properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
-
-	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
-	
-	return properties;
-}
-
 std::pair<int, int> PCOCamera::getActualImageSize() const {
 	auto size = _desiredCropSize;
 	size.first /= _desiredBinningFactor;
@@ -61,6 +52,15 @@ std::string PCOCamera::pcoErrorAsString(const int errCode) {
 	char buf[512];
 	PCO_GetErrorTextSDK(errCode, buf, sizeof(buf));
 	return std::string(buf);
+}
+
+std::vector<CameraProperty> PCOCamera::_derivedGetCameraProperties() {
+	std::vector<CameraProperty> properties;
+	properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
+
+	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
+
+	return properties;
 }
 
 void PCOCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {

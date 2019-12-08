@@ -28,7 +28,7 @@ public:
 
 	virtual std::string getIdentifierStr() const = 0;
 
-	virtual std::vector<CameraProperty> getCameraProperties() = 0;
+	std::vector<CameraProperty> getCameraProperties();
 	void setCameraProperties(const std::vector<CameraProperty>& properties);
 	
     virtual std::pair<int, int> getActualImageSize() const = 0;
@@ -44,6 +44,7 @@ public:
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
 
 private:
+	virtual std::vector<CameraProperty> _derivedGetCameraProperties() = 0;
 	virtual void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) = 0;
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
 	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
@@ -57,6 +58,7 @@ private:
 	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
 
 	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _getImageProcessingDescriptors();
+	virtual std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() { return {}; }
 	void _imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
 								moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue);
 	std::shared_ptr<std::uint16_t> _processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,

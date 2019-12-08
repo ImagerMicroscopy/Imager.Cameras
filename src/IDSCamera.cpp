@@ -30,7 +30,20 @@ std::string IDSCamera::getIdentifierStr() const {
     return idStr;
 }
 
-std::vector<CameraProperty> IDSCamera::getCameraProperties() {
+std::pair<int, int> IDSCamera::getActualImageSize() const {
+	auto size = _desiredCropSize;
+	size.first /= _desiredBinningFactor;
+	size.second /= _desiredBinningFactor;
+	return size;
+}
+
+double IDSCamera::getFrameRate() const {
+	double fps;
+	is_SetFrameRate(_camHandle, IS_GET_FRAMERATE, &fps);
+	return fps;
+}
+
+std::vector<CameraProperty> IDSCamera::_derivedGetCameraProperties() {
 	std::vector<CameraProperty> properties;
 	properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
 
@@ -44,21 +57,8 @@ std::vector<CameraProperty> IDSCamera::getCameraProperties() {
 		properties.push_back(_getSetAdaptiveHotPixelCorrectionMode(GetProperty, std::string()));
 		properties.push_back(_getSetAdaptiveHotPixelCorrectionSensitivity(GetProperty, 0.0));
 	}
-	
+
 	return properties;
-}
-
-std::pair<int, int> IDSCamera::getActualImageSize() const {
-	auto size = _desiredCropSize;
-	size.first /= _desiredBinningFactor;
-	size.second /= _desiredBinningFactor;
-	return size;
-}
-
-double IDSCamera::getFrameRate() const {
-	double fps;
-	is_SetFrameRate(_camHandle, IS_GET_FRAMERATE, &fps);
-	return fps;
 }
 
 void IDSCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {

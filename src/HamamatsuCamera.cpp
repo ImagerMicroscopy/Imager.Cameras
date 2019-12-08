@@ -48,7 +48,18 @@ std::string HamamatsuCamera::getIdentifierStr() const {
 	return _camName;
 }
 
-std::vector<CameraProperty> HamamatsuCamera::getCameraProperties() {
+std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
+    std::pair<int, int> size;
+    size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
+    size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
+    return size;
+}
+
+double HamamatsuCamera::getFrameRate() const {
+	return _getPropertyValue(_camHandle, DCAM_IDPROP_INTERNALFRAMERATE);
+}
+
+std::vector<CameraProperty> HamamatsuCamera::_derivedGetCameraProperties() {
 	std::vector<CameraProperty> properties;
 	properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2, 4 });
 
@@ -68,17 +79,6 @@ std::vector<CameraProperty> HamamatsuCamera::getCameraProperties() {
 		properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
 	}
 	return properties;
-}
-
-std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
-    std::pair<int, int> size;
-    size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
-    size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
-    return size;
-}
-
-double HamamatsuCamera::getFrameRate() const {
-	return _getPropertyValue(_camHandle, DCAM_IDPROP_INTERNALFRAMERATE);
 }
 
 void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
