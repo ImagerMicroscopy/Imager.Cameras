@@ -55,4 +55,7 @@ std::vector<CameraProperty> GetStandardProperties(const double currentExposureTi
 
 std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
 
+std::vector <std::pair<int, int>> StandardCroppingOptions(const std::pair<int, int>& uncroppedImageDimensions);
+std::vector<int> StandardBinningOptions();
+
 #endif

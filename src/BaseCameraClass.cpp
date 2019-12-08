@@ -27,8 +27,7 @@ private:
     T _value;
 };
 
-BaseCameraClass::BaseCameraClass() :
-{
+BaseCameraClass::BaseCameraClass() {
     LARGE_INTEGER freq;
     QueryPerformanceFrequency(&freq);
     _performanceCounterFrequency = freq.QuadPart;
@@ -36,6 +35,13 @@ BaseCameraClass::BaseCameraClass() :
 
 BaseCameraClass::~BaseCameraClass() {
     abortAsyncAquisitionIfRunning();
+}
+
+void BaseCameraClass::setCameraProperties(const std::vector<CameraProperty>& properties) {
+	if (isAsyncAcquisitionRunning()) {
+		throw std::runtime_error("BaseCameraClass::setCameraProperties() but acquisition running");
+	}
+	_derivedSetCameraProperties(properties);
 }
 
 void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops) {

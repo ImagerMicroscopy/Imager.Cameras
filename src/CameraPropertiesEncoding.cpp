@@ -160,3 +160,19 @@ std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(s
 
 	return std::make_tuple(exposureTime, cropping, binning);
 }
+
+std::vector <std::pair<int, int>> StandardCroppingOptions(const std::pair<int, int>& uncroppedImageDimensions) {
+	int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
+	std::vector<std::pair<int, int>> result;
+	for (int s : cropDimensions) {
+		if ((s < uncroppedImageDimensions.first) && (s < uncroppedImageDimensions.second)) {
+			result.push_back(std::make_pair(s, s));
+		}
+	}
+	result.push_back(uncroppedImageDimensions);
+	return result;
+}
+
+std::vector<int> StandardBinningOptions() {
+	return { 1, 2, 4 };
+}

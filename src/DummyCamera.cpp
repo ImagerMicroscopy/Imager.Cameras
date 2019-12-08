@@ -9,63 +9,98 @@
 
 DummyCamera::DummyCamera() :
 	_exposureTime(50.0e-3),
+	_currentBinFactor(1),
 	_emGain(5.0),
 	_coolerOn(false),
 	_temperature(-50.0),
-	_frameCounter(0) {
-
+	_frameCounter(0)
+{
+	_currentCropping = _getSensorSize();
 }
 
 std::vector<CameraProperty> DummyCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties = getRequiredProperties();
-
-	return properties;
+	return GetStandardProperties(_getExposureTime(), _getCurrentCropping(), StandardCroppingOptions(_getSensorSize()), _getCurrentBinning(), StandardBinningOptions());
 }
 
-void DummyCamera::setCameraProperty(const CameraProperty& prop) {
-	if (setIfRequiredProperty(prop) == true) {
-		return;
-	}
-	switch (prop.getPropertyType()) {
-		default:
-			throw std::runtime_error("setting unrecognized option");
-	}
+std::pair<int, int> DummyCamera::getActualImageSize() const {
+	auto crop = _getCurrentCropping();
+	crop.first /= _getCurrentBinning();
+	crop.second /= _getCurrentBinning();
+	return crop;
 }
 
 double DummyCamera::getFrameRate() const {
 	return (1.0 / _getExposureTime());
 }
 
+
+void DummyCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+	double exposureTime = -1.0;
+	std::pair<int, int> cropping;
+	int binFactor = 0;
+	auto propsCopy(properties);
+	std::tie(exposureTime, cropping, binFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+	if (!propsCopy.empty()) {
+		throw std::runtime_error("DummyCamera::setCameraProperties() but non-standard");
+	}
+	_setCurrentCropping(cropping);
+	_setCurrentBinning(binFactor);
+	_setExposureTime(exposureTime);
+}
+
 void DummyCamera::_setExposureTime(const double exposureTime) {
 	auto sensorSize = _getSensorSize();
 	auto currentSize = getActualImageSize();
 	double minExposureTime = 50e-3 / (sensorSize.first * sensorSize.second / (currentSize.first * currentSize.second));
-	_exposureTime = clamp(exposureTime, minExposureTime, 500e-3);
+	_exposureTime = clamp(exposureTime, minExposureTime, 1.0);
+}
+
+void DummyCamera::_setCurrentCropping(const std::pair<int, int>& cropping) {
+	auto supportedCropSizes = StandardCroppingOptions(_getSensorSize());
+	auto it = std::find(supportedCropSizes.cbegin(), supportedCropSizes.cend(), cropping);
+	if (it != supportedCropSizes.cend()) {
+		_currentCropping = cropping;
+	} else {
+		throw std::runtime_error("DummyCamera::_setCurrentCropping() but invalid cropping");
+	}
+}
+
+void DummyCamera::_setCurrentBinning(const int binFactor) {
+	auto supportedBinFactors = StandardBinningOptions();
+	auto it = std::find(supportedBinFactors.cbegin(), supportedBinFactors.cend(), binFactor);
+	if (it != supportedBinFactors.cend()) {
+		_currentBinFactor = binFactor;
+	} else {
+		throw std::runtime_error("DummyCamera::_setCurrentBinning() but invalid binning");
+	}
+}
+
+std::pair<int, int> DummyCamera::_getSensorSize() const {
+	return std::make_pair(2048, 2048);
 }
 
 std::shared_ptr<std::vector<uint16_t>> DummyCamera::_generateNewImage() {
-    std::pair<int, int> sensorSize = _getSensorSize();
-    int nPixels = sensorSize.first * sensorSize.second;
+	std::pair<int, int> imageDimensions = getActualImageSize();
+    int nPixels = imageDimensions.first * imageDimensions.second;
     std::shared_ptr<std::vector<uint16_t>> buf(new std::vector<uint16_t>(nPixels));
-    uint16_t* vecPtr = buf->data();
-    for (int i = 0; i < nPixels; i++) {
-        vecPtr[i] = _frameCounter + i;
-    }
-    _frameCounter += 1;
+	_fillImage(buf->data(), nPixels);
     return buf;
 }
 
+void DummyCamera::_fillImage(std::uint16_t * data, size_t nPixels) {
+	for (size_t i = 0; i < nPixels; i++) {
+		data[i] = _frameCounter + i;
+	}
+	_frameCounter += 1;
+}
+
 void DummyCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
-	auto sensorSize = _getSensorSize();
-	int nPixels = sensorSize.first * sensorSize.second;
+	auto imageDimensions = getActualImageSize();
+	int nPixels = imageDimensions.first * imageDimensions.second;
 	if (nBytes != nPixels * sizeof(std::uint16_t)) {
 		throw std::runtime_error("invalid buffer size to _derivedAcquireSingleImage()");
 	}
-
-	for (int i = 0; i < nPixels; i++) {
-		bufferForThisImage[i] = _frameCounter + i;
-	}
-	_frameCounter += 1;
+	_fillImage(bufferForThisImage, nPixels);
 }
 
 void DummyCamera::_derivedStartAsyncAcquisition() {

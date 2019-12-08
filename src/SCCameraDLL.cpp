@@ -104,7 +104,7 @@ LIBSPEC int SetCameraOption(char * cameraName, char * encodedOption) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->setCameraProperty(CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)));
+		camPtr->setCameraProperties({ CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)) });
 	}
 	catch (...) {
 		return GENERIC_ERROR;

@@ -29,7 +29,7 @@ public:
 	virtual std::string getIdentifierStr() const = 0;
 
 	virtual std::vector<CameraProperty> getCameraProperties() = 0;
-	virtual void setCameraProperty(const CameraProperty& prop) = 0;
+	void setCameraProperties(const std::vector<CameraProperty>& properties);
 	
     virtual std::pair<int, int> getActualImageSize() const = 0;
 	virtual double getFrameRate() const = 0;
@@ -44,9 +44,7 @@ public:
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
 
 private:
-	virtual void _setExposureTime(const double exposureTime) = 0;
-	virtual double _getExposureTime() const = 0;
-
+	virtual void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) = 0;
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
 	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
 
