@@ -41,7 +41,8 @@ std::string AndorCamera::getIdentifierStr() const {
 }
 
 std::vector<CameraProperty> AndorCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties = getRequiredProperties();
+	std::vector<CameraProperty> properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()),
+																   _desiredBinningFactor, StandardBinningOptions());
 
 	if (_hasEMGain()) {
 		properties.push_back(_getSetEMGain(GetProperty, 0.0));
@@ -53,34 +54,6 @@ std::vector<CameraProperty> AndorCamera::getCameraProperties() {
 	properties.push_back(_getSetCoolerOn(GetProperty, std::string()));
 	properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
 	return properties;
-}
-
-void AndorCamera::setCameraProperty(const CameraProperty& prop) {
-	if (setIfRequiredProperty(prop) == true) {
-		return;
-	}
-	switch (prop.getPropertyCode()) {
-	case PropEMGain:
-		_getSetEMGain(SetProperty, prop.getValue());
-		break;
-	case PropFrameTransferMode:
-		_getSetFrameTransferMode(SetProperty, prop.getCurrentOption());
-		break;
-	case PropVerticalReadoutSpeed:
-		_getSetVerticalReadoutSpeeds(SetProperty, prop.getCurrentOption());
-		break;
-	case PropHorizontalReadoutSpeed:
-		_getSetHorizontalReadoutSpeeds(SetProperty, prop.getCurrentOption());
-		break;
-	case PropTemperatureSetPoint:
-		_getSetTemperatureSetPoint(SetProperty, prop.getValue());
-		break;
-	case PropCoolerOn:
-		_getSetCoolerOn(SetProperty, prop.getCurrentOption());
-		break;
-	default:
-		throw std::runtime_error("setting unrecognized option");
-	}
 }
 
 std::pair<int, int> AndorCamera::getActualImageSize() const {
@@ -96,6 +69,43 @@ double AndorCamera::getFrameRate() const {
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 	return (1.0 / kinetic);
+}
+
+
+void AndorCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+	std::vector<CameraProperty> propsCopy(properties);
+	double exposureTime = 0;
+	std::pair<int, int> cropping(512, 512);
+	int binningFactor = 1;
+	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+
+	_setCroppingAndBinning(cropping, binningFactor);
+	_setExposureTime(exposureTime);
+
+	for (const auto& prop : propsCopy) {
+		switch (prop.getPropertyCode()) {
+			case PropEMGain:
+				_getSetEMGain(SetProperty, prop.getValue());
+				break;
+			case PropFrameTransferMode:
+				_getSetFrameTransferMode(SetProperty, prop.getCurrentOption());
+				break;
+			case PropVerticalReadoutSpeed:
+				_getSetVerticalReadoutSpeeds(SetProperty, prop.getCurrentOption());
+				break;
+			case PropHorizontalReadoutSpeed:
+				_getSetHorizontalReadoutSpeeds(SetProperty, prop.getCurrentOption());
+				break;
+			case PropTemperatureSetPoint:
+				_getSetTemperatureSetPoint(SetProperty, prop.getValue());
+				break;
+			case PropCoolerOn:
+				_getSetCoolerOn(SetProperty, prop.getCurrentOption());
+				break;
+			default:
+				throw std::runtime_error("setting unrecognized option");
+		}
+	}
 }
 
 std::pair<int, int> AndorCamera::_getSensorSize() const {
@@ -279,22 +289,6 @@ double AndorCamera::_getExposureTime() const {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	return exposureTime;
-}
-
-void AndorCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {
-	_desiredCropSize = crop;
-
-	_setCroppingAndBinning(_desiredCropSize, _desiredBinningFactor);
-}
-
-void AndorCamera::_derivedSetBinningFactor(const int binningFactor) {
-	_desiredBinningFactor = binningFactor;
-
-	_setCroppingAndBinning(_desiredCropSize, _desiredBinningFactor);
-}
-
-int AndorCamera::_getBinningFactor() const {
-	return _desiredBinningFactor;
 }
 
 void AndorCamera::_setCroppingAndBinning(const std::pair<int, int>& crop, const int binningFactor) {

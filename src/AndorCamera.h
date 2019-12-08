@@ -13,7 +13,7 @@ public:
 	};
 
 	enum AndorPropIDs {
-		PropEMGain = BaseCameraClass::FirstAvailablePropertyID,
+		PropEMGain = CameraProperty::FirstAvailablePropertyID,
 		PropFrameTransferMode,
 		PropVerticalReadoutSpeed,
 		PropHorizontalReadoutSpeed,
@@ -28,13 +28,14 @@ public:
 	std::string getIdentifierStr() const override;
 
 	std::vector<CameraProperty> getCameraProperties() override;
-	void setCameraProperty(const CameraProperty& prop) override;
 
 	std::pair<int, int> getActualImageSize() const override;
 	double getFrameRate() const override;
 
 private:
-	std::pair<int, int> _getSensorSize() const override;
+	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+
+	std::pair<int, int> _getSensorSize() const;
 	AndorCapabilities _getCapabilities() const;
 	bool _hasFrameTransferMode() const;
 	bool _hasEMGain() const;
@@ -45,14 +46,9 @@ private:
 	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
 
-	void _setExposureTime(const double exposureTime) override;
-	double _getExposureTime() const override;
-	void _derivedSetImageCrop(const std::pair<int, int>& crop) override;
-	void _derivedSetBinningFactor(const int binningFactor) override;
-	int _getBinningFactor() const override;
+	void _setExposureTime(const double exposureTime);
+	double _getExposureTime() const;
 	void _setCroppingAndBinning(const std::pair<int, int>& crop, const int binningFactor);
-
-	bool _usesSoftwareCroppingAndBinning() const override { return false; };
 
 	void _setDefaults();
 	std::string _andorErrorCodeToMessage(int errorCode) const;
@@ -66,13 +62,13 @@ private:
 	bool _waitForNewImageWithTimeout(int timeoutMillis) override;
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
+	std::pair<int, int> _desiredCropSize;
+	int _desiredBinningFactor;
 	bool _frameTransferModeOn;
 	bool _coolerOn;
 	double _temperatureSetpoint;
 	int _horizontalReadoutSpeedIndex;
 	int _verticalReadoutSpeedIndex;
-	std::pair<int, int> _desiredCropSize;
-	int _desiredBinningFactor;
 	int _numberOfImagesDelivered;
 };
 
