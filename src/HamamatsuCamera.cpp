@@ -49,7 +49,8 @@ std::string HamamatsuCamera::getIdentifierStr() const {
 }
 
 std::vector<CameraProperty> HamamatsuCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties = getRequiredProperties();
+	std::vector<CameraProperty> properties;
+	properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2, 4 });
 
 	if (_propertyIsSupported(_camHandle, DCAM_IDPROP_CCDMODE)) {
 		properties.push_back(_getSetEMMode(GetProperty, std::string()));
@@ -69,31 +70,6 @@ std::vector<CameraProperty> HamamatsuCamera::getCameraProperties() {
 	return properties;
 }
 
-void HamamatsuCamera::setCameraProperty(const CameraProperty& prop) {
-	if (setIfRequiredProperty(prop) == true) {
-		return;
-	}
-	switch (prop.getPropertyCode()) {
-		case PropEMMode:
-			_getSetEMMode(SetProperty, prop.getCurrentOption());
-			break;
-		case PropEMGain:
-			_getSetEMGain(SetProperty, prop.getValue());
-			break;
-		case PropReadoutSpeed:
-			_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
-			break;
-		case PropTemperatureSetPoint:
-			_getSetTemperatureSetPoint(SetProperty, prop.getValue());
-			break;
-		case PropCoolerOn:
-			_getSetCoolerOn(SetProperty, prop.getCurrentOption());
-			break;
-		default:
-			throw std::runtime_error("setting unrecognized option");
-	}
-}
-
 std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
     std::pair<int, int> size;
     size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
@@ -105,22 +81,40 @@ double HamamatsuCamera::getFrameRate() const {
 	return _getPropertyValue(_camHandle, DCAM_IDPROP_INTERNALFRAMERATE);
 }
 
-int HamamatsuCamera::_getBinningFactor() const {
-    int fact = _getPropertyValue(_camHandle, DCAM_IDPROP_BINNING);
-    switch (fact) {
-        case DCAMPROP_BINNING__1:
-            return 1;
-            break;
-        case DCAMPROP_BINNING__2:
-            return 2;
-            break;
-        case DCAMPROP_BINNING__4:
-            return 4;
-            break;
-        default:
-            throw std::runtime_error("unknown hamamatsu binning factor");
-            break;
-    }
+void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+	std::vector<CameraProperty> propsCopy(properties);
+	
+	double exposureTime = -1.0;
+	std::pair<int, int> cropping(512, 512);
+	int binningFactor = 1;
+	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+
+	_setBinningFactor(1);
+	_setImageCrop(cropping);
+	_setBinningFactor(binningFactor);
+	_setExposureTime(exposureTime);
+
+	for (const auto& prop : propsCopy) {
+		switch (prop.getPropertyCode()) {
+			case PropEMMode:
+				_getSetEMMode(SetProperty, prop.getCurrentOption());
+				break;
+			case PropEMGain:
+				_getSetEMGain(SetProperty, prop.getValue());
+				break;
+			case PropReadoutSpeed:
+				_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
+				break;
+			case PropTemperatureSetPoint:
+				_getSetTemperatureSetPoint(SetProperty, prop.getValue());
+				break;
+			case PropCoolerOn:
+				_getSetCoolerOn(SetProperty, prop.getCurrentOption());
+				break;
+			default:
+				throw std::runtime_error("setting unrecognized option");
+		}
+	}
 }
 
 CameraProperty HamamatsuCamera::_getSetEMMode(GetOrSetProperty getOrSet, const std::string & mode) {
@@ -201,7 +195,7 @@ double HamamatsuCamera::_getExposureTime() const {
 	return _getPropertyValue(_camHandle, DCAM_IDPROP_EXPOSURETIME);
 }
 
-void HamamatsuCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {
+void HamamatsuCamera::_setImageCrop(const std::pair<int, int>& crop) {
     auto sensorSize = _getSensorSize();
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHPOS, 0);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVPOS, 0);
@@ -212,8 +206,14 @@ void HamamatsuCamera::_derivedSetImageCrop(const std::pair<int, int>& crop) {
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHPOS, rowOffset);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVPOS, colOffset);
 }
+std::pair<int, int> HamamatsuCamera::_getImageCrop() {
+	std::pair<int, int> cropping;
+	cropping.first = _getPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE);
+	cropping.second = _getPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE);
+	return cropping;
+}
 
-void HamamatsuCamera::_derivedSetBinningFactor(const int binningFactor) {
+void HamamatsuCamera::_setBinningFactor(const int binningFactor) {
     int fact = 0;
     switch (binningFactor) {
         case 1:
@@ -230,6 +230,26 @@ void HamamatsuCamera::_derivedSetBinningFactor(const int binningFactor) {
             break;
     }
     _setPropertyValue(_camHandle, DCAM_IDPROP_BINNING, fact);
+}
+
+int HamamatsuCamera::_getBinningFactor() {
+	int binning = 1;
+	int encoded = _getPropertyValue(_camHandle, DCAM_IDPROP_BINNING);
+	switch (encoded) {
+		case DCAMPROP_BINNING__1:
+			binning = 1;
+			break;
+		case DCAMPROP_BINNING__2:
+			binning = 2;
+			break;
+		case DCAMPROP_BINNING__4:
+			binning = 4;
+			break;
+		default:
+			throw std::runtime_error("unknown hamamatsu binning factor");
+			break;
+	}
+	return binning;
 }
 
 void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
