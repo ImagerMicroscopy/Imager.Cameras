@@ -20,7 +20,7 @@ public:
 	};
 
 	enum PCOPropIDs {
-		PropReadoutSpeed = BaseCameraClass::FirstAvailablePropertyID,
+		PropReadoutSpeed = CameraProperty::FirstAvailablePropertyID,
 	};
 
 	PCOCamera(HANDLE camHandle);
@@ -29,24 +29,23 @@ public:
 	std::string getIdentifierStr() const override;
 
 	std::vector<CameraProperty> getCameraProperties() override;
-	void setCameraProperty(const CameraProperty& prop) override;
 
-    //std::pair<int, int> getActualImageSize() const override;
+    std::pair<int, int> getActualImageSize() const override;
 	double getFrameRate() const override;
 
 	static std::string pcoErrorAsString(const int errCode);
 
 private:
-	std::pair<int, int> _getSensorSize() const override { return _sensorSize; }
+	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+
+	std::pair<int, int> _getSensorSize() const { return _sensorSize; }
 	//int _getBinningFactor() const override;
 	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
 
-	void _setExposureTime(const double exposureTime) override;
-	double _getExposureTime() const override;
-    //void _derivedSetImageCrop(const std::pair<int, int>& crop) override;
-    //void _derivedSetBinningFactor(const int binningFactor) override;
+	void _setExposureTime(const double exposureTime);
+	double _getExposureTime() const;
 
-    bool _usesSoftwareCroppingAndBinning() const override  { return true; };
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
 	bool _hasCustomAcquireSingleImage() const override { return false; }
 	//void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
@@ -65,6 +64,8 @@ private:
 	PCO_Description _camDescription;
 	std::string _camName;
 	std::pair<int, int> _sensorSize;
+	std::pair<int, int> _desiredCropSize;
+	int _desiredBinningFactor;
 	std::map < std::string , int> _readoutSpeeds;
 	std::vector<std::uint16_t> _frameBuffer;
 	std::vector<HANDLE> _waitObjects;

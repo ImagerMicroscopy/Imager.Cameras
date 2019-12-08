@@ -11,6 +11,8 @@ PCOCamera::PCOCamera(HANDLE camHandle) :
 {
 	_fetchCameraInfo();
 	_initDefaults();
+	_desiredCropSize = _getSensorSize();
+	_desiredBinningFactor = 1;
 }
 
 PCOCamera::~PCOCamera() {
@@ -31,34 +33,20 @@ std::string PCOCamera::getIdentifierStr() const {
 }
 
 std::vector<CameraProperty> PCOCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties = getRequiredProperties();
+	std::vector<CameraProperty> properties;
+	properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
 
 	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
 	
 	return properties;
 }
 
-void PCOCamera::setCameraProperty(const CameraProperty& prop) {
-	if (setIfRequiredProperty(prop) == true) {
-		return;
-	}
-	switch (prop.getPropertyCode()) {
-		case PropReadoutSpeed:
-			_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
-			break;
-		default:
-			throw std::runtime_error("setting unrecognized option");
-	}
+std::pair<int, int> PCOCamera::getActualImageSize() const {
+	auto size = _desiredCropSize;
+	size.first /= _desiredBinningFactor;
+	size.second /= _desiredBinningFactor;
+	return size;
 }
-
-/*std::pair<int, int> PCOCamera::getActualImageSize() const {;
-	WORD hSize, vSize, maxHSize, maxVSize;
-	int pcoErr = PCO_GetSizes(_camHandle, &hSize, &vSize, &maxHSize, &maxVSize);
-	if (pcoErr) {
-		throw std::runtime_error("Error calling PCO_GetSizes()");
-	}
-    return std::pair<int, int>(hSize, vSize);
-}*/
 
 double PCOCamera::getFrameRate() const {
 	DWORD time_s, time_ns;
@@ -73,6 +61,28 @@ std::string PCOCamera::pcoErrorAsString(const int errCode) {
 	char buf[512];
 	PCO_GetErrorTextSDK(errCode, buf, sizeof(buf));
 	return std::string(buf);
+}
+
+void PCOCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+	std::vector<CameraProperty> propsCopy(properties);
+
+	double exposureTime = 0;
+	std::pair<int, int> cropping(512, 512);
+	int binningFactor = 1;
+	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+	_setExposureTime(exposureTime);
+	_desiredCropSize = cropping;
+	_desiredBinningFactor = binningFactor;
+
+	for (const auto& prop : propsCopy) {
+		switch (prop.getPropertyCode()) {
+			case PropReadoutSpeed:
+				_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
+				break;
+			default:
+				throw std::runtime_error("setting unrecognized option");
+		}
+	}
 }
 
 CameraProperty PCOCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string & mode) {
@@ -133,6 +143,17 @@ double PCOCamera::_getExposureTime() const {
 		throw std::runtime_error("Error calling PCO_GetDelayExposureTime()");
 	}
 	return _pcoTimeToSeconds(dwExposure, wTimeBaseExposure);
+}
+
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> PCOCamera::_derivedGetAdditionalImageProcessingDescriptors() {
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> descs;
+	if (_getSensorSize() != _desiredCropSize) {
+		descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_desiredCropSize.first, _desiredCropSize.second)));
+	}
+	if (_desiredBinningFactor != 1) {
+		descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_desiredBinningFactor)));
+	}
+	return descs;
 }
 
 void PCOCamera::_derivedStartAsyncAcquisition() {
