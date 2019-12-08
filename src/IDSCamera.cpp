@@ -10,6 +10,9 @@ IDSCamera::IDSCamera(HIDS camHandle) :
   , _ptrToMemoryWithOldestImage(nullptr)
 {
 	_setDefaults();
+
+	_desiredCropSize = _getSensorSize();
+	_desiredBinningFactor = 1;
 }
 
 IDSCamera::~IDSCamera() {
@@ -28,7 +31,8 @@ std::string IDSCamera::getIdentifierStr() const {
 }
 
 std::vector<CameraProperty> IDSCamera::getCameraProperties() {
-	std::vector<CameraProperty> properties = getRequiredProperties();
+	std::vector<CameraProperty> properties;
+	properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
 
 	if (_haveGainBoost()) {
 		properties.push_back(_getSetGainBoost(GetProperty, std::string()));
@@ -44,39 +48,54 @@ std::vector<CameraProperty> IDSCamera::getCameraProperties() {
 	return properties;
 }
 
-void IDSCamera::setCameraProperty(const CameraProperty & prop) {
-	if (setIfRequiredProperty(prop) == true) {
-		return;
-	}
-
-	switch (prop.getPropertyCode()) {
-		case PropGainBoost:
-			_getSetGainBoost(SetProperty, prop.getCurrentOption());
-			break;
-		case PropHardwareGain:
-			_getSetHardwareGain(SetProperty, prop.getValue());
-			break;
-		case PropPixelClock:
-			_getSetPixelClock(SetProperty, prop.getCurrentOption());
-			break;
-		case PropHotPixelCorrection:
-			_getSetHotPixelCorrection(SetProperty, prop.getCurrentOption());
-			break;
-		case PropAdaptiveHotPixelCorrectionMode:
-			_getSetAdaptiveHotPixelCorrectionMode(SetProperty, prop.getCurrentOption());
-			break;
-		case PropAdaptiveHotPixelSensitivity:
-			_getSetAdaptiveHotPixelCorrectionSensitivity(SetProperty, prop.getValue());
-			break;
-		default:
-			throw std::runtime_error("setting unrecognized option");
-	}
+std::pair<int, int> IDSCamera::getActualImageSize() const {
+	auto size = _desiredCropSize;
+	size.first /= _desiredBinningFactor;
+	size.second /= _desiredBinningFactor;
+	return size;
 }
 
 double IDSCamera::getFrameRate() const {
 	double fps;
 	is_SetFrameRate(_camHandle, IS_GET_FRAMERATE, &fps);
 	return fps;
+}
+
+void IDSCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+	std::vector<CameraProperty> propsCopy(properties);
+
+	double exposureTime = 0;
+	std::pair<int, int> cropping(512, 512);
+	int binningFactor = 1;
+	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+	_setExposureTime(exposureTime);
+	_desiredCropSize = cropping;
+	_desiredBinningFactor = binningFactor;
+
+	for (const auto& prop : propsCopy) {
+		switch (prop.getPropertyCode()) {
+			case PropGainBoost:
+				_getSetGainBoost(SetProperty, prop.getCurrentOption());
+				break;
+			case PropHardwareGain:
+				_getSetHardwareGain(SetProperty, prop.getValue());
+				break;
+			case PropPixelClock:
+				_getSetPixelClock(SetProperty, prop.getCurrentOption());
+				break;
+			case PropHotPixelCorrection:
+				_getSetHotPixelCorrection(SetProperty, prop.getCurrentOption());
+				break;
+			case PropAdaptiveHotPixelCorrectionMode:
+				_getSetAdaptiveHotPixelCorrectionMode(SetProperty, prop.getCurrentOption());
+				break;
+			case PropAdaptiveHotPixelSensitivity:
+				_getSetAdaptiveHotPixelCorrectionSensitivity(SetProperty, prop.getValue());
+				break;
+			default:
+				throw std::runtime_error("setting unrecognized option");
+		}
+	}
 }
 
 std::pair<int, int> IDSCamera::_getSensorSize() const {
@@ -274,6 +293,17 @@ CameraProperty IDSCamera::_getSetAdaptiveHotPixelCorrectionSensitivity(GetOrSetP
 	CameraProperty prop(PropAdaptiveHotPixelSensitivity, "Adaptive hot pixel sensitivity");
 	prop.setNumeric(sensitivity);
 	return prop;
+}
+
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> IDSCamera::_derivedGetAdditionalImageProcessingDescriptors() {
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> descs;
+	if (_getSensorSize() != _desiredCropSize) {
+		descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_desiredCropSize.first, _desiredCropSize.second)));
+	}
+	if (_desiredBinningFactor != 1) {
+		descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_desiredBinningFactor)));
+	}
+	return descs;
 }
 
 bool IDSCamera::_haveGainBoost() const {

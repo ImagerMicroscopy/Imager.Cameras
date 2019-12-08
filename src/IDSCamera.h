@@ -18,7 +18,7 @@ public:
 	};
 
 	enum IDSPropIDs {
-		PropGainBoost = BaseCameraClass::FirstAvailablePropertyID,
+		PropGainBoost = CameraProperty::FirstAvailablePropertyID,
 		PropHardwareGain,
 		PropPixelClock,
 		PropHotPixelCorrection,
@@ -32,14 +32,16 @@ public:
     std::string getIdentifierStr() const override;
 
 	std::vector<CameraProperty> getCameraProperties() override;
-	void setCameraProperty(const CameraProperty& prop) override;
 
+	std::pair<int, int> getActualImageSize() const override;
 	double getFrameRate() const override;
 
 private:
-	std::pair<int, int> _getSensorSize() const override;
-	double _getExposureTime() const override;
-	void _setExposureTime(const double exposureTime) override;
+	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+
+	std::pair<int, int> _getSensorSize() const;
+	double _getExposureTime() const;
+	void _setExposureTime(const double exposureTime);
 
 	CameraProperty _getSetGainBoost(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetHardwareGain(GetOrSetProperty getOrSet, const double value);
@@ -47,6 +49,8 @@ private:
 	CameraProperty _getSetHotPixelCorrection(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetAdaptiveHotPixelCorrectionMode(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetAdaptiveHotPixelCorrectionSensitivity(GetOrSetProperty getOrSet, const double value);
+
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
 	bool _haveGainBoost() const;
 	bool _haveHotPixelCorrection() const;
@@ -60,6 +64,8 @@ private:
     void _setDefaults();
 
     HIDS _camHandle;
+	std::pair<int, int> _desiredCropSize;
+	int _desiredBinningFactor;
 	std::vector<std::pair<int, std::string>> _supportedPixelClocks;
     std::vector<std::uint16_t> _frameBuffer;
     std::vector<char*> _frameBufferPointers;
