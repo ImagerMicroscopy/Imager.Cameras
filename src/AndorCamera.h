@@ -18,9 +18,16 @@ public:
 		PropVerticalReadoutSpeed,
 		PropHorizontalReadoutSpeed,
 		PropTemperatureSetPoint,
-		PropCoolerOn
+		PropCoolerOn,
+		PropTriggerMode
 	};
 
+	enum AndorTriggerMode {
+		TrigInternal = 0,
+		TrigExternal = 1,
+		TrigExternalStart = 6,
+		TrigExternalExposure = 7
+	};
 
 	AndorCamera();
 	virtual ~AndorCamera();
@@ -46,6 +53,8 @@ private:
 	CameraProperty _getSetVerticalReadoutSpeeds(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
+	CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
+	std::vector<std::pair<std::string, int>> _triggerModes() const;
 
 	void _setExposureTime(const double exposureTime);
 	double _getExposureTime() const;
@@ -70,6 +79,7 @@ private:
 	double _temperatureSetpoint;
 	int _horizontalReadoutSpeedIndex;
 	int _verticalReadoutSpeedIndex;
+	int _triggerMode;
 	int _numberOfImagesDelivered;
 };
 

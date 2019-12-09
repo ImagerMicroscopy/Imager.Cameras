@@ -25,7 +25,6 @@ AndorCamera::AndorCamera() :
 		throw std::runtime_error("No Andor camera");
 
 	_setDefaults();
-	_desiredCropSize = _getSensorSize();
 }
 
 AndorCamera::~AndorCamera() {
@@ -68,6 +67,7 @@ std::vector<CameraProperty> AndorCamera::_derivedGetCameraProperties() {
 	properties.push_back(_getSetHorizontalReadoutSpeeds(GetProperty, std::string()));
 	properties.push_back(_getSetCoolerOn(GetProperty, std::string()));
 	properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
+	properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
 	return properties;
 }
 
@@ -100,6 +100,9 @@ void AndorCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>&
 				break;
 			case PropCoolerOn:
 				_getSetCoolerOn(SetProperty, prop.getCurrentOption());
+				break;
+			case PropTriggerMode:
+				_getSetTriggerMode(SetProperty, prop.getCurrentOption());
 				break;
 			default:
 				throw std::runtime_error("setting unrecognized option");
@@ -252,7 +255,47 @@ CameraProperty AndorCamera::_getSetTemperatureSetPoint(GetOrSetProperty getOrSet
 	return prop;
 }
 
-CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std::string & mode) {
+CameraProperty AndorCamera::_getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode) {
+	std::vector<std::pair<std::string, int>> modes = _triggerModes();
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(modes.cbegin(), modes.cend(), [=](const std::pair<std::string, int>& p) {
+			return (p.first == mode);
+		});
+		if (it == modes.cend()) {
+			throw std::runtime_error("AndorCamera::_getSetTriggerMode() but can't find mode");
+		}
+		int triggerCode = it->second;
+		int result = SetTriggerMode(triggerCode);
+		if (result == DRV_SUCCESS) {
+			_triggerMode = triggerCode;
+		}
+	}
+	std::vector<std::string> modeStrings;
+	for (const auto& m : modes) {
+		modeStrings.emplace_back(m.first);
+	}
+	auto it = std::find_if(modes.cbegin(), modes.cend(), [=](const std::pair<std::string, int>& p) {
+		return (p.second == _triggerMode);
+	});
+	if (it == modes.cend()) {
+		throw std::runtime_error("AndorCamera::_getSetTriggerMode() but can't find andor mode");
+	}
+	std::string currentMode = it->first;
+	CameraProperty prop(PropTriggerMode, "Trigger mode");
+	prop.setDiscrete(currentMode, modeStrings);
+	return prop;
+}
+
+std::vector<std::pair<std::string, int>> AndorCamera::_triggerModes() const {
+	std::vector<std::pair<std::string, int>> modes;
+	modes.emplace_back("Internal", TrigInternal);
+	modes.emplace_back("External", TrigExternal);
+	modes.emplace_back("External Start", TrigExternalStart);
+	modes.emplace_back("External Exposure (bulb)", TrigExternalExposure);
+	return modes;
+}
+
+CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode) {
 	static const char* kOn = "On";
 	static const char* kOff = "Off";
 	if (getOrSet == SetProperty) {
@@ -329,6 +372,7 @@ void AndorCamera::_setDefaults() {
 	result = SetTriggerMode(0);					// internal trigger mode
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
+	_triggerMode = TrigInternal;
 
 	result = SetEMGainMode(0);					// EM Gain is controlled by DAC settings in the range 0-255
 												//if (result != DRV_SUCCESS)
