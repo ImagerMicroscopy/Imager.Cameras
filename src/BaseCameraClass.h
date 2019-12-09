@@ -8,6 +8,7 @@
 #include <thread>
 #include <mutex>
 #include <future>
+#include <optional>
 #include <vector>
 
 #include "ReaderWriterQueue/atomicops.h"
@@ -42,6 +43,8 @@ public:
 	void abortAsyncAquisitionIfRunning();
 	int getNImagesAsyncAcquired();
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
+	std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> getOldestImageAsyncAcquiredWithTimeout(const std::uint32_t timeoutMillis);
+
 
 private:
 	virtual std::vector<CameraProperty> _derivedGetCameraProperties() = 0;

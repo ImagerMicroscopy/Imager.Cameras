@@ -205,7 +205,7 @@ int StartAsyncAcquisition(char* cameraName) {
 	return 0;
 }
 
-int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
+int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
     if (!gHaveInit)
         return NO_INIT;
 
@@ -214,12 +214,21 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint16_t** imagePtr, int* nRow
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
         std::shared_ptr<std::uint16_t> imageData;
-        std::tie(imageData, *nRows, *nCols, *timeStamp) = camPtr->getOldestImageAsyncAcquired();
-        *imagePtr = imageData.get();
-		{
-			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
-			gImagesInFlight.push_back(imageData);
+		std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> result = camPtr->getOldestImageAsyncAcquiredWithTimeout(timeoutMillis);
+		if (result.has_value()) {	// got image
+			std::tie(imageData, *nRows, *nCols, *timeStamp) = result.value();
+			*imagePtr = imageData.get();
+			{
+				std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+				gImagesInFlight.push_back(imageData);
+			}
+		} else {					// timeout
+			*imagePtr = nullptr;
+			*nRows = -1;
+			*nCols = -1;
+			*timeStamp = -1;
 		}
+        
     }
     catch (...) {
         return GENERIC_ERROR;

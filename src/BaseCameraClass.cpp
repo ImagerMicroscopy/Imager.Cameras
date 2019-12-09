@@ -114,20 +114,30 @@ int BaseCameraClass::getNImagesAsyncAcquired() {
 }
 
 std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::getOldestImageAsyncAcquired() {
-    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
-    for ( ; ; ) {
-        bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(500));
-        if (haveImage) {
-            return imageData;
-        }
-        if (!haveImage && !isAsyncAcquisitionRunning()) {
+	auto result = getOldestImageAsyncAcquiredWithTimeout(std::numeric_limits<uint32_t>::max());
+	return result.value();
+}
+
+std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> BaseCameraClass::getOldestImageAsyncAcquiredWithTimeout(const std::uint32_t timeoutMillis) {
+	std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
+	int nCompleteWaitLoops = timeoutMillis / 500;
+	int remainder = timeoutMillis - (nCompleteWaitLoops * 500);
+
+	for (int i = 0; i < (nCompleteWaitLoops + 1) ; i += 1) {
+		int sleepDuration = (i == nCompleteWaitLoops) ? remainder : 500;
+		bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(sleepDuration));
+		if (haveImage) {
+			return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>(imageData);
+		}
+		if (!isAsyncAcquisitionRunning()) {
 			if (!_asyncErrorStr.empty()) {
 				throw std::runtime_error(std::string("async worker found error: ") + _asyncErrorStr);
 			} else {
 				throw std::runtime_error("waiting for new image but no acquisition running");
 			}
-        }
-    }
+		}
+	}
+	return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
