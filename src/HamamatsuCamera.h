@@ -35,12 +35,13 @@ public:
 
 	std::string getIdentifierStr() const override;
 
-    std::pair<int, int> getActualImageSize() const override;
 	double getFrameRate() const override;
 
 private:
 	std::vector<CameraProperty> _derivedGetCameraProperties() override;
 	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+
+	std::pair<int, int> _getSizeOfRawImages() const override;
 
 	std::pair<int, int> _getSensorSize() const { return _sensorSize; }
 	CameraProperty _getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);

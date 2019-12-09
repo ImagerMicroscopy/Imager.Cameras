@@ -35,13 +35,6 @@ std::string HamamatsuCamera::getIdentifierStr() const {
 	return _camName;
 }
 
-std::pair<int, int> HamamatsuCamera::getActualImageSize() const {
-    std::pair<int, int> size;
-    size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
-    size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
-    return size;
-}
-
 double HamamatsuCamera::getFrameRate() const {
 	return _getPropertyValue(_camHandle, DCAM_IDPROP_INTERNALFRAMERATE);
 }
@@ -132,6 +125,14 @@ void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProper
 				throw std::runtime_error("setting unrecognized option");
 		}
 	}
+}
+
+
+std::pair<int, int> HamamatsuCamera::_getSizeOfRawImages() const {
+	std::pair<int, int> size;
+	size.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
+	size.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
+	return size;
 }
 
 CameraProperty HamamatsuCamera::_getSetEMMode(GetOrSetProperty getOrSet, const std::string & mode) {
@@ -416,7 +417,7 @@ void HamamatsuCamera::_setDefaults() {
 }
 
 void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
-	std::pair<int, int> imageSize = getActualImageSize();
+	std::pair<int, int> imageSize = _getSizeOfRawImages();
 	int nPixelsInImage = imageSize.first * imageSize.second;
 	DCAMERR err;
 
@@ -445,7 +446,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
-	std::pair<int, int> imageSize = getActualImageSize();
+	std::pair<int, int> imageSize = _getSizeOfRawImages();
 	int nPixelsInImage = imageSize.first * imageSize.second;
 	DCAMERR err;
 	
@@ -502,7 +503,7 @@ bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 
 void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-	auto imageSize = getActualImageSize();
+	auto imageSize = _getSizeOfRawImages();
 	int nPixelsInImage = imageSize.first * imageSize.second;
 	int nBytesPerImage = nPixelsInImage * sizeof(std::uint16_t);
 	if (nBytes != nBytesPerImage) {

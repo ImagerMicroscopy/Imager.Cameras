@@ -39,13 +39,6 @@ std::string AndorCamera::getIdentifierStr() const {
 	return std::string(buf);
 }
 
-std::pair<int, int> AndorCamera::getActualImageSize() const {
-	auto size = _desiredCropSize;
-	size.first /= _desiredBinningFactor;
-	size.second /= _desiredBinningFactor;
-	return size;
-}
-
 double AndorCamera::getFrameRate() const {
 	float exposureTime, accumulate, kinetic;
 	int result = GetAcquisitionTimings(&exposureTime, &accumulate, &kinetic);
@@ -115,6 +108,13 @@ void AndorCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>&
 				throw std::runtime_error("setting unrecognized option");
 		}
 	}
+}
+
+std::pair<int, int> AndorCamera::_getSizeOfRawImages() const {
+	auto size = _desiredCropSize;
+	size.first /= _desiredBinningFactor;
+	size.second /= _desiredBinningFactor;
+	return size;
 }
 
 std::pair<int, int> AndorCamera::_getSensorSize() const {
@@ -502,7 +502,7 @@ std::string AndorCamera::_andorErrorCodeToMessage(int errorCode) const {
 }
 
 void AndorCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
-	auto imageSize = getActualImageSize();
+	auto imageSize = _getSizeOfRawImages();
 	int nPixelsInImage = imageSize.first * imageSize.second;
 
 	if (nBytes != (nPixelsInImage * sizeof(std::uint16_t))) {

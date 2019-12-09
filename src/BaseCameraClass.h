@@ -31,8 +31,7 @@ public:
 
 	std::vector<CameraProperty> getCameraProperties();
 	void setCameraProperties(const std::vector<CameraProperty>& properties);
-	
-    virtual std::pair<int, int> getActualImageSize() const = 0;
+
 	virtual double getFrameRate() const = 0;
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
 
@@ -49,6 +48,8 @@ public:
 private:
 	virtual std::vector<CameraProperty> _derivedGetCameraProperties() = 0;
 	virtual void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) = 0;
+
+	virtual std::pair<int, int> _getSizeOfRawImages() const = 0;
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
 	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
 

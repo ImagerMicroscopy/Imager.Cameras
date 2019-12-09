@@ -18,13 +18,6 @@ DummyCamera::DummyCamera() :
 	_currentCropping = _getSensorSize();
 }
 
-std::pair<int, int> DummyCamera::getActualImageSize() const {
-	auto crop = _getCurrentCropping();
-	crop.first /= _getCurrentBinning();
-	crop.second /= _getCurrentBinning();
-	return crop;
-}
-
 double DummyCamera::getFrameRate() const {
 	return (1.0 / _getExposureTime());
 }
@@ -56,9 +49,26 @@ void DummyCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>&
 	}
 }
 
+std::pair<int, int> DummyCamera::_getSizeOfRawImages() const {
+	return _getSensorSize();
+}
+
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> DummyCamera::_derivedGetAdditionalImageProcessingDescriptors() {
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> descs;
+	if (_getSensorSize() != _getCurrentCropping()) {
+		descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_getCurrentCropping().first, _getCurrentCropping().second)));
+	}
+	if (_getCurrentBinning() != 1) {
+		descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_getCurrentBinning())));
+	}
+	return descs;
+}
+
 void DummyCamera::_setExposureTime(const double exposureTime) {
 	auto sensorSize = _getSensorSize();
-	auto currentSize = getActualImageSize();
+	auto currentSize = _getCurrentCropping();
+	currentSize.first /= _getCurrentBinning();
+	currentSize.second /= _getCurrentBinning();
 	double minExposureTime = 50e-3 / (sensorSize.first * sensorSize.second / (currentSize.first * currentSize.second));
 	_exposureTime = clamp(exposureTime, minExposureTime, 1.0);
 }
@@ -88,7 +98,7 @@ std::pair<int, int> DummyCamera::_getSensorSize() const {
 }
 
 std::shared_ptr<std::vector<uint16_t>> DummyCamera::_generateNewImage() {
-	std::pair<int, int> imageDimensions = getActualImageSize();
+	std::pair<int, int> imageDimensions = _getSizeOfRawImages();
     int nPixels = imageDimensions.first * imageDimensions.second;
     std::shared_ptr<std::vector<uint16_t>> buf(new std::vector<uint16_t>(nPixels));
 	_fillImage(buf->data(), nPixels);
@@ -103,7 +113,7 @@ void DummyCamera::_fillImage(std::uint16_t * data, size_t nPixels) {
 }
 
 void DummyCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
-	auto imageDimensions = getActualImageSize();
+	auto imageDimensions = _getSizeOfRawImages();
 	int nPixels = imageDimensions.first * imageDimensions.second;
 	if (nBytes != nPixels * sizeof(std::uint16_t)) {
 		throw std::runtime_error("invalid buffer size to _derivedAcquireSingleImage()");
@@ -149,7 +159,7 @@ bool DummyCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 void DummyCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
 	int nPixelsInBuf = nBytes / sizeof(std::uint16_t);
-    std::pair<int, int> imageSize = getActualImageSize();
+    std::pair<int, int> imageSize = _getSizeOfRawImages();
     int nPixels = imageSize.first * imageSize.second;
     if (nPixels != nPixelsInBuf) {
         throw std::runtime_error("_derivedStoreNewImageInBuffer() with incorrect buffer size");

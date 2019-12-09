@@ -32,13 +32,6 @@ std::string PCOCamera::getIdentifierStr() const {
 	return _camName;
 }
 
-std::pair<int, int> PCOCamera::getActualImageSize() const {
-	auto size = _desiredCropSize;
-	size.first /= _desiredBinningFactor;
-	size.second /= _desiredBinningFactor;
-	return size;
-}
-
 double PCOCamera::getFrameRate() const {
 	DWORD time_s, time_ns;
 	int pcoErr = PCO_GetCOCRuntime(_camHandle, &time_s, &time_ns);
@@ -90,6 +83,10 @@ void PCOCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& p
 				throw std::runtime_error("setting unrecognized option");
 		}
 	}
+}
+
+std::pair<int, int> PCOCamera::_getSizeOfRawImages() const {
+	return _getSensorSize();
 }
 
 CameraProperty PCOCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string & mode) {

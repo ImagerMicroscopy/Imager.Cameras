@@ -65,7 +65,7 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
 
 		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
 	} else {
-		std::pair<int, int> imageSize = getActualImageSize();
+		std::pair<int, int> imageSize = _getSizeOfRawImages();
 		int nPixels = imageSize.first * imageSize.second;
 		std::shared_ptr<std::uint16_t> imageData(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
 		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
@@ -141,7 +141,7 @@ std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> Base
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
-    auto actualImageSize = getActualImageSize();
+    auto actualImageSize = _getSizeOfRawImages();
 
 	try {
 		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();

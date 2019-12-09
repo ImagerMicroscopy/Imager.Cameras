@@ -30,13 +30,6 @@ std::string IDSCamera::getIdentifierStr() const {
     return idStr;
 }
 
-std::pair<int, int> IDSCamera::getActualImageSize() const {
-	auto size = _desiredCropSize;
-	size.first /= _desiredBinningFactor;
-	size.second /= _desiredBinningFactor;
-	return size;
-}
-
 double IDSCamera::getFrameRate() const {
 	double fps;
 	is_SetFrameRate(_camHandle, IS_GET_FRAMERATE, &fps);
@@ -103,6 +96,10 @@ void IDSCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& p
 				throw std::runtime_error("setting unrecognized option");
 		}
 	}
+}
+
+std::pair<int, int> IDSCamera::_getSizeOfRawImages() const {
+	return _getSensorSize();
 }
 
 std::pair<int, int> IDSCamera::_getSensorSize() const {
