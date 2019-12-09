@@ -23,7 +23,11 @@ public:
 		PropEMGain,
 		PropReadoutSpeed,
 		PropTemperatureSetPoint,
-		PropCoolerOn
+		PropCoolerOn,
+		PropTriggerSource,
+		PropTriggerMode,
+		PropTriggerActive,
+		PropTriggerPolarity
 	};
 
 	HamamatsuCamera(HDCAM camHandle);
@@ -44,6 +48,10 @@ private:
 	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
 	CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
 	CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetTriggerSource(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetTriggerActive(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetTriggerPolarity(GetOrSetProperty getOrSet, const std::string& mode);
 
 	void _setExposureTime(const double exposureTime);
 	double _getExposureTime() const;
@@ -51,6 +59,8 @@ private:
 	std::pair<int, int> _getImageCrop();
     void _setBinningFactor(const int binningFactor);
 	int _getBinningFactor();
+
+	void _setDefaults();
 
 	bool _hasCustomAcquireSingleImage() const override { return true; }
 	void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
