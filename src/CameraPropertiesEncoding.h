@@ -1,6 +1,7 @@
 #ifndef CAMERAPROPERTIESENCODING_H
 #define CAMERAPROPERTIESENCODING_H
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -53,7 +54,7 @@ private:
 std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<std::pair<int, int>>& allowableCropping,
 												  const int currentBinning, const std::vector<int>& allowableBinning);
 
-std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
+std::tuple<std::optional<double>, std::optional<std::pair<int, int>>, std::optional<int>> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
 
 std::vector <std::pair<int, int>> StandardCroppingOptions(const std::pair<int, int>& uncroppedImageDimensions);
 std::vector<int> StandardBinningOptions();

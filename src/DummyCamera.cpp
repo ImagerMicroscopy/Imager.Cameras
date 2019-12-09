@@ -34,17 +34,26 @@ std::vector<CameraProperty> DummyCamera::_derivedGetCameraProperties() {
 }
 
 void DummyCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
-	double exposureTime = -1.0;
-	std::pair<int, int> cropping;
-	int binFactor = 0;
 	auto propsCopy(properties);
-	std::tie(exposureTime, cropping, binFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+
+	std::optional<double> exposureTime = 0;
+	std::optional<std::pair<int, int>> cropping(std::pair<int, int>(512, 512));
+	std::optional<int> binningFactor = 1;
+	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+
+	if (cropping.has_value()) {
+		_setCurrentCropping(cropping.value());
+	}
+	if (binningFactor.has_value()) {
+		_setCurrentBinning(binningFactor.value());
+	}
+	if (exposureTime.has_value()) {
+		_setExposureTime(exposureTime.value());
+	}
+
 	if (!propsCopy.empty()) {
 		throw std::runtime_error("DummyCamera::setCameraProperties() but non-standard");
 	}
-	_setCurrentCropping(cropping);
-	_setCurrentBinning(binFactor);
-	_setExposureTime(exposureTime);
 }
 
 void DummyCamera::_setExposureTime(const double exposureTime) {
@@ -140,8 +149,8 @@ bool DummyCamera::_derivedNewAsyncAcquisitionImageAvailable() {
 }
 void DummyCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
 	int nPixelsInBuf = nBytes / sizeof(std::uint16_t);
-    std::pair<int, int> sensorSize = _getSensorSize();
-    int nPixels = sensorSize.first * sensorSize.second;
+    std::pair<int, int> imageSize = getActualImageSize();
+    int nPixels = imageSize.first * imageSize.second;
     if (nPixels != nPixelsInBuf) {
         throw std::runtime_error("_derivedStoreNewImageInBuffer() with incorrect buffer size");
     }

@@ -115,19 +115,17 @@ std::vector<CameraProperty> GetStandardProperties(const double currentExposureTi
 	return properties;
 }
 
-std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties) {
-	double exposureTime;
-	std::pair<int, int> cropping;
-	int binning;
-	bool haveExposureTime = false, haveCropping = false, haveBinning = false;
+std::tuple<std::optional<double>, std::optional<std::pair<int, int>>, std::optional<int>> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties) {
+	std::optional<double> exposureTime;
+	std::optional<std::pair<int, int>> cropping;
+	std::optional<int> binning;
 
-	for (size_t i = properties.size() - 1; i >= 0; i += 1) {
+	for (int i = properties.size() - 1; i >= 0; i -= 1) {
 		const CameraProperty& prop = properties.at(i);
 		int propertyCode = prop.getPropertyCode();
 		switch (propertyCode) {
 			case CameraProperty::ReqPropExposureTime:
-				exposureTime = prop.getValue();
-				haveExposureTime = true;
+				exposureTime.emplace(prop.getValue());
 				break;
 			case CameraProperty::ReqPropCropping:
 			{
@@ -135,16 +133,16 @@ std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(s
 				if (sscanf(prop.getCurrentOption().c_str(), "%dx%d", &first, &second) != 2) {
 					throw std::runtime_error("decoding cropping from invalid string");
 				}
-				cropping = std::make_pair(first, second);
-				haveCropping = true;
+				cropping.emplace(first, second);
 				break;
 			}
 			case CameraProperty::ReqPropBinning:
 			{
-				if ((sscanf(prop.getCurrentOption().c_str(), "%d", &binning) != 1) || (binning <= 0)) {
+				int theFactor = 0;
+				if ((sscanf(prop.getCurrentOption().c_str(), "%d", &theFactor) != 1) || (theFactor <= 0)) {
 					throw std::runtime_error("decoding binning from invalid string");
 				}
-				haveBinning = true;
+				binning.emplace(theFactor);
 				break;
 			}
 			default:
@@ -152,10 +150,7 @@ std::tuple<double, std::pair<int, int>, int> DecodeAndRemoveStandardProperties(s
 				break;
 		}
 		properties.erase(properties.begin() + i);
-	}
-
-	if (!haveExposureTime || !haveCropping || !haveBinning) {
-		throw std::runtime_error("DecodeAndRemoveStandardProperties() but missing properties");
+		i -= 1;
 	}
 
 	return std::make_tuple(exposureTime, cropping, binning);

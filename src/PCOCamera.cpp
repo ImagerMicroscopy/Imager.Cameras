@@ -66,13 +66,20 @@ std::vector<CameraProperty> PCOCamera::_derivedGetCameraProperties() {
 void PCOCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
 	std::vector<CameraProperty> propsCopy(properties);
 
-	double exposureTime = 0;
-	std::pair<int, int> cropping(512, 512);
-	int binningFactor = 1;
+	std::optional<double> exposureTime = 0;
+	std::optional<std::pair<int, int>> cropping(std::pair<int, int>(512, 512));
+	std::optional<int> binningFactor = 1;
 	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
-	_setExposureTime(exposureTime);
-	_desiredCropSize = cropping;
-	_desiredBinningFactor = binningFactor;
+
+	if (cropping.has_value()) {
+		_desiredCropSize = cropping.value();
+	}
+	if (binningFactor.has_value()) {
+		_desiredBinningFactor = binningFactor.value();
+	}
+	if (exposureTime.has_value()) {
+		_setExposureTime(exposureTime.value());
+	}
 
 	for (const auto& prop : propsCopy) {
 		switch (prop.getPropertyCode()) {

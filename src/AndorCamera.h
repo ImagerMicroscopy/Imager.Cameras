@@ -58,6 +58,8 @@ private:
 
 	void _setExposureTime(const double exposureTime);
 	double _getExposureTime() const;
+	void _setCropping(const std::pair<int, int>& crop);
+	void _setBinning(const int binningFactor);
 	void _setCroppingAndBinning(const std::pair<int, int>& crop, const int binningFactor);
 
 	void _setDefaults();

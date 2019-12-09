@@ -73,13 +73,20 @@ std::vector<CameraProperty> AndorCamera::_derivedGetCameraProperties() {
 
 void AndorCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
 	std::vector<CameraProperty> propsCopy(properties);
-	double exposureTime = 0;
-	std::pair<int, int> cropping(512, 512);
-	int binningFactor = 1;
+	std::optional<double> exposureTime = 0;
+	std::optional<std::pair<int, int>> cropping(std::pair<int,int>(512, 512));
+	std::optional<int> binningFactor = 1;
 	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
 
-	_setCroppingAndBinning(cropping, binningFactor);
-	_setExposureTime(exposureTime);
+	if (cropping.has_value()) {
+		_setCropping(cropping.value());
+	}
+	if (binningFactor.has_value()) {
+		_setBinning(binningFactor.value());
+	}
+	if (exposureTime.has_value()) {
+		_setExposureTime(exposureTime.value());
+	}
 
 	for (const auto& prop : propsCopy) {
 		switch (prop.getPropertyCode()) {
@@ -333,6 +340,14 @@ double AndorCamera::_getExposureTime() const {
 	return exposureTime;
 }
 
+void AndorCamera::_setCropping(const std::pair<int, int>& crop) {
+	_setCroppingAndBinning(crop, _desiredBinningFactor);
+}
+
+void AndorCamera::_setBinning(const int binningFactor) {
+	_setCroppingAndBinning(_desiredCropSize, binningFactor);
+}
+
 void AndorCamera::_setCroppingAndBinning(const std::pair<int, int>& crop, const int binningFactor) {
 	std::pair<int, int> sensorSize = _getSensorSize();
 	int offsetX = (sensorSize.first - crop.first) / 2;
@@ -342,6 +357,8 @@ void AndorCamera::_setCroppingAndBinning(const std::pair<int, int>& crop, const 
 	if (result != DRV_SUCCESS) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 	}
+	_desiredCropSize = crop;
+	_desiredBinningFactor = binningFactor;
 }
 
 void AndorCamera::_setDefaults() {
@@ -354,9 +371,7 @@ void AndorCamera::_setDefaults() {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 
 	std::pair<int, int> sensorSize = _getSensorSize();	// use the full chip, no binning
-	_desiredCropSize = sensorSize;
-	_desiredBinningFactor = 1;
-	result = SetImage(1, 1, 1, sensorSize.second, 1, sensorSize.first);
+	_setCroppingAndBinning(sensorSize, 1);
 
 	result = SetAcquisitionMode(3);				// set kinetics mode
 	if (result != DRV_SUCCESS)
