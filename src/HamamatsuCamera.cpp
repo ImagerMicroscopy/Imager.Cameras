@@ -21,7 +21,7 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
 	std::string serialNumber = _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID);
 	_camName += "_" + serialNumber.substr(5);
 	
-	
+	_setDefaults();
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
