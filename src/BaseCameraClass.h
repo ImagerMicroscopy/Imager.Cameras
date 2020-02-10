@@ -53,7 +53,7 @@ private:
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
 	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
 
-    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
+    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue);
     void _clearAvailableImagesQueue();
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;

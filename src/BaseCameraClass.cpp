@@ -78,17 +78,24 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
 }
 
 int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
-    abortAsyncAquisitionIfRunning();
+	_acquisitionStartTimeStamp = _getTimeStamp();
+	
+	abortAsyncAquisitionIfRunning();
 	_asyncErrorStr.clear();
 	_asyncWantAbort = false;
 	_asyncNImagesStored = 0;
     _clearAvailableImagesQueue();
-
-    _acquisitionStartTimeStamp = _getTimeStamp();
+	std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue(new moodycamel::BlockingReaderWriterQueue<int>());
 
 	_asyncWorkerFuture = std::async(std::launch::async, [=]() {
-		_asyncAcquisitionWorker(acqMode, nImagesToAcquire);
+		_asyncAcquisitionWorker(acqMode, nImagesToAcquire, startedNotificationQueue);
 	});
+
+	int dummy = -1;
+	bool hadValue = startedNotificationQueue->wait_dequeue_timed(dummy, std::chrono::seconds(5));	// wait until acquisition has really started
+	if (!hadValue) {
+		throw std::runtime_error("Waiting excessively long on camera acquisition start");
+	}
 
 	return 0;
 }
@@ -140,7 +147,7 @@ std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> Base
 	return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
 }
 
-void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue) {
     auto actualImageSize = _getSizeOfRawImages();
 
 	try {
@@ -161,6 +168,8 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned 
         CleanupRunner runner([&]() {
             this->_derivedAbortAsyncAcquisition();
         });
+
+		startedNotificationQueue->enqueue(0);
 
 		for ( ; ;) {
 			if (this->_asyncWantAbort) {
