@@ -40,6 +40,7 @@ private:
 	std::vector<CameraProperty> _derivedGetCameraProperties() override;
 	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
 
+	bool _derivedIsConfiguredForHardwareTriggering() override;
 	std::pair<int, int> _getSizeOfRawImages() const override;
 
 	std::pair<int, int> _getSensorSize() const;

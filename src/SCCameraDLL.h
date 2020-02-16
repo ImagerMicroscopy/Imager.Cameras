@@ -36,6 +36,7 @@ extern "C" {
 	LIBSPEC void ReleaseOptionsData(char* data);
 	LIBSPEC int SetCameraOption(char* cameraName, char* encodedOption);
 	LIBSPEC int GetFrameRate(char* cameraName, double* frameRate);
+	LIBSPEC int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHardwareTriggering);
 
     LIBSPEC int SetImageOrientation(char* cameraName, int* orientationOps, int nOps);
     

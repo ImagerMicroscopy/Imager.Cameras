@@ -48,6 +48,10 @@ void BaseCameraClass::setCameraProperties(const std::vector<CameraProperty>& pro
 	_derivedSetCameraProperties(properties);
 }
 
+bool BaseCameraClass::isConfiguredForHardwareTriggering() {
+	return _derivedIsConfiguredForHardwareTriggering();
+}
+
 void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops) {
     _imageOrientationOps = ops;
 }

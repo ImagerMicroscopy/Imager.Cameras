@@ -110,6 +110,10 @@ void AndorCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>&
 	}
 }
 
+bool AndorCamera::_derivedIsConfiguredForHardwareTriggering() {
+	return (_triggerMode != TrigInternal);
+}
+
 std::pair<int, int> AndorCamera::_getSizeOfRawImages() const {
 	auto size = _desiredCropSize;
 	size.first /= _desiredBinningFactor;

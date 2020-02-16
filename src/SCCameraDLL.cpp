@@ -128,6 +128,22 @@ int GetFrameRate(char* cameraName, double* frameRate) {
 	return 0;
 }
 
+int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHardwareTriggering) {
+	if (!gHaveInit)
+		return NO_INIT;
+
+	try {
+		std::shared_ptr<BaseCameraClass> camPtr;
+		std::string identifier(cameraName);
+		camPtr = gCameraManager->getCamera(identifier);
+		*isConfiguredForHardwareTriggering = camPtr->isConfiguredForHardwareTriggering();
+	}
+	catch (...) {
+		return GENERIC_ERROR;
+	}
+	return 0;
+}
+
 int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
     try {
         std::shared_ptr<BaseCameraClass> camPtr;

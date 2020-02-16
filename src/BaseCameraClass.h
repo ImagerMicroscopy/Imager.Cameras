@@ -33,6 +33,7 @@ public:
 	void setCameraProperties(const std::vector<CameraProperty>& properties);
 
 	virtual double getFrameRate() const = 0;
+	bool isConfiguredForHardwareTriggering();
     virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
 
 	std::tuple<std::shared_ptr<uint16_t>, int, int> acquireSingleImage();
@@ -48,6 +49,8 @@ public:
 private:
 	virtual std::vector<CameraProperty> _derivedGetCameraProperties() = 0;
 	virtual void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) = 0;
+
+	virtual bool _derivedIsConfiguredForHardwareTriggering() { return false; }
 
 	virtual std::pair<int, int> _getSizeOfRawImages() const = 0;
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
