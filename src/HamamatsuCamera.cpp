@@ -315,7 +315,7 @@ CameraProperty HamamatsuCamera::_getSetTriggerPolarity(GetOrSetProperty getOrSet
 			throw std::runtime_error("unknown argument to _getSetTriggerPolarity()");
 		}
 	}
-	int currentSource = _getPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERACTIVE);
+	int currentSource = _getPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY);
 	const char* actual = nullptr;
 	switch (currentSource) {
 		case DCAMPROP_TRIGGERPOLARITY__NEGATIVE:
