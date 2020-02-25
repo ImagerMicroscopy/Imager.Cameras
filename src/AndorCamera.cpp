@@ -329,14 +329,9 @@ CameraProperty AndorCamera::_getSetCoolerOn(GetOrSetProperty getOrSet, const std
 }
 
 void AndorCamera::_setExposureTime(const double exposureTime) {
-	// Andor code takes float and sets next exposure time that is not smaller
-	// so make sure that the double -> float conversion does not result in a larger value
-	// than is requested.
+	int result = 0;
 	float fExposureTime = exposureTime;
-	while ((double)fExposureTime > exposureTime) {
-		fExposureTime = std::nextafterf(fExposureTime, 0.0f);
-	}
-	int result = SetExposureTime(fExposureTime);
+	result = SetExposureTime(fExposureTime - 5.0e-6f);	// empirical fudge factor that so that the value is stable over multiple setting cycles in the 987
 	if ((result != DRV_SUCCESS) && (result != DRV_P1INVALID)) {
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 	}
