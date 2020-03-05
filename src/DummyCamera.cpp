@@ -69,8 +69,8 @@ void DummyCamera::_setExposureTime(const double exposureTime) {
 	auto currentSize = _getCurrentCropping();
 	currentSize.first /= _getCurrentBinning();
 	currentSize.second /= _getCurrentBinning();
-	double minExposureTime = 50e-3 / (sensorSize.first * sensorSize.second / (currentSize.first * currentSize.second));
-	_exposureTime = clamp(exposureTime, minExposureTime, 1.0);
+	double minExposureTime = 50e-3 * (static_cast<double>(currentSize.first * currentSize.second) / (sensorSize.first * sensorSize.second));
+	_exposureTime = _limitExposureTime(exposureTime);
 }
 
 void DummyCamera::_setCurrentCropping(const std::pair<int, int>& cropping) {
@@ -81,6 +81,7 @@ void DummyCamera::_setCurrentCropping(const std::pair<int, int>& cropping) {
 	} else {
 		throw std::runtime_error("DummyCamera::_setCurrentCropping() but invalid cropping");
 	}
+	_exposureTime = _limitExposureTime(_exposureTime);
 }
 
 void DummyCamera::_setCurrentBinning(const int binFactor) {
@@ -91,6 +92,16 @@ void DummyCamera::_setCurrentBinning(const int binFactor) {
 	} else {
 		throw std::runtime_error("DummyCamera::_setCurrentBinning() but invalid binning");
 	}
+	_exposureTime = _limitExposureTime(_exposureTime);
+}
+
+double DummyCamera::_limitExposureTime(const double reqExposureTime) const {
+	auto sensorSize = _getSensorSize();
+	auto currentSize = _getCurrentCropping();
+	currentSize.first /= _getCurrentBinning();
+	currentSize.second /= _getCurrentBinning();
+	double minExposureTime = 50e-3 * (static_cast<double>(currentSize.first * currentSize.second) / (sensorSize.first * sensorSize.second));
+	return clamp(reqExposureTime, minExposureTime, 1.0);
 }
 
 std::pair<int, int> DummyCamera::_getSensorSize() const {

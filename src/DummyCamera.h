@@ -43,6 +43,7 @@ private:
 	void _setCurrentCropping(const std::pair<int, int>& cropping);
 	int _getCurrentBinning() const { return _currentBinFactor; }
 	void _setCurrentBinning(int binFactor);
+	double _limitExposureTime(const double reqExposureTime) const;
 
 	double _exposureTime;
 	std::pair<int, int> _currentCropping;
