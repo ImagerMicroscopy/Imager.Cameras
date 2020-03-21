@@ -43,6 +43,7 @@ extern "C" {
 	LIBSPEC int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols);
 
 	LIBSPEC int StartAsyncAcquisition(char* cameraName);
+	LIBSPEC int StartBoundedAsyncAcquisition(char* cameraName, uint64_t nImagesToAcquire);
     LIBSPEC int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp);
     LIBSPEC void ReleaseImageData(uint16_t* imagePtr);
 	LIBSPEC int AbortAsyncAcquisition(char* cameraName);

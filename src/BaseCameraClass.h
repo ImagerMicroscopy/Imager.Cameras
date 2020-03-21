@@ -38,10 +38,10 @@ public:
 
 	std::tuple<std::shared_ptr<uint16_t>, int, int> acquireSingleImage();
 
-	int startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire);
+	int startAsyncAcquisition(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire);
     bool isAsyncAcquisitionRunning() const;
 	void abortAsyncAquisitionIfRunning();
-	int getNImagesAsyncAcquired();
+	std::uint64_t getNImagesAsyncAcquired();
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
 	std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> getOldestImageAsyncAcquiredWithTimeout(const std::uint32_t timeoutMillis);
 
@@ -56,7 +56,7 @@ private:
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
 	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
 
-    void _asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue);
+    void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue);
     void _clearAvailableImagesQueue();
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
@@ -81,7 +81,7 @@ private:
 	std::string _asyncErrorStr;
 	volatile bool _asyncWantAbort;
     volatile bool _processingAsyncHasError;
-	int _asyncNImagesStored;
+	std::uint64_t _asyncNImagesStored;
     moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> _availableImagesQueue;
     std::future<void> _asyncWorkerFuture;
 };

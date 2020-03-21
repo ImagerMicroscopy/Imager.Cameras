@@ -81,7 +81,7 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
 	}
 }
 
-int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, unsigned int nImagesToAcquire) {
+int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire) {
 	_acquisitionStartTimeStamp = _getTimeStamp();
 	
 	abortAsyncAquisitionIfRunning();
@@ -120,7 +120,7 @@ void BaseCameraClass::abortAsyncAquisitionIfRunning() {
 	}
 }
 
-int BaseCameraClass::getNImagesAsyncAcquired() {
+std::uint64_t BaseCameraClass::getNImagesAsyncAcquired() {
     return _asyncNImagesStored;
 }
 
@@ -151,7 +151,7 @@ std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> Base
 	return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
 }
 
-void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, unsigned int nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue) {
     auto actualImageSize = _getSizeOfRawImages();
 
 	try {

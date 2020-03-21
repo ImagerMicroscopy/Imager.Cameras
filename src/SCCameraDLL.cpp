@@ -206,6 +206,10 @@ int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* n
 }
 
 int StartAsyncAcquisition(char* cameraName) {
+	return StartBoundedAsyncAcquisition(cameraName, std::numeric_limits<std::uint64_t>::max());
+}
+
+int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquire) {
 	if (!gHaveInit)
 		return NO_INIT;
 
@@ -213,7 +217,7 @@ int StartAsyncAcquisition(char* cameraName) {
 		std::shared_ptr<BaseCameraClass> camPtr;
 		std::string identifier(cameraName);
 		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFreeRunMode, -1);
+		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFillAndStop, nImagesToAcquire);
 	}
 	catch (...) {
 		return GENERIC_ERROR;
