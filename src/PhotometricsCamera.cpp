@@ -10,26 +10,31 @@
 #include <thread>
 
 #include "Utils.h"
-#include "PVCAM/master.h"
-#include "PVCAM/pvcam.h"
 
 #ifdef WITH_IGOR
 	#include "XOPStandardHeaders.h"
 #endif
 
+std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
+	int readoutRate = 1.0 / (_pixelTime * 1.0e-9) / 1.0e6;
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%d MHz (%d bit)", readoutRate, _bitDepth);
+	return std::string(buf);
+}
+
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
-	_identifier(cameraName)
+	_identifier(cameraName),
+	_installedCallbackFunction(false),
+	_binningFactor(1),
+	_crop(0, 0)
 {
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
 		throw std::runtime_error(getPVCAMErrorMessage());
-	err = pl_cam_get_diags(_pvcamHandle);
-	if (!err)
-		throw std::runtime_error(getPVCAMErrorMessage());
 
-	// default values
+	_readoutPorts = _listReadoutPorts();
 
-	this->setExposureTime(50e-3);
+	_setDefaults();
 }
 
 PhotometricsCamera::~PhotometricsCamera() {
@@ -40,177 +45,203 @@ std::string PhotometricsCamera::getIdentifierStr() const {
 	return _identifier;
 }
 
-void PhotometricsCamera::setExposureTime(const double exposureTime) {
-	// ensure camera is set to accept exposure time in milliseconds
-	std::uint16_t exposureTimeResolution = EXP_RES_ONE_MILLISEC;
-	int err = pl_set_param(_pvcamHandle, PARAM_EXP_RES_INDEX, &exposureTimeResolution);
-	if (!err) {
-		throw std::runtime_error(getPVCAMErrorMessage());
+double PhotometricsCamera::getFrameRate() const {
+	double exposureTime = _getExposureTime();
+	std::uint32_t readoutTimeus = _getCameraParameterCurrentValue<std::uint32_t>(PARAM_READOUT_TIME);
+	return (exposureTime + static_cast<double>(readoutTimeus) / 1.0e6);
+}
+
+void PhotometricsCamera::_setDefaults() {
+	// exposure times are expressed in microseconds
+	_setCameraParameter<std::int32_t>(PARAM_EXP_RES_INDEX, EXP_RES_ONE_MICROSEC);
+
+	// Expose out signal is high when all rows are being exposed at once. 
+	// If the exposure time entered is shorter than readout time the expose out signal will not become high at all. 
+	_setCameraParameter<std::int32_t>(PARAM_EXPOSE_OUT_MODE, EXPOSE_OUT_ROLLING_SHUTTER);
+
+	_setImageCrop(_getSensorSize());
+	_setBinningFactor(1);
+	_setTrigggerMode(EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER);
+}
+
+std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
+	std::vector<CameraProperty> properties;
+	properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2, 4 });
+
+	properties.push_back(_getSetReadoutPort(GetProperty, std::string()));
+	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
+	properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
+
+	return properties;
+}
+
+void PhotometricsCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+	std::vector<CameraProperty> propsCopy(properties);
+
+	std::optional<double> exposureTime;
+	std::optional<std::pair<int, int>> cropping;
+	std::optional<int> binningFactor;
+	std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+
+	if (cropping.has_value()) {
+		_setImageCrop(cropping.value());
+	}
+	if (binningFactor.has_value()) {
+		_setBinningFactor(binningFactor.value());
+	}
+	if (exposureTime.has_value()) {
+		_setExposureTime(exposureTime.value());
 	}
 
-	_requestedExposureTime = exposureTime;
-	_validateExposureTime();
-}
-
-void PhotometricsCamera::setEMGain(const double emGain) {
-	int result;
-
-	_selectFastestReadoutPort(emGain > 0.0);
-	if (emGain > 0.0) {
-		std::uint16_t minGain, maxGain;
-		std::uint16_t multFactor = emGain;
-		result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MIN, &minGain);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-		result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MAX, &maxGain);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-		multFactor = clamp(multFactor, minGain, maxGain);
-		result = pl_set_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, &multFactor);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
+	for (const auto& prop : propsCopy) {
+		switch (prop.getPropertyCode()) {
+			case PropReadoutPort:
+				_getSetReadoutPort(SetProperty, prop.getCurrentOption());
+				break;
+			case PropReadoutSpeed:
+				_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
+				break;
+			case PropTriggerMode:
+				_getSetTriggerMode(SetProperty, prop.getCurrentOption());
+				break;
+			default:
+				throw std::runtime_error("setting unrecognized option");
+		}
 	}
 }
 
-double PhotometricsCamera::getExposureTime() const {
-	return _requestedExposureTime;
-}
-
-double PhotometricsCamera::getEMGain() const {
-	int readoutPort;
-	int err = pl_get_param(_pvcamHandle, PARAM_READOUT_PORT, ATTR_CURRENT, &readoutPort);
-	if (!err) {
-		// handle me
-	}
-	if (readoutPort != READOUT_PORT_MULT_GAIN)
-		return 0.0;
-	uint16_t gain;
-	err = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_CURRENT, &gain);
-	if (!err) {
-		// handle me
+CameraProperty PhotometricsCamera::_getSetReadoutPort(GetOrSetProperty getOrSet, const std::string& port) {
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(_readoutPorts.cbegin(), _readoutPorts.cend(), [&](const ReadoutPort& p) {
+			return (p.name() == port);
+		});
+		if (it == _readoutPorts.cend()) {
+			throw std::runtime_error("unknown readout port in PhotometricsCamera::_getSetReadoutPort()");
+		}
+		_setCameraParameter<std::int32_t>(PARAM_READOUT_PORT, it->index());
 	}
 
-	return gain;
+	std::int32_t currentIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
+	auto it = std::find_if(_readoutPorts.cbegin(), _readoutPorts.cend(), [=](const ReadoutPort& p) {
+		return (p.index() == currentIndex);
+	});
+	if (it == _readoutPorts.cend()) {
+		throw std::runtime_error("unknown readout port index in PhotometricsCamera::_getSetReadoutPort()");
+	}
+
+	const std::string currentPortName = it->name();
+	std::vector<std::string> portNames;
+	for (const auto& p : _readoutPorts) {
+		portNames.emplace_back(p.name());
+	}
+	CameraProperty prop(PropReadoutPort, "Readout port");
+	prop.setDiscrete(currentPortName, portNames);
+	return prop;
 }
 
-double PhotometricsCamera::getTemperature() const {
-	int16_t temperature;
+CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor) {
+	std::int32_t currentIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
+	auto it = std::find_if(_readoutPorts.cbegin(), _readoutPorts.cend(), [=](const ReadoutPort& p) {
+		return (p.index() == currentIndex);
+	});
+	if (it == _readoutPorts.cend()) {
+		throw std::runtime_error("unknown readout port index in PhotometricsCamera::_getSetReadoutSpeed()");
+	}
+	const ReadoutPort& currentReadoutPort = *it;
+	const std::vector<SpeedEntry>& speedTable = currentReadoutPort.speedTable();
 
-	int err = pl_get_param(_pvcamHandle, PARAM_TEMP, ATTR_CURRENT, &temperature);
-	if (!err)
-		return std::numeric_limits<double>::quiet_NaN();
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(speedTable.cbegin(), speedTable.cend(), [&](const SpeedEntry& s) {
+			return (s.descriptor() == descriptor);
+		});
+		if (it == speedTable.cend()) {
+			throw std::runtime_error("unknown speed entry in PhotometricsCamera::_getSetReadoutSpeed()");
+		}
+		_setCameraParameter<std::int32_t>(PARAM_READOUT_PORT, it->index());
+	}
 
-	return (static_cast<double>(temperature) / 100.0);
+	std::int16_t currentIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_SPDTAB_INDEX);
+	auto sIt = std::find_if(speedTable.cbegin(), speedTable.cend(), [=](const SpeedEntry& s) {
+		return (s.index() == currentIndex);
+	});
+	if (sIt == speedTable.cend()) {
+		throw std::runtime_error("unknown speed ebtry index in PhotometricsCamera::_getSetReadoutSpeed()");
+	}
+
+	const std::string currentDescriptor = sIt->descriptor();
+	std::vector<std::string> speedDescriptors;
+	for (const auto& s : speedTable) {
+		speedDescriptors.emplace_back(s.descriptor());
+	}
+	CameraProperty prop(PropReadoutSpeed, "Readout speed");
+	prop.setDiscrete(currentDescriptor, speedDescriptors);
+	return prop;
 }
 
-double PhotometricsCamera::getTemperatureSetpoint() const {
-	std::int16_t setpoint;
+CameraProperty PhotometricsCamera::_getSetTriggerMode(GetOrSetProperty getOrSet, const std::string & mode) {
+	const std::vector<std::pair<std::string, int>> modes = _getTriggerModes();
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(modes.cbegin(), modes.cend(), [&](const auto& m) {
+			return (m.first == mode);
+		});
+		if (it == modes.cend()) {
+			throw std::runtime_error("unknown mode to be set in PhotometricsCamera::_getSetTriggerMode()");
+		}
+		_triggerMode = it->second;
+	}
 
-	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_CURRENT, &setpoint);
-	if (!err)
-		return std::numeric_limits<double>::quiet_NaN();
+	auto it = std::find_if(modes.cbegin(), modes.cend(), [&](const auto& m) {
+		return (m.second == _triggerMode);
+	});
+	if (it == modes.cend()) {
+		throw std::runtime_error("unknown trigger mode index in PhotometricsCamera::_getSetTriggerMode()");
+	}
 
-	return (static_cast<double>(setpoint) / 100.0);
+	const std::string currentMode = it->first;
+	std::vector<std::string> modeNames;
+	for (const auto& m : modes) {
+		modeNames.emplace_back(m.first);
+	}
+	CameraProperty prop(PropTriggerMode, "Trigger Mode");
+	prop.setDiscrete(currentMode, modeNames);
+	return prop;
+}
+
+std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() const {
+	return _getSensorSize();
 }
 
 std::pair<int, int> PhotometricsCamera::_getSensorSize() const {
-	int err;
-	std::uint16_t nRows, nCols;
-	err = pl_get_param(_pvcamHandle, PARAM_PAR_SIZE, ATTR_CURRENT, &nRows);
-	err = pl_get_param(_pvcamHandle, PARAM_SER_SIZE, ATTR_CURRENT, &nCols);
+	int nRows = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_SER_SIZE);
+	int nCols = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_PAR_SIZE);
 	return std::pair<int, int>(nRows, nCols);
 }
 
-void PhotometricsCamera::_derivedSetTemperature(const double temperature) {
-	std::int16_t scaledSetPoint = temperature * 100.0;
-	std::int16_t minTemp, maxTemp;
-
-	int err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MIN, &minTemp);
-	if (!err)
-		throw std::runtime_error(getPVCAMErrorMessage());
-	err = pl_get_param(_pvcamHandle, PARAM_TEMP_SETPOINT, ATTR_MAX, &maxTemp);
-	if (!err)
-		throw std::runtime_error(getPVCAMErrorMessage());
-
-	scaledSetPoint = std::max(std::min(scaledSetPoint, maxTemp), minTemp);
-
-	err = pl_set_param(_pvcamHandle, PARAM_TEMP_SETPOINT, &scaledSetPoint);
-	if (err == 0) {
-		throw std::runtime_error(getPVCAMErrorMessage());
-	}
+double PhotometricsCamera::_getExposureTime() const {
+	std::uint64_t expTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
+	return (expTime / 1.0e6);
 }
 
-std::pair<double, double> PhotometricsCamera::_derivedGetEMGainRange() {
-	std::uint16_t minGain, maxGain;
-	int result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MIN, &minGain);
-	if (!result)
-		throw std::runtime_error(getPVCAMErrorMessage());
-	result = pl_get_param(_pvcamHandle, PARAM_GAIN_MULT_FACTOR, ATTR_MAX, &maxGain);
-	if (!result)
-		throw std::runtime_error(getPVCAMErrorMessage());
-	return std::pair<double, double>(minGain, maxGain);
+void PhotometricsCamera::_setExposureTime(const double exposureTime) {
+	std::pair<std::uint64_t, std::uint64_t> limits = _getCameraParameterLimits<std::uint64_t>(PARAM_EXPOSURE_TIME);
+	std::uint64_t clamped = clamp((std::uint64_t)(exposureTime * 1.0e6), limits.first, limits.second);
+	_setCameraParameter<std::uint64_t>(PARAM_EXPOSURE_TIME, clamped);
 }
 
-void PhotometricsCamera::_selectFastestReadoutPort(bool useEMGain) {
-	int result;
-	if (useEMGain) {
-		int readoutPort = READOUT_PORT_MULT_GAIN;
-		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-	} else {
-		int readoutPort = READOUT_PORT_NORMAL;
-		result = pl_set_param(_pvcamHandle, PARAM_READOUT_PORT, &readoutPort);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-	}
-
-	std::int16_t nSpeedTableEntries;
-	result = pl_get_param(_pvcamHandle, PARAM_SPDTAB_INDEX, ATTR_MAX, &nSpeedTableEntries);
-	if (!result)
-		throw std::runtime_error(getPVCAMErrorMessage());
-
-	std::int16_t fastestIndex = 0;
-	std::uint16_t pixelTime, shortestPixelTime = -1;
-	for (std::int16_t i = 0; i < nSpeedTableEntries; i++) {
-		result = pl_set_param(_pvcamHandle, PARAM_SPDTAB_INDEX, &i);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-
-		std::int16_t bitDepth;
-		result = pl_get_param(_pvcamHandle, PARAM_BIT_DEPTH, ATTR_CURRENT, &bitDepth);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-		if (bitDepth < 12)
-			continue;
-
-		result = pl_get_param(_pvcamHandle, PARAM_PIX_TIME, ATTR_CURRENT, &pixelTime);
-		if (!result)
-			throw std::runtime_error(getPVCAMErrorMessage());
-
-		if (pixelTime < shortestPixelTime) {
-			shortestPixelTime = pixelTime;
-			fastestIndex = i;
-		}
-	}
-
-	result = pl_set_param(_pvcamHandle, PARAM_SPDTAB_INDEX, &fastestIndex);
-	if (!result)
-		throw std::runtime_error(getPVCAMErrorMessage());
+void PhotometricsCamera::_setImageCrop(const std::pair<int, int>& crop) {
+	_crop = crop;
 }
 
-void PhotometricsCamera::_validateExposureTime() {
-	double minExposureTime;
-	int err = pl_get_param(_pvcamHandle, PARAM_EXP_MIN_TIME, ATTR_MIN, &minExposureTime);
-	if (!err) {
-		throw std::runtime_error(getPVCAMErrorMessage());
-	}
+std::pair<int, int> PhotometricsCamera::_getImageCrop() {
+	return _crop;
+}
 
-	// according to the PVCAM manual, the minimal exposure time should be reported in seconds,
-	// but I kept getting a value of 1.0. So now I'm thinking this value is in milliseconds instead
-	// (probably in units of PARAM_EXP_RES_INDEX).
-	minExposureTime /= 1.0e3;
-	_requestedExposureTime = clamp(_requestedExposureTime, minExposureTime, 1.0);
+void PhotometricsCamera::_setBinningFactor(const int binningFactor) {
+	_binningFactor = binningFactor;
+}
+
+int PhotometricsCamera::_getBinningFactor() {
+	return _binningFactor;
 }
 
 std::string PhotometricsCamera::getPVCAMErrorMessage() {
@@ -219,69 +250,120 @@ std::string PhotometricsCamera::getPVCAMErrorMessage() {
 	return std::string(buf);
 }
 
+std::vector<std::pair<std::string, int>> PhotometricsCamera::_getTriggerModes() const {
+	std::vector<std::pair<std::string, int>> modes;
+	modes.push_back(std::make_pair("Internal", EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER));
+	modes.push_back(std::make_pair("External", EXT_TRIG_EDGE_RISING | EXPOSE_OUT_ROLLING_SHUTTER));
+	modes.push_back(std::make_pair("External Start", EXT_TRIG_TRIG_FIRST | EXPOSE_OUT_ROLLING_SHUTTER));
+	modes.push_back(std::make_pair("External Exposure (bulb)", EXT_TRIG_LEVEL | EXPOSE_OUT_ROLLING_SHUTTER));
+	return modes;
+}
+
 void PhotometricsCamera::_derivedStartAsyncAcquisition() {
 	int err = 0;
-	std::pair<int, int> chipSize = this->_getSensorSize();
-	rgn_type region = { 0, chipSize.second - 1, 1, 0, chipSize.first - 1, 1 };
-	int scaledExposureTime = _requestedExposureTime * 1.0e3;
+	std::uint64_t exposureTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
 	std::uint32_t nBytesInImage;
-	int nImagesInBuffer = 10;
+	const int nImagesInBuffer = 10;
 
-	// check that the camera is ready to go
-	err = pl_cam_get_diags(_pvcamHandle);
-	if (err == 0) {
-		throw std::runtime_error(getPVCAMErrorMessage());
+	// clear queue that signals new image is available
+	for ( ; ; ) {
+		int dummy = 0;
+		bool haveValue = _pvcamCallbackQueue.try_dequeue(dummy);
+		if (!haveValue) {
+			break;
+		}
 	}
 
-	// init exposure functionality
-	err = pl_exp_init_seq();
-	if (err == 0)
-		throw std::runtime_error(getPVCAMErrorMessage());
-
-	err = pl_exp_setup_cont(_pvcamHandle, 1, &region, TIMED_MODE, scaledExposureTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
-	if (err == 0) {
-		throw std::runtime_error(getPVCAMErrorMessage());
+	if (!_installedCallbackFunction) {
+		err = pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_EOF, &_pvcamCallbackFunction, (void*)(&_pvcamCallbackQueue));
+		if (err != PV_OK) {
+			throw std::runtime_error("error installing pvcam callback");
+		}
+		_installedCallbackFunction = true;
 	}
 
+	std::pair<int, int> sensorSize = this->_getSensorSize();
+	rgn_type region = { 0 };
+	region.s1 = (sensorSize.first - _crop.first) / 2;
+	region.s2 = sensorSize.first - 1 - region.s1;
+	region.p1 = (sensorSize.second - _crop.second) / 2;
+	region.p2 = sensorSize.second - 1 - region.p1;
+	region.sbin = _binningFactor;
+	region.pbin = _binningFactor;
+
+
+	err = pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, exposureTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+	if (err != PV_OK) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
 	_asyncBuffer.resize(nBytesInImage * nImagesInBuffer);
-	pl_exp_start_cont(_pvcamHandle, _asyncBuffer.data(), _asyncBuffer.size() * sizeof(std::uint16_t));
-	if (err == 0) {
+
+	err = pl_exp_start_cont(_pvcamHandle, _asyncBuffer.data(), _asyncBuffer.size() * sizeof(std::uint16_t));
+	if (err != PV_OK) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 }
 
 void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
-	int err = pl_exp_stop_cont(_pvcamHandle, CCS_HALT);
-	if (err == 0) {
-		err = pl_exp_uninit_seq();
-	}
+	pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
 bool PhotometricsCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-	int err = 0;
-	std::int16_t status;
-	std::uint32_t unused;
-	err = pl_exp_check_cont_status(_pvcamHandle, &status, reinterpret_cast<uns32_ptr>(&unused), reinterpret_cast<uns32_ptr>(&unused));
-	if (err == 0) {
-		throw std::runtime_error(getPVCAMErrorMessage());
-	}
-	if (status == READOUT_FAILED) {
-		throw std::runtime_error("readout failed");
-	}
-	return (status == FRAME_AVAILABLE);
+	int dummy = 0;
+	return _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(100));
 }
 
 void PhotometricsCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-	uint16_t* address;
+	uint16_t* address = nullptr;
 	int err = pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
-	if (err == 0) {
+	if (err != PV_OK) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
 	memcpy(bufferForThisImage, address, nBytes);
 	err = pl_exp_unlock_oldest_frame(_pvcamHandle);
-	if (err == 0) {
+	if (err != PV_OK) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
+}
+
+void PhotometricsCamera::_pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr) {
+	moodycamel::BlockingReaderWriterQueue<int>* queuePtr = (moodycamel::BlockingReaderWriterQueue<int>*)(contextPtr);
+	queuePtr->enqueue(0);
+}
+
+std::vector<PhotometricsCamera::ReadoutPort> PhotometricsCamera::_listReadoutPorts() {
+	std::vector<ReadoutPort> readoutPorts;
+	std::vector<std::pair<std::int32_t, std::string>> portEnums = _getCameraEnumParameters(PARAM_READOUT_PORT);
+	for (const auto& p : portEnums) {
+		int portIndex = p.first;
+		const std::string& portName = p.second;
+		std::vector<SpeedEntry> speedEntries;
+		_setCameraParameter<std::int32_t>(PARAM_READOUT_PORT, portIndex);
+		std::uint32_t nSpeeds = _getCameraParameterCount(PARAM_SPDTAB_INDEX);
+		for (std::uint32_t i = 0; i < nSpeeds; i += 1) {
+			_setCameraParameter<std::int16_t>(PARAM_SPDTAB_INDEX, i);
+			std::uint16_t pixelTime = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_PIX_TIME);
+			std::int16_t bitDepth = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_BIT_DEPTH);
+			speedEntries.emplace_back(i, pixelTime, bitDepth);
+		}
+		readoutPorts.emplace_back(portName, portIndex, speedEntries);
+	}
+	return readoutPorts;
+}
+
+std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCameraEnumParameters(int paramID) const {
+	std::vector<std::pair<std::int32_t, std::string>> params;
+	std::uint32_t count = _getCameraParameterCount(paramID);
+	for (std::uint32_t i = 0; i < count; ++i) {
+		std::int32_t value = 0;
+		char desc[128] = { 0 };
+		rs_bool result = pl_get_enum_param(_pvcamHandle, paramID, i, &value, desc, 127);
+		if (result != PV_OK) {
+			throw std::runtime_error("invalid result in PhotometricsCamera::_getCameraEnumParameters()");
+		}
+		params.emplace_back(value, desc);
+	}
+	return params;
 }
 
 #endif

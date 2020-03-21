@@ -1,42 +1,152 @@
 #ifndef PHOTOMETRICSCAMERA_H
 #define PHOTOMETRICSCAMERA_H
 
+#include "PVCAM/master.h"
+#include "PVCAM/pvcam.h"
+
 #include "BaseCameraClass.h"
 
 class PhotometricsCamera : public BaseCameraClass {
+
+	enum GetOrSetProperty {
+		GetProperty,
+		SetProperty
+	};
+
+	enum PhotometricsPropIDs {
+		PropReadoutPort = CameraProperty::FirstAvailablePropertyID,
+		PropReadoutSpeed,
+		PropTriggerMode,
+	};
+	
+	class SpeedEntry {
+	public:
+		SpeedEntry(int indexRHS, int pixelTimeRHS, int bitDepthRHS) :
+			_index(indexRHS),
+			_pixelTime(pixelTimeRHS),
+			_bitDepth(bitDepthRHS)
+		{
+			_descriptor = _generateDescriptor();
+		}
+
+		int index() const { return _index; }
+		const std::string& descriptor() const { return _descriptor; }
+
+	private:
+		std::string _generateDescriptor() const;
+
+		int _index;
+		int _pixelTime;
+		int _bitDepth;
+		std::string _descriptor;
+	};
+	class ReadoutPort {
+	public:
+		ReadoutPort(const std::string& name, int index, const std::vector<SpeedEntry>& speedTable) :
+			_name(name),
+			_index(index),
+			_speedTable(speedTable)
+		{}
+
+		const std::string& name() const { return _name; }
+		int index() const { return _index; }
+		const std::vector<SpeedEntry>& speedTable() const { return _speedTable; }
+
+	private:
+		std::string _name;
+		int _index;
+		std::vector<SpeedEntry> _speedTable;
+	};
+
 public:
 	PhotometricsCamera(const std::string& cameraName);
 	~PhotometricsCamera();
 
 	std::string getIdentifierStr() const override;
 
-	void setExposureTime(const double exposureTime) override;
-	void setEMGain(const double emGain) override;
-
-	double getExposureTime() const override;
-	double getEMGain() const override;
-	double getTemperature() const override;
-	double getTemperatureSetpoint() const override;
-	std::pair<int, int> _getSensorSize() const override;
+	double getFrameRate() const override;
 
 	static std::string getPVCAMErrorMessage();
 
 private:
-	void _derivedSetTemperature(const double temperature) override;
-	std::pair<double, double> _derivedGetEMGainRange() override;
-	void _setCoolerOn(const bool on) override { ; };
-	void _selectFastestReadoutPort(bool useEMGain);
-	void _validateExposureTime();
+	void _setDefaults();
+
+	std::vector<CameraProperty> _derivedGetCameraProperties() override;
+	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+
+	CameraProperty _getSetReadoutPort(GetOrSetProperty getOrSet, const std::string& port);
+	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
+	CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
+
+	bool _derivedIsConfiguredForHardwareTriggering() override { return false; }
+
+	std::pair<int, int> _getSizeOfRawImages() const override;
+	std::pair<int, int> _getSensorSize() const;
+
+	double _getExposureTime() const;
+	void _setExposureTime(const double exposureTime);
+	void _setImageCrop(const std::pair<int, int>& crop);
+	std::pair<int, int> _getImageCrop();
+	void _setBinningFactor(const int binningFactor);
+	int _getBinningFactor();
+	void _setTrigggerMode(const int triggerMode) { _triggerMode = triggerMode; }
+	int _getTriggerMode() const { return _triggerMode; }
+	std::vector<std::pair<std::string, int>> _getTriggerModes() const;
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	bool _derivedNewAsyncAcquisitionImageAvailable() override;
 	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
 
+	static void _pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
+
+	std::vector<ReadoutPort> _listReadoutPorts();
+
+	template <typename T> T _getCameraParameter(int paramID, int attribute) const {
+		T value;
+		rs_bool result = pl_get_param(_pvcamHandle, paramID, attribute, &value);
+		if (result != PV_OK) {
+			throw std::runtime_error(getPVCAMErrorMessage());
+		}
+		return value;
+	}
+
+	template <typename T> T _getCameraParameterCurrentValue(int paramID) const {
+		return _getCameraParameter<T>(paramID, ATTR_CURRENT);
+	}
+
+	bool _cameraSupportsParameter(int paramID) const {
+		rs_bool isAvailable = _getCameraParameter<rs_bool>(paramID, ATTR_AVAIL);
+		return (isAvailable != PV_FAIL);
+	}
+
+	template <typename T> std::pair<T,T> _getCameraParameterLimits(int paramID) const {
+		T min = _getCameraParameter<T>(paramID, ATTR_MIN);
+		T max = _getCameraParameter<T>(paramID, ATTR_MAX);
+		return std::pair(min, max);
+	}
+
+	std::uint32_t _getCameraParameterCount(int paramID) const {
+		return _getCameraParameter<std::uint32_t>(paramID, ATTR_COUNT);
+	}
+	std::vector<std::pair<std::int32_t, std::string>> _getCameraEnumParameters(int paramID) const;
+
+	template <typename T> void _setCameraParameter(int paramID, T paramValue) {
+		rs_bool result = pl_set_param(_pvcamHandle, paramID, &paramValue);
+		if (result != PV_OK) {
+			throw std::runtime_error(getPVCAMErrorMessage());
+		}
+	}
+
 	std::string _identifier;
 	std::int16_t _pvcamHandle;
-	double _requestedExposureTime;
+	std::vector<ReadoutPort> _readoutPorts;
+	int _binningFactor;
+	std::pair<int, int> _crop;
+	int _triggerMode;
 	std::vector<std::uint16_t> _asyncBuffer;
+	moodycamel::BlockingReaderWriterQueue<int> _pvcamCallbackQueue;
+	bool _installedCallbackFunction;
 };
 
 #endif
