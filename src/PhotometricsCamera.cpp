@@ -23,7 +23,6 @@ std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
 }
 
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
-	_identifier(cameraName),
 	_installedCallbackFunction(false),
 	_binningFactor(1),
 	_crop(0, 0)
@@ -31,6 +30,14 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
 		throw std::runtime_error(getPVCAMErrorMessage());
+
+	char prodName[MAX_PRODUCT_NAME_LEN + 1];
+	char serNum[MAX_ALPHA_SER_NUM_LEN + 1];
+	_fillCameraTextParameter(PARAM_PRODUCT_NAME, prodName);
+	_fillCameraTextParameter(PARAM_HEAD_SER_NUM_ALPHA, serNum);
+	_identifier = prodName;
+	_identifier += "_";
+	_identifier += serNum;
 
 	_readoutPorts = _listReadoutPorts();
 
@@ -48,25 +55,22 @@ std::string PhotometricsCamera::getIdentifierStr() const {
 double PhotometricsCamera::getFrameRate() const {
 	double exposureTime = _getExposureTime();
 	std::uint32_t readoutTimeus = _getCameraParameterCurrentValue<std::uint32_t>(PARAM_READOUT_TIME);
-	return (exposureTime + static_cast<double>(readoutTimeus) / 1.0e6);
+	return (1.0 / (exposureTime + static_cast<double>(readoutTimeus) / 1.0e6));
 }
 
 void PhotometricsCamera::_setDefaults() {
 	// exposure times are expressed in microseconds
 	_setCameraParameter<std::int32_t>(PARAM_EXP_RES_INDEX, EXP_RES_ONE_MICROSEC);
 
-	// Expose out signal is high when all rows are being exposed at once. 
-	// If the exposure time entered is shorter than readout time the expose out signal will not become high at all. 
-	_setCameraParameter<std::int32_t>(PARAM_EXPOSE_OUT_MODE, EXPOSE_OUT_ROLLING_SHUTTER);
-
 	_setImageCrop(_getSensorSize());
 	_setBinningFactor(1);
 	_setTrigggerMode(EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER);
+	_setExposureTime(50.0e-3);
 }
 
 std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
 	std::vector<CameraProperty> properties;
-	properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2, 4 });
+	properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2});
 
 	properties.push_back(_getSetReadoutPort(GetProperty, std::string()));
 	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
@@ -140,9 +144,9 @@ CameraProperty PhotometricsCamera::_getSetReadoutPort(GetOrSetProperty getOrSet,
 }
 
 CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor) {
-	std::int32_t currentIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
+	std::int32_t currentReadoutPortIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
 	auto it = std::find_if(_readoutPorts.cbegin(), _readoutPorts.cend(), [=](const ReadoutPort& p) {
-		return (p.index() == currentIndex);
+		return (p.index() == currentReadoutPortIndex);
 	});
 	if (it == _readoutPorts.cend()) {
 		throw std::runtime_error("unknown readout port index in PhotometricsCamera::_getSetReadoutSpeed()");
@@ -157,7 +161,7 @@ CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet
 		if (it == speedTable.cend()) {
 			throw std::runtime_error("unknown speed entry in PhotometricsCamera::_getSetReadoutSpeed()");
 		}
-		_setCameraParameter<std::int32_t>(PARAM_READOUT_PORT, it->index());
+		_setCameraParameter<std::int32_t>(PARAM_SPDTAB_INDEX, it->index());
 	}
 
 	std::int16_t currentIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_SPDTAB_INDEX);
@@ -165,7 +169,7 @@ CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet
 		return (s.index() == currentIndex);
 	});
 	if (sIt == speedTable.cend()) {
-		throw std::runtime_error("unknown speed ebtry index in PhotometricsCamera::_getSetReadoutSpeed()");
+		throw std::runtime_error("unknown speed entry index in PhotometricsCamera::_getSetReadoutSpeed()");
 	}
 
 	const std::string currentDescriptor = sIt->descriptor();
@@ -208,7 +212,10 @@ CameraProperty PhotometricsCamera::_getSetTriggerMode(GetOrSetProperty getOrSet,
 }
 
 std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() const {
-	return _getSensorSize();
+	std::pair<int, int> cropped = _getImageCrop();
+	cropped.first /= _getBinningFactor();
+	cropped.second /= _getBinningFactor();
+	return cropped;
 }
 
 std::pair<int, int> PhotometricsCamera::_getSensorSize() const {
@@ -225,23 +232,52 @@ double PhotometricsCamera::_getExposureTime() const {
 void PhotometricsCamera::_setExposureTime(const double exposureTime) {
 	std::pair<std::uint64_t, std::uint64_t> limits = _getCameraParameterLimits<std::uint64_t>(PARAM_EXPOSURE_TIME);
 	std::uint64_t clamped = clamp((std::uint64_t)(exposureTime * 1.0e6), limits.first, limits.second);
-	_setCameraParameter<std::uint64_t>(PARAM_EXPOSURE_TIME, clamped);
+	rgn_type region = _getRegionForCurrentBinningAndCropping();
+	std::uint32_t nBytesInImage = 0;
+	int err = pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, clamped, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+	if (err != PV_OK) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
+}
+
+void PhotometricsCamera::_updateCameraTimings() {
+	std::uint64_t expTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
+	rgn_type region = _getRegionForCurrentBinningAndCropping();
+	std::uint32_t nBytesInImage = 0;
+	int err = pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, expTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+	if (err != PV_OK) {
+		throw std::runtime_error(getPVCAMErrorMessage());
+	}
 }
 
 void PhotometricsCamera::_setImageCrop(const std::pair<int, int>& crop) {
 	_crop = crop;
+	_updateCameraTimings();
 }
 
-std::pair<int, int> PhotometricsCamera::_getImageCrop() {
+std::pair<int, int> PhotometricsCamera::_getImageCrop() const {
 	return _crop;
 }
 
 void PhotometricsCamera::_setBinningFactor(const int binningFactor) {
 	_binningFactor = binningFactor;
+	_updateCameraTimings();
 }
 
-int PhotometricsCamera::_getBinningFactor() {
+int PhotometricsCamera::_getBinningFactor() const {
 	return _binningFactor;
+}
+
+rgn_type PhotometricsCamera::_getRegionForCurrentBinningAndCropping() const {
+	std::pair<int, int> sensorSize = this->_getSensorSize();
+	rgn_type region = { 0 };
+	region.s1 = (sensorSize.first - _crop.first) / 2;
+	region.s2 = sensorSize.first - 1 - region.s1;
+	region.p1 = (sensorSize.second - _crop.second) / 2;
+	region.p2 = sensorSize.second - 1 - region.p1;
+	region.sbin = _binningFactor;
+	region.pbin = _binningFactor;
+	return region;
 }
 
 std::string PhotometricsCamera::getPVCAMErrorMessage() {

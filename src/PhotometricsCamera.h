@@ -85,10 +85,12 @@ private:
 
 	double _getExposureTime() const;
 	void _setExposureTime(const double exposureTime);
+	void _updateCameraTimings();
 	void _setImageCrop(const std::pair<int, int>& crop);
-	std::pair<int, int> _getImageCrop();
+	std::pair<int, int> _getImageCrop() const;
 	void _setBinningFactor(const int binningFactor);
-	int _getBinningFactor();
+	int _getBinningFactor() const;
+	rgn_type _getRegionForCurrentBinningAndCropping() const;
 	void _setTrigggerMode(const int triggerMode) { _triggerMode = triggerMode; }
 	int _getTriggerMode() const { return _triggerMode; }
 	std::vector<std::pair<std::string, int>> _getTriggerModes() const;
@@ -111,6 +113,13 @@ private:
 		return value;
 	}
 
+	void _fillCameraTextParameter(int paramID, char* buf) const {
+		rs_bool result = pl_get_param(_pvcamHandle, paramID, ATTR_CURRENT, buf);
+		if (result != PV_OK) {
+			throw std::runtime_error(getPVCAMErrorMessage());
+		}
+	}
+
 	template <typename T> T _getCameraParameterCurrentValue(int paramID) const {
 		return _getCameraParameter<T>(paramID, ATTR_CURRENT);
 	}
@@ -123,7 +132,7 @@ private:
 	template <typename T> std::pair<T,T> _getCameraParameterLimits(int paramID) const {
 		T min = _getCameraParameter<T>(paramID, ATTR_MIN);
 		T max = _getCameraParameter<T>(paramID, ATTR_MAX);
-		return std::pair(min, max);
+		return std::pair<T,T>(min, max);
 	}
 
 	std::uint32_t _getCameraParameterCount(int paramID) const {

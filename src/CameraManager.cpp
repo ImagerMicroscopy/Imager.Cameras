@@ -74,7 +74,7 @@ void CameraManager::discoverCameras() {
 	
 	for (const std::string& name : cameraNames) {
 		std::shared_ptr<BaseCameraClass> newCamera(new PhotometricsCamera(name));
-		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(name, newCamera));
+		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(newCamera->getIdentifierStr(), newCamera));
 	}
 #endif
 
