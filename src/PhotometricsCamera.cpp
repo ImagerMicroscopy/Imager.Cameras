@@ -74,6 +74,7 @@ std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
 
 	properties.push_back(_getSetReadoutPort(GetProperty, std::string()));
 	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
+	properties.push_back(_getSetGain(GetProperty, std::string()));
 	properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
 
 	return properties;
@@ -104,6 +105,9 @@ void PhotometricsCamera::_derivedSetCameraProperties(const std::vector<CameraPro
 				break;
 			case PropReadoutSpeed:
 				_getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
+				break;
+			case PropGain:
+				_getSetGain(SetProperty, prop.getCurrentOption());
 				break;
 			case PropTriggerMode:
 				_getSetTriggerMode(SetProperty, prop.getCurrentOption());
@@ -144,14 +148,7 @@ CameraProperty PhotometricsCamera::_getSetReadoutPort(GetOrSetProperty getOrSet,
 }
 
 CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor) {
-	std::int32_t currentReadoutPortIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
-	auto it = std::find_if(_readoutPorts.cbegin(), _readoutPorts.cend(), [=](const ReadoutPort& p) {
-		return (p.index() == currentReadoutPortIndex);
-	});
-	if (it == _readoutPorts.cend()) {
-		throw std::runtime_error("unknown readout port index in PhotometricsCamera::_getSetReadoutSpeed()");
-	}
-	const ReadoutPort& currentReadoutPort = *it;
+	const auto[currentReadoutPort, currentReadoutSpeed, currentGain] = _getCurrentReadoutSettings();
 	const std::vector<SpeedEntry>& speedTable = currentReadoutPort.speedTable();
 
 	if (getOrSet == SetProperty) {
@@ -164,21 +161,41 @@ CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet
 		_setCameraParameter<std::int32_t>(PARAM_SPDTAB_INDEX, it->index());
 	}
 
-	std::int16_t currentIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_SPDTAB_INDEX);
-	auto sIt = std::find_if(speedTable.cbegin(), speedTable.cend(), [=](const SpeedEntry& s) {
-		return (s.index() == currentIndex);
-	});
-	if (sIt == speedTable.cend()) {
-		throw std::runtime_error("unknown speed entry index in PhotometricsCamera::_getSetReadoutSpeed()");
-	}
+	const auto[updatedReadoutPort, updatedReadoutSpeed, updatedGain] = _getCurrentReadoutSettings();
 
-	const std::string currentDescriptor = sIt->descriptor();
+
+	const std::string& currentDescriptor = updatedReadoutSpeed.descriptor();
 	std::vector<std::string> speedDescriptors;
 	for (const auto& s : speedTable) {
 		speedDescriptors.emplace_back(s.descriptor());
 	}
 	CameraProperty prop(PropReadoutSpeed, "Readout speed");
 	prop.setDiscrete(currentDescriptor, speedDescriptors);
+	return prop;
+}
+
+CameraProperty PhotometricsCamera::_getSetGain(GetOrSetProperty getOrSet, const std::string & descriptor) {
+	const auto[currentReadoutPort, currentReadoutSpeed, currentGain] = _getCurrentReadoutSettings();
+	const std::vector<Gain>& gains = currentReadoutSpeed.gains();
+
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(gains.cbegin(), gains.cend(), [&](const auto& g) {
+			return (g.descriptor() == descriptor);
+		});
+		if (it == gains.cend()) {
+			throw std::runtime_error("unknown gain in PhotometricsCamera::_getSetGain()");
+		}
+		_setCameraParameter<std::int16_t>(PARAM_GAIN_INDEX, it->index());
+	}
+
+	const auto[updatedReadoutPort, updatedReadoutSpeed, updatedGain] = _getCurrentReadoutSettings();
+	const std::string& currentDescriptor = updatedGain.descriptor();
+	std::vector<std::string> gainDescriptors;
+	for (const auto& g : updatedReadoutSpeed.gains()) {
+		gainDescriptors.emplace_back(g.descriptor());
+	}
+	CameraProperty prop(PropGain, "Gain");
+	prop.setDiscrete(currentDescriptor, gainDescriptors);
 	return prop;
 }
 
@@ -380,11 +397,53 @@ std::vector<PhotometricsCamera::ReadoutPort> PhotometricsCamera::_listReadoutPor
 			_setCameraParameter<std::int16_t>(PARAM_SPDTAB_INDEX, i);
 			std::uint16_t pixelTime = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_PIX_TIME);
 			std::int16_t bitDepth = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_BIT_DEPTH);
-			speedEntries.emplace_back(i, pixelTime, bitDepth);
+			std::vector<Gain> gains;
+			std::pair<std::int16_t, std::int16_t> gainLimits = _getCameraParameterLimits<std::int16_t>(PARAM_GAIN_INDEX);
+			for (std::uint16_t gainIdx = gainLimits.first; gainIdx <= gainLimits.second; gainIdx += 1) {
+				_setCameraParameter<std::int16_t>(PARAM_GAIN_INDEX, gainIdx);
+				char gainName[MAX_GAIN_NAME_LEN + 1];
+				_fillCameraTextParameter(PARAM_GAIN_NAME, gainName);
+				gains.emplace_back(gainIdx, gainName);
+			}
+			speedEntries.emplace_back(i, pixelTime, bitDepth, gains);
 		}
 		readoutPorts.emplace_back(portName, portIndex, speedEntries);
 	}
 	return readoutPorts;
+}
+
+std::tuple<PhotometricsCamera::ReadoutPort, PhotometricsCamera::SpeedEntry, PhotometricsCamera::Gain> PhotometricsCamera::_getCurrentReadoutSettings() const {
+	std::int32_t currentReadoutPortIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
+	std::int16_t currentSpeedTableIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_SPDTAB_INDEX);
+	std::int16_t currentGainIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_GAIN_INDEX);
+
+	auto portIt = std::find_if(_readoutPorts.cbegin(), _readoutPorts.cend(), [=](const ReadoutPort& p) {
+		return (p.index() == currentReadoutPortIndex);
+	});
+	if (portIt == _readoutPorts.cend()) {
+		throw std::runtime_error("unknown readout port index in PhotometricsCamera::_getCurrentReadoutSettings()");
+	}
+	const ReadoutPort& currentReadoutPort = *portIt;
+	
+	const std::vector<SpeedEntry>& speedTable = currentReadoutPort.speedTable();
+	auto speedIt = std::find_if(speedTable.cbegin(), speedTable.cend(), [&](const SpeedEntry& s) {
+		return (s.index() == currentSpeedTableIndex);
+	});
+	if (speedIt == speedTable.cend()) {
+		throw std::runtime_error("unknown speed entry in PhotometricsCamera::_getCurrentReadoutSettings()");
+	}
+	const SpeedEntry& currentSpeedEntry = *speedIt;
+
+	const std::vector<Gain>& gains = currentSpeedEntry.gains();
+	auto gainIt = std::find_if(gains.cbegin(), gains.cend(), [&](const Gain& g) {
+		return (g.index() == currentGainIndex);
+	});
+	if (gainIt == gains.cend()) {
+		throw std::runtime_error("unknown gain entry in PhotometricsCamera::_getCurrentReadoutSettings()");
+	}
+	const Gain& currentGain = *gainIt;
+
+	return std::make_tuple(currentReadoutPort, currentSpeedEntry, currentGain);
 }
 
 std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCameraEnumParameters(int paramID) const {

@@ -16,21 +16,39 @@ class PhotometricsCamera : public BaseCameraClass {
 	enum PhotometricsPropIDs {
 		PropReadoutPort = CameraProperty::FirstAvailablePropertyID,
 		PropReadoutSpeed,
-		PropTriggerMode,
+		PropGain,
+		PropTriggerMode
+	};
+
+	class Gain {
+	public:
+		Gain(int index, const std::string& description) :
+			_index(index),
+			_description(description)
+		{}
+
+		int index() const { return _index; }
+		const std::string& descriptor() const { return _description; }
+
+	private:
+		int _index;
+		std::string _description;
 	};
 	
 	class SpeedEntry {
 	public:
-		SpeedEntry(int indexRHS, int pixelTimeRHS, int bitDepthRHS) :
+		SpeedEntry(int indexRHS, int pixelTimeRHS, int bitDepthRHS, const std::vector<Gain>& gains) :
 			_index(indexRHS),
 			_pixelTime(pixelTimeRHS),
-			_bitDepth(bitDepthRHS)
+			_bitDepth(bitDepthRHS),
+			_gains(gains)
 		{
 			_descriptor = _generateDescriptor();
 		}
 
 		int index() const { return _index; }
 		const std::string& descriptor() const { return _descriptor; }
+		const std::vector<Gain>& gains() const { return _gains; }
 
 	private:
 		std::string _generateDescriptor() const;
@@ -39,7 +57,9 @@ class PhotometricsCamera : public BaseCameraClass {
 		int _pixelTime;
 		int _bitDepth;
 		std::string _descriptor;
+		std::vector<Gain> _gains;
 	};
+
 	class ReadoutPort {
 	public:
 		ReadoutPort(const std::string& name, int index, const std::vector<SpeedEntry>& speedTable) :
@@ -76,6 +96,7 @@ private:
 
 	CameraProperty _getSetReadoutPort(GetOrSetProperty getOrSet, const std::string& port);
 	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
+	CameraProperty _getSetGain(GetOrSetProperty getOrSet, const std::string& descriptor);
 	CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
 
 	bool _derivedIsConfiguredForHardwareTriggering() override { return false; }
@@ -103,6 +124,7 @@ private:
 	static void _pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
 
 	std::vector<ReadoutPort> _listReadoutPorts();
+	std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings() const;
 
 	template <typename T> T _getCameraParameter(int paramID, int attribute) const {
 		T value;
