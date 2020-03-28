@@ -52,6 +52,7 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	_identifier += serNum;
 
 	_readoutPorts = _listReadoutPorts();
+	_postProcessingFeatures = _listPostProcessingFeatures();
 
 	_setDefaults();
 }
@@ -88,6 +89,12 @@ std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
 	properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
 	properties.push_back(_getSetGain(GetProperty, std::string()));
 	properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
+	properties.push_back(_getSetPostProcessingFeature(GetProperty, std::string()));
+
+	const std::vector<CameraProperty> postProcessingFeatureParameters = _getSetPostProcessingFeatureParameter(GetProperty, -1, 0.0);
+	for (const auto& p : postProcessingFeatureParameters) {
+		properties.push_back(p);
+	}
 
 	return properties;
 }
@@ -124,8 +131,13 @@ void PhotometricsCamera::_derivedSetCameraProperties(const std::vector<CameraPro
 			case PropTriggerMode:
 				_getSetTriggerMode(SetProperty, prop.getCurrentOption());
 				break;
+			case PropPostProcessingFeature:
+				_getSetPostProcessingFeature(SetProperty, prop.getCurrentOption());
+				break;
 			default:
-				throw std::runtime_error("setting unrecognized option");
+				// should be postprocessing param
+				_getSetPostProcessingFeatureParameter(SetProperty, prop.getPropertyCode(), prop.getValue());
+				break;
 		}
 	}
 }
@@ -238,6 +250,55 @@ CameraProperty PhotometricsCamera::_getSetTriggerMode(GetOrSetProperty getOrSet,
 	CameraProperty prop(PropTriggerMode, "Trigger Mode");
 	prop.setDiscrete(currentMode, modeNames);
 	return prop;
+}
+
+CameraProperty PhotometricsCamera::_getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string & mode) {
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(_postProcessingFeatures.cbegin(), _postProcessingFeatures.cend(), [&](const auto& f) {
+			return (f.descriptor() == mode);
+		});
+		if (it == _postProcessingFeatures.cend()) {
+			throw std::runtime_error("unknown feature in PhotometricsCamera::_getSetPostProcessingFeature()");
+		}
+		_setCameraParameter<std::int16_t>(PARAM_PP_INDEX, it->index());
+	}
+
+	const PostProcessingFeature& currentFeature = _getCurrentPostProcessingFeature();
+	std::vector<std::string> allFeatureNames;
+	for (const auto& f : _postProcessingFeatures) {
+		allFeatureNames.push_back(f.descriptor());
+	}
+	CameraProperty prop(PropPostProcessingFeature, "Postprocessing");
+	prop.setDiscrete(currentFeature.descriptor(), allFeatureNames);
+	return prop;
+}
+
+std::vector<CameraProperty> PhotometricsCamera::_getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value) {
+	const PostProcessingFeature& currentFeature = _getCurrentPostProcessingFeature();
+	const std::vector<PostProcessingFeatureParameter>& currentParameters = currentFeature.parameters();
+
+	if (getOrSet == SetProperty) {
+		auto it = std::find_if(currentParameters.cbegin(), currentParameters.cend(), [&](const auto& p) {
+			return (p.scCameraID() == scCameraParameterID);
+		});
+		if (it == currentParameters.cend()) {
+			throw std::runtime_error("unknown parameter in PhotometricsCamera::_getSetPostProcessingFeatureParameter()");
+		}
+		_setCameraParameter<std::int16_t>(PARAM_PP_PARAM_INDEX, it->pvcamID());
+		auto limits = _getCameraParameterLimits<std::uint32_t>(PARAM_PP_PARAM);
+		std::uint32_t clamped = clamp(static_cast<std::uint32_t>(std::round(value)), limits.first, limits.second);
+		_setCameraParameter<std::uint32_t>(PARAM_PP_PARAM, clamped);
+	}
+
+	std::vector<CameraProperty> featureParameters;
+	for (const auto& p : currentParameters) {
+		CameraProperty prop(p.scCameraID(), p.descriptor());
+		_setCameraParameter<std::int16_t>(PARAM_PP_PARAM_INDEX, p.pvcamID());
+		prop.setNumeric(_getCameraParameterCurrentValue<std::uint32_t>(PARAM_PP_PARAM));
+		featureParameters.push_back(prop);
+	}
+
+	return featureParameters;
 }
 
 std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() const {
@@ -456,6 +517,40 @@ std::tuple<PhotometricsCamera::ReadoutPort, PhotometricsCamera::SpeedEntry, Phot
 	const Gain& currentGain = *gainIt;
 
 	return std::make_tuple(currentReadoutPort, currentSpeedEntry, currentGain);
+}
+
+std::vector<PhotometricsCamera::PostProcessingFeature> PhotometricsCamera::_listPostProcessingFeatures() {
+	std::vector<PostProcessingFeature> features;
+	int processingSettingID = PropFirstPostProcessingSettingID;
+
+	std::uint32_t nFeatures = _getCameraParameterCount(PARAM_PP_INDEX);
+	for (std::uint32_t featureIdx = 0; featureIdx < nFeatures; featureIdx += 1) {
+		_setCameraParameter<std::uint16_t>(PARAM_PP_INDEX, featureIdx);
+		char featureName[MAX_PP_NAME_LEN + 1];
+		_fillCameraTextParameter(PARAM_PP_FEAT_NAME, featureName);
+		std::uint32_t nFeatureParameters = _getCameraParameterCount(PARAM_PP_PARAM_INDEX);
+		std::vector<PostProcessingFeatureParameter> featureParams;
+		for (std::uint32_t featureParamIdx = 0; featureParamIdx < nFeatureParameters; featureParamIdx += 1) {
+			_setCameraParameter<std::int16_t>(PARAM_PP_PARAM_INDEX, featureParamIdx);
+			char featureParamName[MAX_PP_NAME_LEN + 1];
+			_fillCameraTextParameter(PARAM_PP_PARAM_NAME, featureParamName);
+			featureParams.emplace_back(featureParamIdx, processingSettingID++, featureParamName);
+		}
+		features.emplace_back(featureIdx, featureName, featureParams);
+	}
+	return features;
+}
+
+const PhotometricsCamera::PostProcessingFeature& PhotometricsCamera::_getCurrentPostProcessingFeature() const {
+	std::int16_t currentFeatureIdx = _getCameraParameterCurrentValue<std::int16_t>(PARAM_PP_INDEX);
+	auto it = std::find_if(_postProcessingFeatures.cbegin(), _postProcessingFeatures.cend(), [&](const auto& f) {
+		return (f.index() == currentFeatureIdx);
+	});
+	if (it == _postProcessingFeatures.cend()) {
+		throw std::runtime_error("unknown feature in PhotometricsCamera::_getCurrentPostProcessingFeature()");
+	}
+
+	return *it;
 }
 
 std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCameraEnumParameters(int paramID) const {

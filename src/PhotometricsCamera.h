@@ -17,7 +17,9 @@ class PhotometricsCamera : public BaseCameraClass {
 		PropReadoutPort = CameraProperty::FirstAvailablePropertyID,
 		PropReadoutSpeed,
 		PropGain,
-		PropTriggerMode
+		PropTriggerMode,
+		PropPostProcessingFeature,
+		PropFirstPostProcessingSettingID = CameraProperty::FirstAvailablePropertyID + 1000
 	};
 
 	class Gain {
@@ -74,6 +76,42 @@ class PhotometricsCamera : public BaseCameraClass {
 		std::vector<SpeedEntry> _speedTable;
 	};
 
+	class PostProcessingFeatureParameter {
+	public:
+		PostProcessingFeatureParameter(int pvcamID, int scCameraID, const std::string& descriptor) :
+			_pvcamID(pvcamID),
+			_scCameraID(scCameraID),
+			_descriptor(descriptor)
+		{}
+
+		const int pvcamID() const { return _pvcamID; }
+		const int scCameraID() const { return _scCameraID; }
+		const std::string& descriptor() const { return _descriptor; }
+
+	private:
+		int _pvcamID;
+		int _scCameraID;
+		std::string _descriptor;
+	};
+
+	class PostProcessingFeature {
+	public:
+		PostProcessingFeature(int index, const std::string& description, const std::vector<PostProcessingFeatureParameter>& postProcessingSettings) :
+			_index(index),
+			_description(description),
+			_postProcessingSettings(postProcessingSettings)
+		{}
+
+		int index() const { return _index; }
+		const std::string& descriptor() const { return _description; }
+		const std::vector<PostProcessingFeatureParameter> parameters() const { return _postProcessingSettings; }
+
+	private:
+		int _index;
+		std::string _description;
+		std::vector<PostProcessingFeatureParameter> _postProcessingSettings;
+	};
+
 public:
 	PhotometricsCamera(const std::string& cameraName);
 	~PhotometricsCamera();
@@ -94,6 +132,8 @@ private:
 	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
 	CameraProperty _getSetGain(GetOrSetProperty getOrSet, const std::string& descriptor);
 	CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
+	CameraProperty _getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode);
+	std::vector<CameraProperty> _getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value);
 
 	bool _derivedIsConfiguredForHardwareTriggering() override { return false; }
 
@@ -121,6 +161,8 @@ private:
 
 	std::vector<ReadoutPort> _listReadoutPorts();
 	std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings() const;
+	std::vector<PostProcessingFeature> _listPostProcessingFeatures();
+	const PostProcessingFeature& _getCurrentPostProcessingFeature() const;
 
 	template <typename T> T _getCameraParameter(int paramID, int attribute) const {
 		T value;
@@ -168,6 +210,7 @@ private:
 	std::string _identifier;
 	std::int16_t _pvcamHandle;
 	std::vector<ReadoutPort> _readoutPorts;
+	std::vector<PhotometricsCamera::PostProcessingFeature> _postProcessingFeatures;
 	int _binningFactor;
 	std::pair<int, int> _crop;
 	int _triggerMode;
