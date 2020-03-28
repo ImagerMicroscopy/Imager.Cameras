@@ -22,10 +22,7 @@ class PhotometricsCamera : public BaseCameraClass {
 
 	class Gain {
 	public:
-		Gain(int index, const std::string& description) :
-			_index(index),
-			_description(description)
-		{}
+		Gain(int index, int bitDepth, const std::string& description);
 
 		int index() const { return _index; }
 		const std::string& descriptor() const { return _description; }
@@ -33,14 +30,14 @@ class PhotometricsCamera : public BaseCameraClass {
 	private:
 		int _index;
 		std::string _description;
+		int _bitDepth;
 	};
 	
 	class SpeedEntry {
 	public:
-		SpeedEntry(int indexRHS, int pixelTimeRHS, int bitDepthRHS, const std::vector<Gain>& gains) :
+		SpeedEntry(int indexRHS, int pixelTimeRHS, const std::vector<Gain>& gains) :
 			_index(indexRHS),
 			_pixelTime(pixelTimeRHS),
-			_bitDepth(bitDepthRHS),
 			_gains(gains)
 		{
 			_descriptor = _generateDescriptor();
@@ -55,7 +52,6 @@ class PhotometricsCamera : public BaseCameraClass {
 
 		int _index;
 		int _pixelTime;
-		int _bitDepth;
 		std::string _descriptor;
 		std::vector<Gain> _gains;
 	};

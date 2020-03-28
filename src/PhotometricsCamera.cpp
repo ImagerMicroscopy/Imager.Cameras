@@ -15,10 +15,22 @@
 	#include "XOPStandardHeaders.h"
 #endif
 
+PhotometricsCamera::Gain::Gain(int index, int bitDepth, const std::string & description) :
+	_index(index),
+	_bitDepth(bitDepth)
+{
+	char bitDepthStr[32];
+	sprintf_s(bitDepthStr, sizeof(bitDepthStr), "(%d bit)", bitDepth);
+	_description = description;
+	_description += " ";
+	_description += bitDepthStr;
+}
+
+
 std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
 	int readoutRate = 1.0 / (_pixelTime * 1.0e-9) / 1.0e6;
 	char buf[128];
-	snprintf(buf, sizeof(buf), "%d MHz (%d bit)", readoutRate, _bitDepth);
+	snprintf(buf, sizeof(buf), "%d MHz", readoutRate);
 	return std::string(buf);
 }
 
@@ -396,16 +408,16 @@ std::vector<PhotometricsCamera::ReadoutPort> PhotometricsCamera::_listReadoutPor
 		for (std::uint32_t i = 0; i < nSpeeds; i += 1) {
 			_setCameraParameter<std::int16_t>(PARAM_SPDTAB_INDEX, i);
 			std::uint16_t pixelTime = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_PIX_TIME);
-			std::int16_t bitDepth = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_BIT_DEPTH);
 			std::vector<Gain> gains;
 			std::pair<std::int16_t, std::int16_t> gainLimits = _getCameraParameterLimits<std::int16_t>(PARAM_GAIN_INDEX);
 			for (std::uint16_t gainIdx = gainLimits.first; gainIdx <= gainLimits.second; gainIdx += 1) {
 				_setCameraParameter<std::int16_t>(PARAM_GAIN_INDEX, gainIdx);
 				char gainName[MAX_GAIN_NAME_LEN + 1];
 				_fillCameraTextParameter(PARAM_GAIN_NAME, gainName);
-				gains.emplace_back(gainIdx, gainName);
+				std::int16_t bitDepth = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_BIT_DEPTH);
+				gains.emplace_back(gainIdx, bitDepth, gainName);
 			}
-			speedEntries.emplace_back(i, pixelTime, bitDepth, gains);
+			speedEntries.emplace_back(i, pixelTime, gains);
 		}
 		readoutPorts.emplace_back(portName, portIndex, speedEntries);
 	}
