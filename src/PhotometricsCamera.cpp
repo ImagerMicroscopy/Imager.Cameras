@@ -75,6 +75,24 @@ void PhotometricsCamera::_setDefaults() {
 	// exposure times are expressed in microseconds
 	_setCameraParameter<std::int32_t>(PARAM_EXP_RES_INDEX, EXP_RES_ONE_MICROSEC);
 
+	// select the first readout port / speed / gain combination that offers 16 bit precision
+	bool found = false;
+	for (const auto& p : _readoutPorts) {
+		for (const auto& s : p.speedTable()) {
+			for (const auto& g : s.gains()) {
+				if (found) {
+					continue;
+				}
+				if (g.bitDepth() == 16) {
+					_setCameraParameter<std::int32_t>(PARAM_READOUT_PORT, p.index());
+					_setCameraParameter<std::int16_t>(PARAM_SPDTAB_INDEX, s.index());
+					_setCameraParameter<std::int16_t>(PARAM_GAIN_INDEX, g.index());
+					found = true;
+				}
+			}
+		}
+	}
+
 	_setImageCrop(_getSensorSize());
 	_setBinningFactor(1);
 	_setTrigggerMode(EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER);
@@ -182,7 +200,7 @@ CameraProperty PhotometricsCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet
 		if (it == speedTable.cend()) {
 			throw std::runtime_error("unknown speed entry in PhotometricsCamera::_getSetReadoutSpeed()");
 		}
-		_setCameraParameter<std::int32_t>(PARAM_SPDTAB_INDEX, it->index());
+		_setCameraParameter<std::int16_t>(PARAM_SPDTAB_INDEX, it->index());
 	}
 
 	const auto[updatedReadoutPort, updatedReadoutSpeed, updatedGain] = _getCurrentReadoutSettings();
@@ -538,6 +556,15 @@ std::vector<PhotometricsCamera::PostProcessingFeature> PhotometricsCamera::_list
 		}
 		features.emplace_back(featureIdx, featureName, featureParams);
 	}
+
+	// remove everything except denoising 
+	features.erase(std::remove_if(features.begin(), features.end(), [](const auto& f) {
+		return (f.descriptor() != "DENOISING");
+	}), features.end());
+	if (!features.empty()) {
+		_setCameraParameter<std::uint16_t>(PARAM_PP_INDEX, features.at(0).index());
+	}
+
 	return features;
 }
 

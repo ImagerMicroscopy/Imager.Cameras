@@ -28,6 +28,7 @@ class PhotometricsCamera : public BaseCameraClass {
 
 		int index() const { return _index; }
 		const std::string& descriptor() const { return _description; }
+		int bitDepth() const { return _bitDepth; }
 
 	private:
 		int _index;
