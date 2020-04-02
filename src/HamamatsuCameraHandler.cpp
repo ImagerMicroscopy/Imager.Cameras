@@ -1,3 +1,7 @@
+#include "SCConfigure.h"
+
+#ifdef WITH_HAMAMATSU
+
 #include "HamamatsuCameraHandler.h"
 
 #include "windows.h"
@@ -38,3 +42,4 @@ void CloseHamamatsuLibrary() {
 	dcamapi_uninit();
 }
 
+#endif

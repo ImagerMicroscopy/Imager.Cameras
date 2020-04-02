@@ -1,3 +1,7 @@
+#include "SCConfigure.h"
+
+#ifdef WITH_PHOTOMETRICS
+
 #include "PhotometricsCameraHandler.h"
 
 #include "PhotometricsCamera.h"
@@ -32,3 +36,5 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
 void ClosePhotometricsLibrary() {
 	pl_pvcam_uninit();
 }
+
+#endif
