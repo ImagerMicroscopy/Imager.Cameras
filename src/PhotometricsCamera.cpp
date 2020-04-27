@@ -95,7 +95,7 @@ void PhotometricsCamera::_setDefaults() {
 
 	_setImageCrop(_getSensorSize());
 	_setBinningFactor(1);
-	_setTrigggerMode(EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER);
+	_setTrigggerMode(EXT_TRIG_INTERNAL | EXPOSE_OUT_FIRST_ROW);
 	_setExposureTime(50.0e-3);
 }
 
@@ -320,7 +320,7 @@ std::vector<CameraProperty> PhotometricsCamera::_getSetPostProcessingFeaturePara
 }
 
 bool PhotometricsCamera::_derivedIsConfiguredForHardwareTriggering() {
-	if (_triggerMode == (EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER)) {
+	if (_triggerMode == (EXT_TRIG_INTERNAL | EXPOSE_OUT_FIRST_ROW)) {
 		return false;
 	} else {
 		return true;
@@ -404,10 +404,10 @@ std::string PhotometricsCamera::getPVCAMErrorMessage() {
 
 std::vector<std::pair<std::string, int>> PhotometricsCamera::_getTriggerModes() const {
 	std::vector<std::pair<std::string, int>> modes;
-	modes.push_back(std::make_pair("Internal", EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER));
-	modes.push_back(std::make_pair("External", EXT_TRIG_EDGE_RISING | EXPOSE_OUT_ROLLING_SHUTTER));
-	modes.push_back(std::make_pair("External Start", EXT_TRIG_TRIG_FIRST | EXPOSE_OUT_ROLLING_SHUTTER));
-	modes.push_back(std::make_pair("External Exposure (bulb)", EXT_TRIG_LEVEL | EXPOSE_OUT_ROLLING_SHUTTER));
+	modes.push_back(std::make_pair("Internal", EXT_TRIG_INTERNAL | EXPOSE_OUT_FIRST_ROW));
+	modes.push_back(std::make_pair("External", EXT_TRIG_EDGE_RISING | EXPOSE_OUT_FIRST_ROW));
+	modes.push_back(std::make_pair("External Start", EXT_TRIG_TRIG_FIRST | EXPOSE_OUT_FIRST_ROW));
+	modes.push_back(std::make_pair("External Exposure (bulb)", EXT_TRIG_LEVEL | EXPOSE_OUT_FIRST_ROW));
 	return modes;
 }
 
