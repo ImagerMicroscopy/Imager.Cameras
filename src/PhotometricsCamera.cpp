@@ -319,6 +319,14 @@ std::vector<CameraProperty> PhotometricsCamera::_getSetPostProcessingFeaturePara
 	return featureParameters;
 }
 
+bool PhotometricsCamera::_derivedIsConfiguredForHardwareTriggering() {
+	if (_triggerMode == (EXT_TRIG_INTERNAL | EXPOSE_OUT_ROLLING_SHUTTER)) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
 std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() const {
 	std::pair<int, int> cropped = _getImageCrop();
 	cropped.first /= _getBinningFactor();

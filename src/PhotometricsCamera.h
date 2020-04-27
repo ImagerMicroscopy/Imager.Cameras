@@ -136,7 +136,7 @@ private:
 	CameraProperty _getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode);
 	std::vector<CameraProperty> _getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value);
 
-	bool _derivedIsConfiguredForHardwareTriggering() override { return false; }
+	bool _derivedIsConfiguredForHardwareTriggering() override;
 
 	std::pair<int, int> _getSizeOfRawImages() const override;
 	std::pair<int, int> _getSensorSize() const;
