@@ -308,6 +308,8 @@ void PCOCamera::_initDefaults() {
 	if (pcoErr) {
 		throw std::runtime_error("Error calling PCO_GetCameraHealthStatus()");
 	}
+
+	_setExposureTime(0.1);
 }
 
 double PCOCamera::_pcoTimeToSeconds(DWORD time, DWORD timeBase) const {
