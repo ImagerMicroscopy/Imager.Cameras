@@ -27,6 +27,10 @@
 #include "PCOCamera.h"
 #endif
 
+#ifdef WITH_OCEANOPTICS
+#include "api/seabreezeapi/SeaBreezeAPI.h"
+#endif
+
 #ifdef WITH_DUMMYCAM
 #include "DummyCamera.h"
 #endif
@@ -105,6 +109,10 @@ void CameraManager::discoverCameras() {
 		std::shared_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
 		_availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), pcoCamera));
 	}
+#endif
+
+#ifdef WITH_OCEANOPTICS
+	SeaBreezeAPI* seabreezeAPI = SeaBreezeAPI::getInstance();
 #endif
 
 #ifdef WITH_DUMMYCAM

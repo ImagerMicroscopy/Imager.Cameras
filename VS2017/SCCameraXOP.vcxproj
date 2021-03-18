@@ -232,7 +232,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\include\IPP2017;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\include\IPP2017;$(SolutionDir)\..\include\OceanOpticsSeabreeze;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>DCAM_TARGETOS_IS_WIN32;_WINDLL;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
@@ -337,7 +337,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\include\IPP2017;$(SolutionDir)\..\include;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\include\IPP2017;$(SolutionDir)\..\include\OceanOpticsSeabreeze;$(SolutionDir)\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>DCAM_TARGETOS_IS_WIN32;_WINDLL;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -387,6 +387,7 @@
     <ClCompile Include="..\src\IDSCamera.cpp" />
     <ClCompile Include="..\src\ImageProcessingUtils.cpp" />
     <ClCompile Include="..\src\ImageRecycler.cpp" />
+    <ClCompile Include="..\src\OceanOpticsCamera.cpp" />
     <ClCompile Include="..\src\PCOCamera.cpp" />
     <ClCompile Include="..\src\PhotometricsCamera.cpp" />
     <ClCompile Include="..\src\PhotometricsCameraHandler.cpp" />
@@ -413,6 +414,7 @@
     <ClInclude Include="..\src\IDSCamera.h" />
     <ClInclude Include="..\src\ImageProcessingUtils.h" />
     <ClInclude Include="..\src\ImageRecycler.h" />
+    <ClInclude Include="..\src\OceanOpticsCamera.h" />
     <ClInclude Include="..\src\PCOCamera.h" />
     <ClInclude Include="..\src\PhotometricsCamera.h" />
     <ClInclude Include="..\src\PhotometricsCameraHandler.h" />
