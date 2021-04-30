@@ -29,6 +29,8 @@ public:
 
 	std::string getIdentifierStr() const final;
 
+	double getFrameRate() const override;
+
 private:
 	std::vector<CameraProperty> _derivedGetCameraProperties() override;
 	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
@@ -57,7 +59,6 @@ private:
 
 	SeaBreezeAPI* _seabreezeAPI;
 	long _deviceID;
-	long _featureID;
 	std::vector<long> _spectrometerFeatures;
 	int _spectrumLength;
 	long _integrationTimeMicros;

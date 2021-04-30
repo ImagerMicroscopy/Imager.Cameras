@@ -11,7 +11,8 @@ OceanOpticsCamera::OceanOpticsCamera(long deviceID) :
 	_deviceID(deviceID),
 	_nSpectraToAverage(1),
 	_spectraGrabberShouldAbort(false),
-	_spectraGrabberHasError(false)
+	_spectraGrabberHasError(false),
+	_availableSpectraQueue(16)
 {
 	int errorCode = 0, err = 0;
 
@@ -19,20 +20,24 @@ OceanOpticsCamera::OceanOpticsCamera(long deviceID) :
 	if (err) {
 		throw std::runtime_error("error opening ocean optics");
 	}
-	_spectrometerFeatures.resize(10);
-	err = _seabreezeAPI->getSpectrometerFeatures(_deviceID, &errorCode, _spectrometerFeatures.data(), _spectrometerFeatures.size());
-	if (err) {
-		throw std::runtime_error("error getting spectrometer features");
+	int nFeatures = _seabreezeAPI->getNumberOfSpectrometerFeatures(_deviceID, &errorCode);
+	if ((errorCode != 0) || (nFeatures < 1)) {
+		throw std::runtime_error("no features found");
 	}
-	_spectrumLength = _seabreezeAPI->spectrometerGetFormattedSpectrumLength(_deviceID, 0, &errorCode);
+	_spectrometerFeatures.resize(nFeatures);
+	_seabreezeAPI->getSpectrometerFeatures(_deviceID, &errorCode, _spectrometerFeatures.data(), _spectrometerFeatures.size());
+	if (errorCode != 0) {
+		throw std::runtime_error("no features found");
+	}
+	_spectrumLength = _seabreezeAPI->spectrometerGetFormattedSpectrumLength(_deviceID, _spectrometerFeatures.at(0), &errorCode);
 	if (errorCode != 0) {
 		throw std::runtime_error("error getting spectrum length");
 	}
-	_minIntegrationTimeMicros = _seabreezeAPI->spectrometerGetMinimumIntegrationTimeMicros(_deviceID, 0, &errorCode);
+	_minIntegrationTimeMicros = _seabreezeAPI->spectrometerGetMinimumIntegrationTimeMicros(_deviceID, _spectrometerFeatures.at(0), &errorCode);
 	if (errorCode != 0) {
 		throw std::runtime_error("error getting min exposure time");
 	}
-	_maxIntegrationTimeMicros = _seabreezeAPI->spectrometerGetMaximumIntegrationTimeMicros(_deviceID, 0, &errorCode);
+	_maxIntegrationTimeMicros = _seabreezeAPI->spectrometerGetMaximumIntegrationTimeMicros(_deviceID, _spectrometerFeatures.at(0), &errorCode);
 	if (errorCode != 0) {
 		throw std::runtime_error("error getting max exposure time");
 	}
@@ -52,6 +57,10 @@ std::string OceanOpticsCamera::getIdentifierStr() const {
 		throw std::runtime_error("error getting identifier string");
 	}
 	return std::string(buf);
+}
+
+double OceanOpticsCamera::getFrameRate() const {
+	return (1.0 / _getExposureTime());
 }
 
 std::vector<CameraProperty> OceanOpticsCamera::_derivedGetCameraProperties() {
@@ -92,10 +101,12 @@ CameraProperty OceanOpticsCamera::_getSetNSpectraToAverage(GetOrSetProperty getO
 	}
 	CameraProperty prop(PropNSpectraToAverage, "N spectra to average");
 	prop.setNumeric(_getNSpectraToAverage());
+	return prop;
 }
 
 void OceanOpticsCamera::_setDefaults() {
 	_setExposureTime(0.1);
+	_setNSpectraToAverage(1);
 }
 
 void OceanOpticsCamera::_setExposureTime(const double exposureTime) {
@@ -103,7 +114,7 @@ void OceanOpticsCamera::_setExposureTime(const double exposureTime) {
 	long integrationTimeMicros = static_cast<long>(exposureTime * 1.0e6);
 	integrationTimeMicros = clamp(integrationTimeMicros, _minIntegrationTimeMicros, _maxIntegrationTimeMicros);
 	integrationTimeMicros = std::min(integrationTimeMicros, 1000000L);	// limit to max 1 s
-	_seabreezeAPI->spectrometerSetIntegrationTimeMicros(_deviceID, 0, &errorCode, integrationTimeMicros);
+	_seabreezeAPI->spectrometerSetIntegrationTimeMicros(_deviceID, _spectrometerFeatures.at(0), &errorCode, integrationTimeMicros);
 	if (errorCode != 0) {
 		throw std::runtime_error("error setting exposure time");
 	}
@@ -111,7 +122,7 @@ void OceanOpticsCamera::_setExposureTime(const double exposureTime) {
 }
 
 double OceanOpticsCamera::_getExposureTime() const {
-	return _integrationTimeMicros;
+	return ((double)_integrationTimeMicros / 1.0e6);
 }
 
 void OceanOpticsCamera::_setNSpectraToAverage(const double nSpectra) {
@@ -160,30 +171,27 @@ void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
 	std::vector<double> singleSpectrum(nPixels);
 
 	// discard the first spectrum
-	int errorCode = 0, err = 0;
-	err = _seabreezeAPI->spectrometerGetFormattedSpectrum(_deviceID, _featureID, &errorCode, singleSpectrum.data(), singleSpectrum.size());
-	if (err) {
+	int errorCode = 0;
+	_seabreezeAPI->spectrometerGetFormattedSpectrum(_deviceID, _spectrometerFeatures.at(0), &errorCode, singleSpectrum.data(), singleSpectrum.size());
+	if (errorCode) {
 		_spectraGrabberHasError = true;
 		return;
 	}
-
 
 	for ( ; ; ) {
 		for (auto& p : accumulatedSpectrum) {
 			p = 0.0;
 		}
-
 		for (int i = 0; i < nSpectraToAverage; i += 1) {
 			if (_spectraGrabberShouldAbort) {
 				return;
 			}
 
-			err = _seabreezeAPI->spectrometerGetFormattedSpectrum(_deviceID, _featureID, &errorCode, singleSpectrum.data(), singleSpectrum.size());
-			if (err) {
+			_seabreezeAPI->spectrometerGetFormattedSpectrum(_deviceID, _spectrometerFeatures.at(0), &errorCode, singleSpectrum.data(), singleSpectrum.size());
+			if (errorCode) {
 				_spectraGrabberHasError = true;
 				return;
 			}
-
 			for (size_t i = 0; i < accumulatedSpectrum.size(); i += 1) {
 				accumulatedSpectrum[i] += singleSpectrum[i];
 			}
@@ -194,7 +202,7 @@ void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
 			}
 		}
 
-		_availableSpectraQueue.enqueue(accumulatedSpectrum);
+		_availableSpectraQueue.try_enqueue(accumulatedSpectrum);
 	}
 }
 
@@ -202,6 +210,7 @@ void OceanOpticsCamera::_startAsyncSpectraGrabber() {
 	_stopAsyncSpectraGrabber();
 	_spectraGrabberShouldAbort = false;
 	_spectraGrabberHasError = false;
+	while (_availableSpectraQueue.pop()) {}
 	_spectraGrabberFuture = std::async(std::launch::async, [=]() {
 		_asyncSpectraGrabberWorker();
 	});

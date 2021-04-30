@@ -29,6 +29,7 @@
 
 #ifdef WITH_OCEANOPTICS
 #include "api/seabreezeapi/SeaBreezeAPI.h"
+#include "OceanOpticsCamera.h"
 #endif
 
 #ifdef WITH_DUMMYCAM
@@ -113,6 +114,14 @@ void CameraManager::discoverCameras() {
 
 #ifdef WITH_OCEANOPTICS
 	SeaBreezeAPI* seabreezeAPI = SeaBreezeAPI::getInstance();
+	long ooDeviceIDs[32];
+	seabreezeAPI->probeDevices();
+	int nOODevices = seabreezeAPI->getDeviceIDs(ooDeviceIDs, sizeof(ooDeviceIDs));
+	for (int i = 0; i < nOODevices; i += 1) {
+		std::shared_ptr<BaseCameraClass> ooCamera(new OceanOpticsCamera(ooDeviceIDs[i]));
+		_availableCameras.emplace(ooCamera->getIdentifierStr(), ooCamera);
+	}
+
 #endif
 
 #ifdef WITH_DUMMYCAM
