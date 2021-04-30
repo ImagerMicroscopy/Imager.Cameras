@@ -385,11 +385,6 @@ bool IDSCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
     return true;
 }
 
-bool IDSCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-    // only _waitForNewImageWithTimeout() can be implemented with the available ISD api
-	return false;
-}
-
 void IDSCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
     int err = is_CopyImageMem(_camHandle, _ptrToMemoryWithOldestImage, _idOfMemoryWithOldestImage, reinterpret_cast<char*>(bufferForThisImage));
     is_UnlockSeqBuf(_camHandle, _idOfMemoryWithOldestImage, _ptrToMemoryWithOldestImage);

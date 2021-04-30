@@ -460,9 +460,9 @@ void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
 	pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
-bool PhotometricsCamera::_derivedNewAsyncAcquisitionImageAvailable() {
+bool PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
 	int dummy = 0;
-	return _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(100));
+	return _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
 }
 
 void PhotometricsCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
