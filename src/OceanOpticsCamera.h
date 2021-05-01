@@ -21,7 +21,8 @@ public:
 
 	enum OOPropIDs {
 		PropExposureTime = CameraProperty::FirstAvailablePropertyID,
-		PropNSpectraToAverage
+		PropNSpectraToAverage,
+		PropOffsetToSubtract
 	};
 
 	OceanOpticsCamera(long deviceID);
@@ -39,6 +40,7 @@ private:
 
 	CameraProperty _getSetExposureTime(GetOrSetProperty getOrSet, const double exposureTime);
 	CameraProperty _getSetNSpectraToAverage(GetOrSetProperty getOrSet, const double nSpectra);
+	CameraProperty _getSetOffsetToSubtract(GetOrSetProperty getOrSet, const double offset);
 
 	void _setDefaults();
 
@@ -46,6 +48,8 @@ private:
 	double _getExposureTime() const;
 	void _setNSpectraToAverage(const double nSpectra);
 	double _getNSpectraToAverage() const;
+	void _setOffsetToSubtract(const double offset);
+	double _getOffsetToSubtract() const;
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
@@ -65,6 +69,7 @@ private:
 	long _minIntegrationTimeMicros;
 	long _maxIntegrationTimeMicros;
 	int _nSpectraToAverage;
+	double _offsetToSubtract;
 
 	std::future<void> _spectraGrabberFuture;
 	bool _spectraGrabberShouldAbort;

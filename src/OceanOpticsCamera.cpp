@@ -10,6 +10,7 @@ OceanOpticsCamera::OceanOpticsCamera(long deviceID) :
 	_seabreezeAPI(SeaBreezeAPI::getInstance()),
 	_deviceID(deviceID),
 	_nSpectraToAverage(1),
+	_offsetToSubtract(0.0),
 	_spectraGrabberShouldAbort(false),
 	_spectraGrabberHasError(false),
 	_availableSpectraQueue(16)
@@ -64,7 +65,7 @@ double OceanOpticsCamera::getFrameRate() const {
 }
 
 std::vector<CameraProperty> OceanOpticsCamera::_derivedGetCameraProperties() {
-	return { _getSetExposureTime(GetProperty, 0.0), _getSetNSpectraToAverage(GetProperty, 0.0) };
+	return { _getSetExposureTime(GetProperty, 0.0), _getSetNSpectraToAverage(GetProperty, 0.0), _getSetOffsetToSubtract(GetProperty, 0.0) };
 }
 
 void OceanOpticsCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
@@ -75,6 +76,9 @@ void OceanOpticsCamera::_derivedSetCameraProperties(const std::vector<CameraProp
 			break;
 		case PropNSpectraToAverage:
 			_getSetNSpectraToAverage(SetProperty, prop.getValue());
+			break;
+		case PropOffsetToSubtract:
+			_getSetOffsetToSubtract(SetProperty, prop.getValue());
 			break;
 		default:
 			throw std::runtime_error("setting unrecognized option");
@@ -101,6 +105,15 @@ CameraProperty OceanOpticsCamera::_getSetNSpectraToAverage(GetOrSetProperty getO
 	}
 	CameraProperty prop(PropNSpectraToAverage, "N spectra to average");
 	prop.setNumeric(_getNSpectraToAverage());
+	return prop;
+}
+
+CameraProperty OceanOpticsCamera::_getSetOffsetToSubtract(GetOrSetProperty getOrSet, const double offset) {
+	if (getOrSet == SetProperty) {
+		_setOffsetToSubtract(offset);
+	}
+	CameraProperty prop(PropOffsetToSubtract, "Offset to subtract");
+	prop.setNumeric(_getOffsetToSubtract());
 	return prop;
 }
 
@@ -131,6 +144,14 @@ void OceanOpticsCamera::_setNSpectraToAverage(const double nSpectra) {
 
 double OceanOpticsCamera::_getNSpectraToAverage() const {
 	return _nSpectraToAverage;
+}
+
+void OceanOpticsCamera::_setOffsetToSubtract(const double offset) {
+	_offsetToSubtract = clamp(offset, 0.0, 65535.0);
+}
+
+double OceanOpticsCamera::_getOffsetToSubtract() const {
+	return _offsetToSubtract;
 }
 
 void OceanOpticsCamera::_derivedStartAsyncAcquisition() {
@@ -167,6 +188,7 @@ void OceanOpticsCamera::_derivedStoreNewImageInBuffer(std::uint16_t * bufferForT
 void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
 	int nPixels = _getSizeOfRawImages().first;
 	int nSpectraToAverage = _nSpectraToAverage;
+	double offsetToSubtract = _offsetToSubtract;
 	std::vector<double> accumulatedSpectrum(nPixels);
 	std::vector<double> singleSpectrum(nPixels);
 
@@ -193,7 +215,7 @@ void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
 				return;
 			}
 			for (size_t i = 0; i < accumulatedSpectrum.size(); i += 1) {
-				accumulatedSpectrum[i] += singleSpectrum[i];
+				accumulatedSpectrum[i] += (singleSpectrum[i] - offsetToSubtract);
 			}
 		}
 		if (nSpectraToAverage > 1) {
