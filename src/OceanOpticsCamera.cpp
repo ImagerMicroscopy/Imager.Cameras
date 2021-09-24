@@ -181,7 +181,7 @@ void OceanOpticsCamera::_derivedStoreNewImageInBuffer(std::uint16_t * bufferForT
 	}
 
 	for (size_t i = 0; i < _spectrumInFlight.size(); i += 1) {
-		bufferForThisImage[i] = std::round(_spectrumInFlight[i]);
+		bufferForThisImage[i] = clamp(std::round(_spectrumInFlight[i]), 0.0, 65535.0);
 	}
 }
 
