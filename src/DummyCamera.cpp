@@ -65,11 +65,6 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> DummyCamera::_derivedGet
 }
 
 void DummyCamera::_setExposureTime(const double exposureTime) {
-	auto sensorSize = _getSensorSize();
-	auto currentSize = _getCurrentCropping();
-	currentSize.first /= _getCurrentBinning();
-	currentSize.second /= _getCurrentBinning();
-	double minExposureTime = 50e-3 * (static_cast<double>(currentSize.first * currentSize.second) / (sensorSize.first * sensorSize.second));
 	_exposureTime = _limitExposureTime(exposureTime);
 }
 
@@ -100,7 +95,7 @@ double DummyCamera::_limitExposureTime(const double reqExposureTime) const {
 	auto currentSize = _getCurrentCropping();
 	currentSize.first /= _getCurrentBinning();
 	currentSize.second /= _getCurrentBinning();
-	double minExposureTime = 50e-3 * (static_cast<double>(currentSize.first * currentSize.second) / (sensorSize.first * sensorSize.second));
+	double minExposureTime = 10e-3 * (static_cast<double>(currentSize.first * currentSize.second) / (sensorSize.first * sensorSize.second));
 	return clamp(reqExposureTime, minExposureTime, 1.0);
 }
 
