@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <stdexcept>
 
 void RotateCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage) {
     IppiSize roiSize = { (int)nRows, (int)nCols };
@@ -38,7 +39,7 @@ void CropImage(const std::uint16_t* image, size_t nRows, size_t nCols, size_t ou
 
 void BinImage(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* binnedImage, const int binFactor) {
     if (binFactor > 32) {
-        throw std::logic_error("unsupported binning factor");
+        throw std::logic_error(std::string("unsupported binning factor"));
     }
     if (binFactor == 1) {
         memcpy(binnedImage, image, nRows * nCols * sizeof(std::uint16_t));
