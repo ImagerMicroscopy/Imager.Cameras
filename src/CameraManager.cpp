@@ -36,6 +36,10 @@
 #include "DummyCamera.h"
 #endif
 
+#ifdef WITH_IDS_PEAK
+#include "IDSPeakCameraHandler.h"
+#endif
+
 CameraManager::CameraManager() {
 }
 
@@ -46,6 +50,10 @@ CameraManager::~CameraManager() {
 
 #ifdef WITH_HAMAMATSU
 	CloseHamamatsuLibrary();
+#endif
+
+#ifdef WITH_IDS_PEAK
+	CloseIDSPeakLibrary();
 #endif
 }
 
@@ -94,6 +102,10 @@ void CameraManager::discoverCameras() {
         std::shared_ptr<BaseCameraClass> idsCamera(new IDSCamera(camHandle));
         _availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(idsCamera->getIdentifierStr(), idsCamera));
     }
+#endif
+
+#ifdef WITH_IDS_PEAK
+
 #endif
 
 #ifdef WITH_PCO
