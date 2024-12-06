@@ -16,10 +16,10 @@ incdirs = include_directories(
 abslibdir = join_paths(meson.source_root(), '../lib/win64')
 
 cc = meson.get_compiler('cpp')
-libippcoremt = cc.find_library('ippcoremt', dirs:[abslibdir])
-libippimt = cc.find_library('ippimt', dirs:[abslibdir])
-libippsmt = cc.find_library('ippsmt', dirs:[abslibdir])
-libippippvmmt = cc.find_library('ippvmmt', dirs:[abslibdir])
+libs = []
+foreach lib : ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi', 'ids_peak_comfort_c']
+        libs += cc.find_library(lib, dirs:[abslibdir])
+endforeach
 
 library('SCCamera',
         'AndorCamera.cpp',
@@ -30,6 +30,8 @@ library('SCCamera',
         'HamamatsuCamera.cpp',
         'HamamatsuCameraHandler.cpp',
         'IDSCamera.cpp',
+        'IDSPeakCamera.cpp',
+        'IDSPeakCameraHandler.cpp',
         'ImageProcessingUtils.cpp',
         'ImageRecycler.cpp',
         'OceanOpticsCamera.cpp',
@@ -38,6 +40,6 @@ library('SCCamera',
         'PhotometricsCameraHandler.cpp',
         'SCCameraDLL.cpp',
 	include_directories : incdirs,
-        dependencies: [libippcoremt, libippimt, libippsmt, libippippvmmt],
+        dependencies: libs,
         cpp_args : '-DNOMINMAX',
         install : true)

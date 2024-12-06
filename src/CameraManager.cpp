@@ -105,7 +105,10 @@ void CameraManager::discoverCameras() {
 #endif
 
 #ifdef WITH_IDS_PEAK
-
+	std::vector<std::shared_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
+	for (auto& cam : idsCams) {
+		_availableCameras.insert(std::make_pair(cam->getIdentifierStr(), cam));
+	}
 #endif
 
 #ifdef WITH_PCO
