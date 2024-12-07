@@ -1,5 +1,7 @@
 #include "IDSPeakCamera.h"
 
+#include <algorithm>
+#include <sstream>
 #include <stdexcept>
 
 #include "Utils.h"
@@ -62,6 +64,8 @@ std::vector<CameraProperty> IDSPeakCamera::_derivedGetCameraProperties() {
 
     std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize, 
                                                                    allowableCropping, currentBinning, allowableBinning);
+    properties.push_back(_getSetPixelClock());
+
     return properties;
 }
 
@@ -75,6 +79,83 @@ void IDSPeakCamera::_derivedSetCameraProperties(const std::vector<CameraProperty
     if (maybeCropping.has_value()) {
         _cropSize = maybeCropping.value();
     }
+
+    for (const CameraProperty& prop : propsCopy) {
+        switch (prop.getPropertyCode()) {
+            case PropPixelClock:
+                _getSetPixelClock(prop);
+                break;
+            default:
+                throw std::runtime_error("IDS Peak setting unknown property");
+        }
+    }
+}
+
+CameraProperty IDSPeakCamera::_getSetPixelClock(std::optional<CameraProperty> maybeValueToSet) {
+    peak_status status = PEAK_STATUS_SUCCESS;
+
+    bool hasRange = false;
+    double minPixelClock_MHz, maxPixelClock_MHz, incPixelClock_MHz;
+    if (peak_PixelClock_HasRange(_camHandle)) {
+        hasRange = true;
+        status = peak_PixelClock_GetRange(_camHandle, &minPixelClock_MHz, &maxPixelClock_MHz, &incPixelClock_MHz);
+        if (PEAK_ERROR(status)) {
+            throw std::runtime_error("can't get IDS Peak pixel clock range");
+        }
+    }
+
+    if (maybeValueToSet.has_value()) {
+        const CameraProperty& propToSet = maybeValueToSet.value();
+        double clockToSet = 0.0;
+        if (hasRange) {
+            clockToSet = clamp(propToSet.getValue(), minPixelClock_MHz, maxPixelClock_MHz);
+        } else {
+            const std::string& setting = propToSet.getCurrentOption();
+            clockToSet = atof(setting.c_str());
+        }
+        status = peak_PixelClock_Set(_camHandle, clockToSet);
+        if (PEAK_ERROR(status)) {
+            throw std::runtime_error("can't get IDS Peak pixel clock range");
+        }
+    }
+
+    CameraProperty currentSetting(PropPixelClock, "Pixel clock (MHz)");
+    double currentClock = 0.0;
+    status = peak_PixelClock_Get(_camHandle, &currentClock);
+    if (PEAK_ERROR(status)) {
+        throw std::runtime_error("can't get IDS Peak pixel clock");
+    }
+
+    if (hasRange) {
+        currentSetting.setNumeric(currentClock);
+    } else{
+        std::stringstream ss;
+        ss << currentClock;
+        std::string currentClockStr = ss.str();
+
+        size_t nVals = 100;
+        std::vector<double> availableClocks(nVals);
+        status = peak_PixelClock_GetList(_camHandle, availableClocks.data(), &nVals);
+        if (PEAK_ERROR(status)) {
+            throw std::runtime_error("can't get IDS Peak pixel clock list");
+        }
+        availableClocks.resize(nVals);
+
+        std::vector<std::string> optionsList(nVals);
+        std::transform(availableClocks.cbegin(), availableClocks.cend(), optionsList.begin(), [](double c) -> std::string {
+            std::stringstream ss;
+            ss << c;
+            return ss.str();
+        });
+
+        if (std::find(optionsList.cbegin(), optionsList.cend(), currentClockStr) == optionsList.cend()) {
+            throw std::runtime_error("cannot find IDS Peak discrete pixel clock string");
+        }
+
+        currentSetting.setDiscrete(currentClockStr, optionsList);
+    }
+
+    return currentSetting;
 }
 
 std::pair<int, int> IDSPeakCamera::_getSizeOfRawImages() const {

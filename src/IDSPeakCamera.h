@@ -1,6 +1,8 @@
 #ifndef IDSPEAKCAMERA_H
 #define IDSPEAKCAMERA_H
 
+#include <optional>
+
 #include "ids_peak_comfort_c/ids_peak_comfort_c.h"
 
 #include "BaseCameraClass.h"
@@ -13,15 +15,8 @@ public:
 	};
 
 	enum IDSPeakPropIDs {
-		PropEMMode = CameraProperty::FirstAvailablePropertyID,
-		PropEMGain,
-		PropReadoutSpeed,
-		PropTemperatureSetPoint,
-		PropCoolerOn,
-		PropTriggerSource,
-		PropTriggerMode,
-		PropTriggerActive,
-		PropTriggerPolarity
+		PropPixelClock = CameraProperty::FirstAvailablePropertyID,
+		PropGain
 	};
 
 	IDSPeakCamera(const peak_camera_descriptor& camDescriptor);
@@ -34,6 +29,7 @@ public:
 private:
 	std::vector<CameraProperty> _derivedGetCameraProperties() override;
 	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+	CameraProperty _getSetPixelClock(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
 
 	std::pair<int, int> _getSizeOfRawImages() const override;
 
