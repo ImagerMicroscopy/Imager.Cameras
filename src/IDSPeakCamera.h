@@ -29,7 +29,9 @@ public:
 private:
 	std::vector<CameraProperty> _derivedGetCameraProperties() override;
 	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+
 	CameraProperty _getSetPixelClock(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
+	CameraProperty _getSetGain(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
 
 	std::pair<int, int> _getSizeOfRawImages() const override;
 

@@ -65,6 +65,7 @@ std::vector<CameraProperty> IDSPeakCamera::_derivedGetCameraProperties() {
     std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize, 
                                                                    allowableCropping, currentBinning, allowableBinning);
     properties.push_back(_getSetPixelClock());
+    properties.push_back(_getSetGain());
 
     return properties;
 }
@@ -84,6 +85,9 @@ void IDSPeakCamera::_derivedSetCameraProperties(const std::vector<CameraProperty
         switch (prop.getPropertyCode()) {
             case PropPixelClock:
                 _getSetPixelClock(prop);
+                break;
+            case PropGain:
+                _getSetGain(prop);
                 break;
             default:
                 throw std::runtime_error("IDS Peak setting unknown property");
@@ -156,6 +160,36 @@ CameraProperty IDSPeakCamera::_getSetPixelClock(std::optional<CameraProperty> ma
     }
 
     return currentSetting;
+}
+
+CameraProperty IDSPeakCamera::_getSetGain(std::optional<CameraProperty> maybeValueToSet) {
+    peak_status status = PEAK_STATUS_SUCCESS;
+
+    double minGain, maxGain, incGain;
+    status = peak_Gain_GetRange(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, 
+                                &minGain, &maxGain, &incGain);
+    if (PEAK_ERROR(status)) {
+        throw std::runtime_error("can't get IDS Peak gain range");
+    }
+
+    if (maybeValueToSet.has_value()) {
+        const CameraProperty& propToSet = maybeValueToSet.value();
+        double gainToSet = clamp(propToSet.getValue(), minGain, maxGain);
+        status = peak_Gain_Set(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, gainToSet);
+        if (PEAK_ERROR(status)) {
+            throw std::runtime_error("can't set IDS Peak gain");
+        }
+    }
+
+    double currentGain = 0.0;
+    status = peak_Gain_Get(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, &currentGain);
+    if (PEAK_ERROR(status)) {
+        throw std::runtime_error("can't get IDS Peak gain");
+    }
+
+    CameraProperty prop(PropGain, "Analog gain");
+    prop.setNumeric(currentGain);
+    return prop;
 }
 
 std::pair<int, int> IDSPeakCamera::_getSizeOfRawImages() const {
