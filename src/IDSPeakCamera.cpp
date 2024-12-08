@@ -65,7 +65,7 @@ std::vector<CameraProperty> IDSPeakCamera::_derivedGetCameraProperties() {
     std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize, 
                                                                    allowableCropping, currentBinning, allowableBinning);
     properties.push_back(_getSetPixelClock());
-    properties.push_back(_getSetGain());
+    //properties.push_back(_getSetGain());
 
     return properties;
 }
