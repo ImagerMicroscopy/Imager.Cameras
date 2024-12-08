@@ -10,6 +10,8 @@
 #include "CameraPropertiesEncoding.h"
 #include "ImageProcessingUtils.h"
 
+std::string gLastError = std::string();
+
 CameraManager* gCameraManager = nullptr;
 void StopCameraManager();
 bool StartCameraManager() {
@@ -19,9 +21,10 @@ bool StartCameraManager() {
             gCameraManager->discoverCameras();
         }
     }
-    catch (std::runtime_error e) {
-        StopCameraManager();
-    }
+	catch (const std::exception& e) {
+		gLastError = e.what();
+		StopCameraManager();
+	}
 
     return (gCameraManager != nullptr);
 }
@@ -29,7 +32,7 @@ bool StartCameraManager() {
 void StopCameraManager() {
     if (gCameraManager != nullptr) {
         delete gCameraManager;
-gCameraManager = nullptr;
+		gCameraManager = nullptr;
     }
 }
 
@@ -86,7 +89,8 @@ LIBSPEC int GetCameraOptions(char * cameraName, char ** encodedOptionsPtr) {
 		*encodedOptionsPtr = new char[serialized.size() + 1];
 		memcpy(*encodedOptionsPtr, serialized.data(), serialized.size() + 1);
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
@@ -106,7 +110,8 @@ LIBSPEC int SetCameraOption(char * cameraName, char * encodedOption) {
 		camPtr = gCameraManager->getCamera(identifier);
 		camPtr->setCameraProperties({ CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)) });
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
@@ -122,7 +127,8 @@ int GetFrameRate(char* cameraName, double* frameRate) {
 		camPtr = gCameraManager->getCamera(identifier);
 		*frameRate = camPtr->getFrameRate();
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
@@ -138,7 +144,8 @@ int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHard
 		camPtr = gCameraManager->getCamera(identifier);
 		*isConfiguredForHardwareTriggering = camPtr->isConfiguredForHardwareTriggering();
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
@@ -173,9 +180,10 @@ int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
 
         camPtr->setImageOrientationOps(ops);
     }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
+    catch (const std::exception& e) {
+		gLastError = e.what();
+		return GENERIC_ERROR;
+	}
     return 0;
 }
 
@@ -199,7 +207,8 @@ int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* n
 			gImagesInFlight.push_back(imageData);
 		}
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
@@ -219,7 +228,8 @@ int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquir
 		camPtr = gCameraManager->getCamera(identifier);
 		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFillAndStop, nImagesToAcquire);
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
@@ -250,9 +260,10 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16
 		}
         
     }
-    catch (...) {
-        return GENERIC_ERROR;
-    }
+    catch (const std::exception& e) {
+		gLastError = e.what();
+		return GENERIC_ERROR;
+	}
     return 0;
 }
 
@@ -273,8 +284,9 @@ void ReleaseImageData(uint16_t* imagePtr) {
 			gImagesInFlight.erase(it);
 		}
     }
-    catch (...) {
-    }
+    catch (const std::exception& e) {
+		gLastError = e.what();
+	}
 }
 
 int AbortAsyncAcquisition(char* cameraName) {
@@ -287,8 +299,17 @@ int AbortAsyncAcquisition(char* cameraName) {
 		camPtr = gCameraManager->getCamera(identifier);
         camPtr->abortAsyncAquisitionIfRunning();
 	}
-	catch (...) {
+	catch (const std::exception& e) {
+		gLastError = e.what();
 		return GENERIC_ERROR;
 	}
 	return 0;
+}
+
+LIBSPEC void GetLastSCCamError(char* msgBuf, size_t bufSize) {
+	if (bufSize > 1) {
+		size_t nBytesToCopy = std::min(gLastError.length(), bufSize - 1);
+		memcpy(msgBuf, gLastError.c_str(), nBytesToCopy);
+		msgBuf[nBytesToCopy] = 0;
+	}
 }

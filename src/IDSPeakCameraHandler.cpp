@@ -8,8 +8,6 @@
 #include "IDSPeakCameraHandler.h"
 #include "IDSPeakCamera.h"
 
-#endif
-
 std::vector<std::shared_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
     peak_status status = PEAK_STATUS_SUCCESS;
 
@@ -38,3 +36,5 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
 void CloseIDSPeakLibrary() {
     peak_Library_Exit();
 }
+
+#endif
