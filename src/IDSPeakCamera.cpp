@@ -1,3 +1,7 @@
+#include "SCConfigure.h"
+
+#ifdef WITH_IDS_PEAK
+
 #include "IDSPeakCamera.h"
 
 #include <algorithm>
@@ -354,3 +358,5 @@ void IDSPeakCamera::_derivedStoreNewImageInBuffer(std::uint16_t *bufferForThisIm
     peak_Frame_Release(_camHandle, _peakFrameH);
     _peakFrameH = nullptr;
 }
+
+#endif

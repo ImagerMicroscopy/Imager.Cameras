@@ -17,7 +17,7 @@
 #endif
 
 #ifdef WITH_IDS
-#include "IDSCamera.h"
+#include "IDSCameraHandler.h"
 #endif
 
 #ifdef WITH_PCO
