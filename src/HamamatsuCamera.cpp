@@ -132,7 +132,7 @@ void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProper
 
 bool HamamatsuCamera::_derivedIsConfiguredForHardwareTriggering() {
 	int currentSource = _getPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE);
-	return (currentSource != DCAMPROP_TRIGGERSOURCE__INTERNAL);
+    return ((currentSource != DCAMPROP_TRIGGERSOURCE__INTERNAL) && (currentSource != DCAMPROP_TRIGGERSOURCE__SOFTWARE));
 }
 
 std::pair<int, int> HamamatsuCamera::_getSizeOfRawImages() const {
@@ -229,6 +229,7 @@ CameraProperty HamamatsuCamera::_getSetTriggerSource(GetOrSetProperty getOrSet, 
 	const char* actual = nullptr;
 	switch (currentSource) {
 		case DCAMPROP_TRIGGERSOURCE__INTERNAL:
+		case DCAMPROP_TRIGGERSOURCE__SOFTWARE:
 			actual = kInternal;
 			break;
 		case DCAMPROP_TRIGGERSOURCE__EXTERNAL:
