@@ -443,8 +443,10 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 	waitParams.eventmask = DCAMWAIT_CAPEVENT_STOPPED;
 	waitParams.timeout = waitMillis;
 	err = dcamwait_start(_camWaitHandle, &waitParams);
-
-	dcamcap_stop(_camHandle);
+	if (err == DCAMERR_TIMEOUT) {
+		throw std::runtime_error("waiting for single dcam acquisition but timeout");
+	}
+	
 	_releaseCamWaitHandle();
 	dcambuf_release(_camHandle);
 }
