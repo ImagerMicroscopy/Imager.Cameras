@@ -86,7 +86,6 @@ private:
 	HDCAM _camHandle;
 	std::string _camName;
 	std::pair<int, int> _sensorSize;
-	std::vector<std::uint16_t> _frameBuffer;
 	HDCAMWAIT _camWaitHandle;
 	int _numberOfImagesDelivered;
 };

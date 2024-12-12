@@ -453,17 +453,11 @@ void HamamatsuCamera::_derivedStartAsyncAcquisition() {
 	std::pair<int, int> imageSize = _getSizeOfRawImages();
 	int nPixelsInImage = imageSize.first * imageSize.second;
 	DCAMERR err;
-	
-	if (_frameBuffer.empty()) {
-		auto sensorSize = _getSensorSize();
-		_frameBuffer.resize(sensorSize.first * sensorSize.second * kHamamatsuImagesInBuffer);
-	}
 
-	std::uint16_t* bufferPtrs[kHamamatsuImagesInBuffer];
-	for (int i = 0; i < kHamamatsuImagesInBuffer; i++) {
-		bufferPtrs[i] = _frameBuffer.data() + i * nPixelsInImage;
+	err = dcambuf_alloc(_camHandle, kHamamatsuImagesInBuffer);
+	if (err != DCAMERR_SUCCESS) {
+		throw std::runtime_error("can't allocate DCAM buffers");
 	}
-	_attachBuffers(bufferPtrs, kHamamatsuImagesInBuffer);
 
 	_initializeCamWaitHandle();
 
@@ -515,22 +509,23 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 	}
 
 	DCAMERR err;
-	DCAMCAP_TRANSFERINFO transferInfo = { 0 };
-	transferInfo.size = sizeof(DCAMCAP_TRANSFERINFO);
-	err = dcamcap_transferinfo(_camHandle, &transferInfo);
+	DCAMBUF_FRAME frame;
+	frame.size = sizeof(frame);
+	frame.iFrame = -1;	// retrieve latest image
+	frame.iKind = 0;	// reserved - must be zero or error
+	frame.option = 0;	// reserved - must be zero or error
+	frame.buf = bufferForThisImage;
+	frame.rowbytes = imageSize.first * sizeof(std::uint16_t);
+	frame.type = DCAM_PIXELTYPE_NONE;
+	frame.width = imageSize.first;
+	frame.height = imageSize.second;
+	frame.left = 0;
+	frame.top = 0;
+	err = dcambuf_copyframe(_camHandle, &frame);
 	if (err != DCAMERR_SUCCESS) {
-		throw std::runtime_error("error in dcam transferinfo");
+		throw std::runtime_error("error in dcambuf_copyframe");
 	}
 
-	int lastAcquiredImageIndex = transferInfo.nNewestFrameIndex;
-	int nUnreadImagesInBuffer = transferInfo.nFrameCount - _numberOfImagesDelivered;
-    int indexOfEarliestUnreadImage = lastAcquiredImageIndex - nUnreadImagesInBuffer + 1;
-	if (indexOfEarliestUnreadImage < 0) {
-		indexOfEarliestUnreadImage = kHamamatsuImagesInBuffer + indexOfEarliestUnreadImage;
-	}
-
-	std::uint16_t* startOfImage = _frameBuffer.data() + indexOfEarliestUnreadImage * nPixelsInImage;
-	memcpy(bufferForThisImage, startOfImage, nBytesPerImage);
 	_numberOfImagesDelivered += 1;
 }
 
