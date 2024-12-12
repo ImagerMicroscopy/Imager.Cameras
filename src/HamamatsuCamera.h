@@ -67,6 +67,7 @@ private:
 
 	bool _hasCustomAcquireSingleImage() const override { return true; }
 	void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+	void _stopSoftwareTriggeredAcquisitionIfRunning();
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
@@ -86,6 +87,7 @@ private:
 	HDCAM _camHandle;
 	std::string _camName;
 	std::pair<int, int> _sensorSize;
+	bool _softwareTriggeredAcquisitionRunning;
 	HDCAMWAIT _camWaitHandle;
 	int _numberOfImagesDelivered;
 };
