@@ -487,13 +487,10 @@ void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
 }
 
 void HamamatsuCamera::_derivedStartAsyncAcquisition() {
-	std::pair<int, int> imageSize = _getSizeOfRawImages();
-	int nPixelsInImage = imageSize.first * imageSize.second;
-	DCAMERR err;
-
+	
 	_stopSoftwareTriggeredAcquisitionIfRunning();
 
-	err = dcambuf_alloc(_camHandle, kHamamatsuImagesInBuffer);
+	DCAMERR err = dcambuf_alloc(_camHandle, kHamamatsuImagesInBuffer);
 	if (err != DCAMERR_SUCCESS) {
 		throw std::runtime_error("can't allocate DCAM buffers");
 	}
