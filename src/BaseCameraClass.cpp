@@ -130,16 +130,15 @@ std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::ge
 }
 
 std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> BaseCameraClass::getOldestImageAsyncAcquiredWithTimeout(const std::uint32_t timeoutMillis) {
-	std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
-	int nCompleteWaitLoops = timeoutMillis / 500;
-	int remainder = timeoutMillis - (nCompleteWaitLoops * 500);
+	std::uint32_t maybeCorrectedTimeoutMillis = std::max(timeoutMillis, (std::uint32_t)1);
 
-	for (int i = 0; i < (nCompleteWaitLoops + 1) ; i += 1) {
-		int sleepDuration = (i == nCompleteWaitLoops) ? remainder : 500;
-		bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(sleepDuration));
-		if (haveImage) {
-			return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>(imageData);
-		}
+	std::chrono::time_point<std::chrono::high_resolution_clock> start(std::chrono::high_resolution_clock::now());
+	std::chrono::time_point<std::chrono::high_resolution_clock> end = start + std::chrono::milliseconds(maybeCorrectedTimeoutMillis);
+	std::chrono::milliseconds singleWaitDuration(std::min(maybeCorrectedTimeoutMillis, (std::uint32_t)250));
+
+	std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
+
+	for ( ; ; ) {
 		if (!isAsyncAcquisitionRunning()) {
 			if (!_asyncErrorStr.empty()) {
 				throw std::runtime_error(std::string("async worker found error: ") + _asyncErrorStr);
@@ -147,8 +146,17 @@ std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> Base
 				throw std::runtime_error("waiting for new image but no acquisition running");
 			}
 		}
+
+		if (std::chrono::high_resolution_clock::now() > end) {
+			// timeout
+			return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
+		}
+
+		bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(singleWaitDuration));
+		if (haveImage) {
+			return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>(imageData);
+		}
 	}
-	return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue) {
@@ -185,7 +193,7 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint
 					_asyncErrorStr = "image processing async had error";
 					return;
 				}
-            	NewImageResult result = _waitForNewImageWithTimeout(100, theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
+            	NewImageResult result = _waitForNewImageWithTimeout(250, theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
 				if (result == NewImageCopied) {
 					double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
 					processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
