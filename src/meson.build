@@ -8,7 +8,8 @@ project('src', 'cpp',
 
 incdirs = include_directories(
                 ['../include',
-                 '../include/IPP2017'
+                 '../include/IPP2017',
+                 '../include/OceanOpticsSeabreeze'
                 ]
            )
 
@@ -17,7 +18,10 @@ abslibdir = join_paths(meson.source_root(), '../lib/win64')
 
 cc = meson.get_compiler('cpp')
 libs = []
-foreach lib : ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi', 'ids_peak_comfort_c', 'SC2_Cam', 'uEye_api_64']
+foreach lib : ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi',
+               'ids_peak_comfort_c', 'SC2_Cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
+               'atmcd64m'
+              ]
         libs += cc.find_library(lib, dirs:[abslibdir])
 endforeach
 

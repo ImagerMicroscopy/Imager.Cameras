@@ -162,27 +162,26 @@ void OceanOpticsCamera::_derivedAbortAsyncAcquisition() {
 	_stopAsyncSpectraGrabber();
 }
 
-bool OceanOpticsCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-	return (_availableSpectraQueue.size_approx() > 0);
-}
-
-bool OceanOpticsCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-	if (_spectraGrabberHasError) {
+BaseCameraClass::NewImageResult OceanOpticsCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
+    if (_spectraGrabberHasError) {
 		_stopAsyncSpectraGrabber();
-		throw std::runtime_error("error in acquisition thread");
+		throw std::runtime_error("error in Ocean Optics acquisition thread");
 	}
-	bool haveIt = _availableSpectraQueue.wait_dequeue_timed(_spectrumInFlight, std::chrono::milliseconds(timeoutMillis));
-	return haveIt;
-}
 
-void OceanOpticsCamera::_derivedStoreNewImageInBuffer(std::uint16_t * bufferForThisImage, int nBytes) {
-	if (nBytes != (_spectrumInFlight.size() * sizeof(std::uint16_t))) {
+	std::vector<double> spectrumInFlight;
+	bool haveIt = _availableSpectraQueue.wait_dequeue_timed(spectrumInFlight, std::chrono::milliseconds(timeoutMillis));
+	if (!haveIt) {
+		return NoImageBeforeTimeout;
+	}
+
+	if (nBytes != (spectrumInFlight.size() * sizeof(std::uint16_t))) {
 		throw std::runtime_error("buffer of wrong size");
 	}
-
-	for (size_t i = 0; i < _spectrumInFlight.size(); i += 1) {
-		bufferForThisImage[i] = clamp(std::round(_spectrumInFlight[i]), 0.0, 65535.0);
+	for (size_t i = 0; i < spectrumInFlight.size(); i += 1) {
+		bufferForThisImage[i] = clamp(std::round(spectrumInFlight[i]), 0.0, 65535.0);
 	}
+
+	return NewImageCopied;
 }
 
 void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
@@ -204,7 +203,7 @@ void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
 		for (auto& p : accumulatedSpectrum) {
 			p = 0.0;
 		}
-		for (int i = 0; i < nSpectraToAverage; i += 1) {
+		for (int n = 0; n < nSpectraToAverage; n += 1) {
 			if (_spectraGrabberShouldAbort) {
 				return;
 			}
@@ -214,6 +213,8 @@ void OceanOpticsCamera::_asyncSpectraGrabberWorker() {
 				_spectraGrabberHasError = true;
 				return;
 			}
+
+
 			for (size_t i = 0; i < accumulatedSpectrum.size(); i += 1) {
 				accumulatedSpectrum[i] += (singleSpectrum[i] - offsetToSubtract);
 			}

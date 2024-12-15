@@ -24,6 +24,11 @@ public:
 		AcqFillAndStop
 	};
 
+	enum NewImageResult {
+		NewImageCopied,
+		NoImageBeforeTimeout
+	};
+
 	BaseCameraClass();
 	virtual ~BaseCameraClass();
 
@@ -54,15 +59,13 @@ private:
 
 	virtual std::pair<int, int> _getSizeOfRawImages() const = 0;
 	virtual bool _hasCustomAcquireSingleImage() const { return false; }
-	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {throw std::logic_error("custom single acquire but not implemented"); }
+	virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) { throw std::logic_error("custom single acquire but not implemented"); }
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue);
     void _clearAvailableImagesQueue();
     virtual void _derivedStartAsyncAcquisition() = 0;
 	virtual void _derivedAbortAsyncAcquisition() = 0;
-	virtual bool _derivedNewAsyncAcquisitionImageAvailable() { return false; }
-    virtual bool _waitForNewImageWithTimeout(int timeoutMillis);
-	virtual void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) = 0;
+    virtual NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) = 0;
 
 	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _getImageProcessingDescriptors();
 	virtual std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() { return {}; }

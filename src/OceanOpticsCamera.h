@@ -53,9 +53,7 @@ private:
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
-	bool _derivedNewAsyncAcquisitionImageAvailable() override;
-	bool _waitForNewImageWithTimeout(int timeoutMillis) override;
-	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
 	void _asyncSpectraGrabberWorker();
 	void _startAsyncSpectraGrabber();
@@ -75,7 +73,6 @@ private:
 	bool _spectraGrabberShouldAbort;
 	bool _spectraGrabberHasError;
 	moodycamel::BlockingReaderWriterQueue<std::vector<double>> _availableSpectraQueue;
-	std::vector<double> _spectrumInFlight;
 };
 
 #endif

@@ -56,8 +56,7 @@ private:
 
     void _derivedStartAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
-    bool _waitForNewImageWithTimeout(int timeoutMillis) override;
-    void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
     void _setDefaults();
 
@@ -68,10 +67,6 @@ private:
     std::vector<std::uint16_t> _frameBuffer;
     std::vector<char*> _frameBufferPointers;
     std::vector<int> _frameBufferIDs;
-    int _nBytesPerImage;
-    int _numberOfImagesDelivered;
-    int _idOfMemoryWithOldestImage;
-    char* _ptrToMemoryWithOldestImage;
 };
 
 #endif

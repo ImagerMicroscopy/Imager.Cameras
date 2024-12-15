@@ -70,9 +70,7 @@ private:
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
-	bool _derivedNewAsyncAcquisitionImageAvailable() override;
-	bool _waitForNewImageWithTimeout(int timeoutMillis) override;
-	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
 	std::pair<int, int> _desiredCropSize;
 	int _desiredBinningFactor;

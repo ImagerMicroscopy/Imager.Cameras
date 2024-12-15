@@ -558,29 +558,18 @@ void AndorCamera::_derivedAbortAsyncAcquisition() {
 	AbortAcquisition();
 }
 
-bool AndorCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-	long nImagesAcquired;
-	int result = GetTotalNumberImagesAcquired(&nImagesAcquired);
-	if (result != DRV_SUCCESS)
-		throw std::runtime_error(_andorErrorCodeToMessage(result));
-	return (nImagesAcquired != _numberOfImagesDelivered);
-}
-
-bool AndorCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-	if (_derivedNewAsyncAcquisitionImageAvailable()) {
-		return true;
+BaseCameraClass::NewImageResult AndorCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+	int result = WaitForAcquisitionTimeOut(timeoutMillis);
+	if (result = DRV_NO_NEW_DATA) {
+		return NoImageBeforeTimeout;
 	}
-	else {
-		WaitForAcquisitionTimeOut(timeoutMillis);
-		return _derivedNewAsyncAcquisitionImageAvailable();
-	}
-}
 
-void AndorCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-	int result = GetOldestImage16(bufferForThisImage, nBytes / 2);
+	result = GetOldestImage16(bufferForThisImage, nBytes / 2);
 	if (result != DRV_SUCCESS)
 		throw std::runtime_error(_andorErrorCodeToMessage(result));
 	_numberOfImagesDelivered += 1;
+
+	return NewImageCopied;
 }
 
 #endif

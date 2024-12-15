@@ -6,8 +6,6 @@
 
 IDSCamera::IDSCamera(HIDS camHandle) :
     _camHandle(camHandle)
-  , _idOfMemoryWithOldestImage(-1)
-  , _ptrToMemoryWithOldestImage(nullptr)
 {
 	_setDefaults();
 
@@ -349,8 +347,6 @@ void IDSCamera::_derivedStartAsyncAcquisition() {
     if (err != IS_SUCCESS) {
         throw std::runtime_error("unable to capture video");
     }
-    _idOfMemoryWithOldestImage = -1;
-    _ptrToMemoryWithOldestImage = nullptr;
 }
 
 void IDSCamera::_derivedAbortAsyncAcquisition() {
@@ -369,30 +365,34 @@ void IDSCamera::_derivedAbortAsyncAcquisition() {
     _frameBuffer.clear();
 }
 
-bool IDSCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-    char *imagePtr;
-    int imageID;
-    int err = is_WaitForNextImage(_camHandle, timeoutMillis, &imagePtr, &imageID);
+BaseCameraClass::NewImageResult IDSCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+    char *ptrToMemoryWithOldestImage;
+    int idOfMemoryWithOldestImage;
+    int err = is_WaitForNextImage(_camHandle, timeoutMillis, &ptrToMemoryWithOldestImage, &idOfMemoryWithOldestImage);
     if (err == IS_TIMED_OUT) {
-        return false;
+        return NoImageBeforeTimeout;
     }
-    if (err != IS_SUCCESS) {
-        is_UnlockSeqBuf(_camHandle, imageID, imagePtr);
+	if (err != IS_SUCCESS) {
+        is_UnlockSeqBuf(_camHandle, idOfMemoryWithOldestImage, ptrToMemoryWithOldestImage);
         throw std::runtime_error("error from is_WaitForNextImage()");
-    }
-    _idOfMemoryWithOldestImage = imageID;
-    _ptrToMemoryWithOldestImage = imagePtr;
-    return true;
-}
+	}
 
-void IDSCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
-    int err = is_CopyImageMem(_camHandle, _ptrToMemoryWithOldestImage, _idOfMemoryWithOldestImage, reinterpret_cast<char*>(bufferForThisImage));
-    is_UnlockSeqBuf(_camHandle, _idOfMemoryWithOldestImage, _ptrToMemoryWithOldestImage);
-    if (err != IS_SUCCESS) {
-        throw std::runtime_error("error from is_WaitForNextImage()");
+	auto imageSize = _getSizeOfRawImages();
+	int nBytesNeeded = imageSize.first * imageSize.second * sizeof(std::uint16_t);
+	if (nBytes != nBytesNeeded) {
+		throw std::runtime_error("incorrect buffer size provided to IDS cam");
+	}
+
+	err = is_CopyImageMem(_camHandle, ptrToMemoryWithOldestImage, idOfMemoryWithOldestImage, reinterpret_cast<char*>(bufferForThisImage));
+	if (err != IS_SUCCESS) {
+        throw std::runtime_error("error from is_CopyImageMem()");
     }
-    _idOfMemoryWithOldestImage = -1;
-    _ptrToMemoryWithOldestImage = nullptr;
+    is_UnlockSeqBuf(_camHandle, idOfMemoryWithOldestImage, ptrToMemoryWithOldestImage);
+    if (err != IS_SUCCESS) {
+        throw std::runtime_error("error from is_UnlockSeqBuf()");
+    }
+    
+	return NewImageCopied;
 }
 
 void IDSCamera::_setDefaults() {

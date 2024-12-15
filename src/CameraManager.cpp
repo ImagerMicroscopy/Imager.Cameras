@@ -8,7 +8,6 @@
 #endif
 
 #ifdef WITH_ANDOR
-#include "Andor/ATMCD32D.H"
 #include "AndorCamera.h"
 #endif
 
@@ -17,18 +16,14 @@
 #endif
 
 #ifdef WITH_IDS
-#include "IDSCameraHandler.h"
+#include "IDSCamera.h"
 #endif
 
 #ifdef WITH_PCO
-#include "windows.h"
-#include "PCO/SC2_SDKStructures.h"
-#include "PCO/SC2_CamExport.h"
 #include "PCOCamera.h"
 #endif
 
 #ifdef WITH_OCEANOPTICS
-#include "api/seabreezeapi/SeaBreezeAPI.h"
 #include "OceanOpticsCamera.h"
 #endif
 

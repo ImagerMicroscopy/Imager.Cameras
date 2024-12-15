@@ -460,22 +460,28 @@ void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
 	pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
-bool PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-	int dummy = 0;
-	return _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
-}
+BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
+    int dummy = 0;
 
-void PhotometricsCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+	bool haveImage = _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
+	if (!haveImage) {
+		return NoImageBeforeTimeout;
+	}
+
 	uint16_t* address = nullptr;
 	int err = pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
 	if (err != PV_OK) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
+
 	memcpy(bufferForThisImage, address, nBytes);
+
 	err = pl_exp_unlock_oldest_frame(_pvcamHandle);
 	if (err != PV_OK) {
 		throw std::runtime_error(getPVCAMErrorMessage());
 	}
+
+	return NewImageCopied;
 }
 
 void PhotometricsCamera::_pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr) {

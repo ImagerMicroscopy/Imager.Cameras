@@ -13,7 +13,6 @@
 IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
     _camDescriptor(camDescriptor),
     _camHandle(nullptr),
-    _peakFrameH(nullptr),
     _nextExpectedImageInSequenceIdx(0)
 {
     peak_status status = PEAK_STATUS_SUCCESS;
@@ -256,14 +255,6 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> IDSPeakCamera::_derivedG
 
 void IDSPeakCamera::_derivedStartAsyncAcquisition() {
     peak_status status = PEAK_STATUS_SUCCESS;
-    if (_peakFrameH != nullptr) {
-        peak_Frame_Release(_camHandle, _peakFrameH);
-        _peakFrameH = nullptr;
-        if (PEAK_ERROR(status)) {
-            throw std::runtime_error("can't release frame at start of IDS Peak async acquisition");
-        }
-    }
-
     status = peak_Acquisition_Start(_camHandle, PEAK_INFINITE);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get start IDS Peak async acquisition");
@@ -279,40 +270,23 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
     }
 }
 
-bool IDSPeakCamera::_waitForNewImageWithTimeout(int timeoutMillis){
-    if (_peakFrameH != nullptr) {
-        throw std::logic_error("waiting for new IDS image but have waiting frame");
-    }
-
-    peak_status status = peak_Acquisition_WaitForFrame(_camHandle, timeoutMillis, &_peakFrameH);
+BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
+    peak_frame_handle peakFrameH = nullptr;
+    peak_status status = peak_Acquisition_WaitForFrame(_camHandle, timeoutMillis, &peakFrameH);
     if (status == PEAK_STATUS_TIMEOUT) {
-        return false;
+        return NoImageBeforeTimeout;
     }
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't wait for IDS Peak frame");
     }
 
-    if (!peak_Frame_IsComplete(_peakFrameH)) {
-        peak_Frame_Release(_camHandle, _peakFrameH);
-        _peakFrameH = nullptr;
-        throw std::runtime_error("IDS Peak frame incomplete");
-    }
-
-    return (status == PEAK_STATUS_SUCCESS);
-}
-
-void IDSPeakCamera::_derivedStoreNewImageInBuffer(std::uint16_t *bufferForThisImage, int nBytes) {
-    if (_peakFrameH == nullptr) {
-        throw std::logic_error("IDSPeakCamera::_derivedStoreNewImageInBuffer() but no frame");
-    }
-    if (!peak_Frame_IsComplete(_peakFrameH)) {
-        peak_Frame_Release(_camHandle, _peakFrameH);
-        _peakFrameH = nullptr;
+    if (!peak_Frame_IsComplete(peakFrameH)) {
+        peak_Frame_Release(_camHandle, peakFrameH);
         throw std::runtime_error("IDS Peak frame incomplete");
     }
 
     peak_frame_info frameInfo;
-    peak_status status = peak_Frame_GetInfo(_peakFrameH, &frameInfo);
+    status = peak_Frame_GetInfo(peakFrameH, &frameInfo);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't read IDS Peak frame info");
     }
@@ -338,7 +312,7 @@ void IDSPeakCamera::_derivedStoreNewImageInBuffer(std::uint16_t *bufferForThisIm
 
     int nPixels = (int)frameInfo.bytesWritten / nBytesPerPixel;
     if (nBytes / 2 != nPixels) {    // assume UINT16 pixels in output
-        throw std::runtime_error("can't read IDS Peak frame info");
+        throw std::runtime_error("IDS peak format not UINT16");
     }
 
     uint8_t* bufAddress = frameInfo.buffer.memoryAddress;
@@ -355,8 +329,9 @@ void IDSPeakCamera::_derivedStoreNewImageInBuffer(std::uint16_t *bufferForThisIm
             throw std::runtime_error("invalid bytes per pixel for IDS Peak");
     }
 
-    peak_Frame_Release(_camHandle, _peakFrameH);
-    _peakFrameH = nullptr;
+    peak_Frame_Release(_camHandle, peakFrameH);
+    
+    return NewImageCopied;
 }
 
 #endif

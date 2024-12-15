@@ -46,12 +46,10 @@ private:
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
-	bool _waitForNewImageWithTimeout(int timeoutMillis) override;
-	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
 	peak_camera_descriptor _camDescriptor;
 	peak_camera_handle _camHandle;
-	peak_frame_handle _peakFrameH;
 	int _nextExpectedImageInSequenceIdx;
 
 	std::pair<int, int> _cropSize;;

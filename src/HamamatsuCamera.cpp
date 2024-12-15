@@ -467,7 +467,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 		throw std::runtime_error("waiting for single dcam acquisition but timeout");
 	}
 
-	_derivedStoreNewImageInBuffer(bufferForThisImage, nBytes);
+	_copyLatestImage(bufferForThisImage, nBytes);
 
 	if (!_softwareTriggeredAcquisitionRunning) {
 		dcamcap_stop(_camHandle);
@@ -516,30 +516,22 @@ void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
 	_releaseCamWaitHandle();
 }
 
-bool HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-	if (_derivedNewAsyncAcquisitionImageAvailable()) {
-		return true;
-	}
-	DCAMWAIT_START waitParams = { 0 };
+BaseCameraClass::NewImageResult HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+    DCAMWAIT_START waitParams = { 0 };
 	waitParams.size = sizeof(DCAMWAIT_START);
 	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
 	waitParams.timeout = timeoutMillis;
 	DCAMERR err = dcamwait_start(_camWaitHandle, &waitParams);
-    return _derivedNewAsyncAcquisitionImageAvailable();
-}
-
-bool HamamatsuCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-	DCAMERR err;
-	DCAMCAP_TRANSFERINFO transferInfo = { 0 };
-	transferInfo.size = sizeof(DCAMCAP_TRANSFERINFO);
-	err = dcamcap_transferinfo(_camHandle, &transferInfo);
-	if (err != DCAMERR_SUCCESS) {
-		throw std::runtime_error("error in dcam transferinfo");
+	if (err == DCAMERR_TIMEOUT) {
+		return NoImageBeforeTimeout;
 	}
-	return (_numberOfImagesDelivered != transferInfo.nFrameCount);
+
+	_copyLatestImage(bufferForThisImage, nBytes);
+
+	return NewImageCopied;
 }
 
-void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+void HamamatsuCamera::_copyLatestImage(std::uint16_t* bufferForThisImage, int nBytes) {
 	auto imageSize = _getSizeOfRawImages();
 	int nPixelsInImage = imageSize.first * imageSize.second;
 	int nBytesPerImage = nPixelsInImage * sizeof(std::uint16_t);
@@ -566,18 +558,6 @@ void HamamatsuCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThis
 	}
 
 	_numberOfImagesDelivered += 1;
-}
-
-void HamamatsuCamera::_attachBuffers(std::uint16_t** bufPtrs, int nBuffers) {
-	DCAMBUF_ATTACH attachParams = { 0 };
-	attachParams.size = sizeof(attachParams);
-	attachParams.iKind = DCAMBUF_ATTACHKIND_FRAME;
-	attachParams.buffer = reinterpret_cast<void**>(bufPtrs);
-	attachParams.buffercount = nBuffers;
-	DCAMERR err = dcambuf_attach(_camHandle, &attachParams);
-	if (err != DCAMERR_SUCCESS) {
-		throw std::runtime_error("couldn't attach buffers");
-	}
 }
 
 void HamamatsuCamera::_initializeCamWaitHandle() {

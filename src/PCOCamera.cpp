@@ -213,26 +213,27 @@ void PCOCamera::_derivedAbortAsyncAcquisition() {
     }
 }
 
-bool PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
+BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
     int result = WaitForSingleObject(_waitObjects.at(_nextBufferToReadIndex), timeoutMillis);
     if ((result != WAIT_OBJECT_0) && (result != WAIT_TIMEOUT)) {
         throw std::runtime_error("Unexpected return in WaitForSingleObject()");
     }
-    return (result == WAIT_OBJECT_0);
-}
 
-void PCOCamera::_derivedStoreNewImageInBuffer(std::uint16_t *bufferForThisImage, int nBytes) {
+    if (result == WAIT_TIMEOUT) {
+        return NoImageBeforeTimeout;
+    }
+
     auto imageSize = _getSensorSize();  // getActualImageSize();
     int nPixelsInImage = imageSize.first * imageSize.second;
     int nBytesPerImage = nPixelsInImage * sizeof(std::uint16_t);
+    std::uint16_t *thisImagePtr = _frameBuffer.data() + _nextBufferToReadIndex * nPixelsInImage;
     if (nBytes != nBytesPerImage) {
-        throw std::runtime_error("buffer of invalid size");
+        throw std::runtime_error("buffer of invalid size for PCO");
     }
 
-    std::uint16_t *thisImagePtr = _frameBuffer.data() + _nextBufferToReadIndex * nPixelsInImage;
     memcpy(bufferForThisImage, thisImagePtr, nBytesPerImage);
-	ResetEvent(_waitObjects.at(_nextBufferToReadIndex));
-
+    
+    ResetEvent(_waitObjects.at(_nextBufferToReadIndex));
     int pcoErr = PCO_AddBufferExtern(_camHandle, _waitObjects.at(_nextBufferToReadIndex), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(_nextBufferToReadIndex)));
     if (pcoErr) {
         std::string errMsg = pcoErrorAsString(pcoErr);
@@ -241,6 +242,8 @@ void PCOCamera::_derivedStoreNewImageInBuffer(std::uint16_t *bufferForThisImage,
 
     _nextBufferToReadIndex = (_nextBufferToReadIndex + 1) % kPCOImagesInBuffer;
     _numberOfImagesDelivered += 1;
+
+    return NewImageCopied;
 }
 
 void PCOCamera::_fetchCameraInfo() {

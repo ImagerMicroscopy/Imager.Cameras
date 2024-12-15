@@ -176,30 +176,29 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint
 		startedNotificationQueue->enqueue(0);
 
 		for ( ; ;) {
-			if (this->_asyncWantAbort) {
-				return;
-			}
-            if (this->_processingAsyncHasError) {
-                _asyncErrorStr = "image processing async had error";
-                return;
-            }
-
-            bool haveImage = _waitForNewImageWithTimeout(100);
-            if (haveImage) {
-                double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
-                std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(actualImageSize);
-                _derivedStoreNewImageInBuffer(theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
-
-                processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
-				_asyncNImagesStored += 1;
-				
-				if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesToAcquire)) {
+			std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(actualImageSize);
+			for ( ; ; ) {
+				if (_asyncWantAbort) {
 					return;
+				}
+				if (_processingAsyncHasError) {
+					_asyncErrorStr = "image processing async had error";
+					return;
+				}
+            	NewImageResult result = _waitForNewImageWithTimeout(100, theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
+				if (result == NewImageCopied) {
+					double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
+					processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
+					_asyncNImagesStored += 1;
+					
+					if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesToAcquire)) {
+						return;
+					}
 				}
 			}
 		}
 	}
-	catch (std::runtime_error& e) {
+	catch (const std::exception& e) {
 		_asyncErrorStr = e.what();
 		return;
 	}
@@ -215,20 +214,6 @@ void BaseCameraClass::_clearAvailableImagesQueue() {
     do {
         hadValue = _availableImagesQueue.try_dequeue(dummy);
     } while (hadValue);
-}
-
-bool BaseCameraClass::_waitForNewImageWithTimeout(int timeoutMillis) {
-    auto start = std::chrono::high_resolution_clock::now();
-    for ( ; ; ) {
-        if (_derivedNewAsyncAcquisitionImageAvailable()) {
-            return true;
-        }
-        std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - start;
-        if (diff.count() > ((double)timeoutMillis / 1000.0)) {
-            return false;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    }
 }
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getImageProcessingDescriptors() {

@@ -3,7 +3,9 @@
 
 #include <thread>
 #include <memory>
-#include <queue>
+
+#include "ReaderWriterQueue/atomicops.h"
+#include "ReaderWriterQueue/readerwriterqueue.h"
 
 #include "BaseCameraClass.h"
 #include "Utils.h"
@@ -32,8 +34,7 @@ private:
 
 	void _derivedStartAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
-	bool _derivedNewAsyncAcquisitionImageAvailable() override;
-	void _derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) override;
+	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
 	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
@@ -53,8 +54,8 @@ private:
 	double _temperature;
 	std::thread _timerThread;
 	volatile bool _abortTimerThread;
-    std::mutex _imagesQueueMutex;
-    std::queue<std::shared_ptr<std::vector<uint16_t>>> _imagesQueue;
+
+	moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::vector<uint16_t>>> _imagesQueue;
 	std::uint16_t _frameCounter;
 };
 

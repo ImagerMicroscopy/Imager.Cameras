@@ -129,20 +129,17 @@ void DummyCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, 
 
 void DummyCamera::_derivedStartAsyncAcquisition() {
 	_abortTimerThread = false;
-    while (!_imagesQueue.empty()) {
-        _imagesQueue.pop();
+    while (_imagesQueue.pop()) {
+        ;
     }
  	_timerThread = std::thread([=]() {
 		std::int64_t exposureTimeMillis = this->_getExposureTime() * 1000.0;
-		for (;;) {
+		for ( ; ; ) {
 			if (this->_abortTimerThread)
 				return;
             std::this_thread::sleep_for(std::chrono::milliseconds(exposureTimeMillis));
             auto newImage = _generateNewImage();
-            {
-                std::lock_guard<std::mutex> guard(_imagesQueueMutex);
-                _imagesQueue.push(newImage);
-            }
+			_imagesQueue.enqueue(newImage);
 		}
 	});
 }
@@ -152,31 +149,32 @@ void DummyCamera::_derivedAbortAsyncAcquisition() {
 	if (_timerThread.joinable()) {
 		_timerThread.join();
 	}
-    while (!_imagesQueue.empty()) {
-        _imagesQueue.pop();
+    while (_imagesQueue.pop()) {
+        ;
     }
 }
 
-bool DummyCamera::_derivedNewAsyncAcquisitionImageAvailable() {
-    {
-        std::lock_guard<std::mutex> guard(_imagesQueueMutex);
-        return (!_imagesQueue.empty());
-    }
-}
-void DummyCamera::_derivedStoreNewImageInBuffer(std::uint16_t* bufferForThisImage, int nBytes) {
+BaseCameraClass::NewImageResult DummyCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
+	std::shared_ptr<std::vector<std::uint16_t>> newImage;
+	bool hadImage = _imagesQueue.wait_dequeue_timed(newImage, std::chrono::milliseconds(timeoutMillis));
+	if (!hadImage) {
+		return NoImageBeforeTimeout;
+	}
+
 	int nPixelsInBuf = nBytes / sizeof(std::uint16_t);
     std::pair<int, int> imageSize = _getSizeOfRawImages();
     int nPixels = imageSize.first * imageSize.second;
+
+	if (newImage->size() != nPixels) {
+		throw std::logic_error("dummy camera has wrong number of pixels");
+	}
     if (nPixels != nPixelsInBuf) {
-        throw std::runtime_error("_derivedStoreNewImageInBuffer() with incorrect buffer size");
+        throw std::runtime_error("_waitForNewImageWithTimeout() with incorrect buffer size");
     }
-    std::shared_ptr<std::vector<uint16_t>> newImage;
-    {
-        std::lock_guard<std::mutex> guard(_imagesQueueMutex);
-        newImage = _imagesQueue.front();
-        _imagesQueue.pop();
-    }
+
     memcpy(bufferForThisImage, newImage->data(), nPixels * sizeof(uint16_t));
+
+	return NewImageCopied;
 }
 
 #endif
