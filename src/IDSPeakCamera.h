@@ -52,7 +52,7 @@ private:
 	peak_camera_handle _camHandle;
 	int _nextExpectedImageInSequenceIdx;
 
-	std::pair<int, int> _cropSize;;
+	std::pair<int, int> _cropSize;
 };
 
 #endif

@@ -12,7 +12,6 @@ public:
 
 	enum AndorSDK3PropIDs {
 		PropPixelClock = CameraProperty::FirstAvailablePropertyID,
-		PropGain
 	};
 
 	enum TriggerMode {
@@ -54,7 +53,6 @@ private:
 	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
 
 	CameraProperty _getSetPixelClock(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
-	CameraProperty _getSetGain(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
 
 	std::pair<int, int> _getSizeOfRawImages() const override;
 
@@ -63,12 +61,12 @@ private:
     void _setImageCrop(const std::pair<int, int>& crop);
 	std::pair<int, int> _getImageCrop();
 
-	TriggerMode _getSetTriggerMode(std::optional<TriggerMode> maybeMode = std::optional<TriggerMode>());
+	std::string _getSetPixelClock_SDK(std::optional<std::string> maybeClock = std::optional<std::string>());
+	std::vector<std::string> _getPossiblePixelClocks() const;
+	TriggerMode _getSetTriggerMode_SDK(std::optional<TriggerMode> maybeMode = std::optional<TriggerMode>());
 	void _sendSoftwareTrigger();
 
-	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override {
-		return std::vector<std::shared_ptr<ImageProcessingDescriptor>>();
-	}
+	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
 	bool _hasCustomAcquireSingleImage() const override { return false; }
 
@@ -78,6 +76,7 @@ private:
 
 	void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr);
 	std::string _getSelectedParameterStringValue(const std::string& featureStr) const;
+	std::vector<std::string> _enumerateParameterStringValues(const std::string& featureStr) const;
 	void _setParameterFloatValue(const std::string& featureStr, double value);
 	FloatValue _getParameterFloatValue(const std::string& featureStr) const;
 	void _setParameterIntValue(const std::string& featureStr, int value);

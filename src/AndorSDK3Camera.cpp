@@ -14,6 +14,9 @@ AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),
     _imageBufferSize(0)
 {
+    _setDefaults();
+
+    _cropSize = AndorSDK3Camera::_getSizeOfRawImages();
 }
 
 AndorSDK3Camera::~AndorSDK3Camera() {
@@ -48,12 +51,56 @@ double AndorSDK3Camera::getFrameRate() const {
 void AndorSDK3Camera::_setDefaults() {
     _setParameterStringValue("PixelEncoding", "Mono16");
     _setParameterStringValue("CycleMode", "Continuous");
-    _getSetTriggerMode(kTriggerInternal);
+    _getSetTriggerMode_SDK(kTriggerInternal);
     _setParameterBoolValue("MetadataEnable", true);
     _setExposureTime(0.05);
 }
 
-#endif
+std::vector<CameraProperty> AndorSDK3Camera::_derivedGetCameraProperties() {
+    double exposureTime = _getExposureTime();
+    std::vector<std::pair<int, int>> allowableCropping = StandardCroppingOptions(_getSizeOfRawImages());
+    int currentBinning = 1;
+    std::vector<int> allowableBinning({1});
+
+    std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize, 
+                                                                   allowableCropping, currentBinning, allowableBinning);
+    properties.push_back(_getSetPixelClock());
+    //properties.push_back(_getSetGain());
+
+    return properties;
+}
+
+void AndorSDK3Camera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+    auto propsCopy = properties;
+
+    auto [maybeExposureTime, maybeCropping, maybeBinning] = DecodeAndRemoveStandardProperties(propsCopy);
+    if (maybeExposureTime.has_value()) {
+        _setExposureTime(maybeExposureTime.value());
+    }
+    if (maybeCropping.has_value()) {
+        _cropSize = maybeCropping.value();
+    }
+
+    for (const CameraProperty& prop : propsCopy) {
+        switch (prop.getPropertyCode()) {
+            case PropPixelClock:
+                _getSetPixelClock(prop);
+                break;
+            default:
+                throw std::runtime_error("Andor3 setting unknown property");
+        }
+    }
+}
+
+CameraProperty AndorSDK3Camera::_getSetPixelClock(std::optional<CameraProperty> maybeValueToSet) {
+    if (maybeValueToSet.has_value()) {
+        _getSetPixelClock_SDK(maybeValueToSet.value().getCurrentOption());
+    }
+
+    CameraProperty prop(PropPixelClock, "Pixel clock");
+    prop.setDiscrete(_getSetPixelClock_SDK(), _getPossiblePixelClocks());
+    return prop;
+}
 
 void AndorSDK3Camera::_derivedStartAsyncAcquisition() {
     AT_Flush(_camHandle); // remove pending buffers
@@ -105,11 +152,12 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
         throw std::runtime_error("can't convert Andor3 buffer");
     }
 
-    IntValue imageSize = _getParameterIntValue("ImageSizeBytes");
     err = AT_QueueBuffer(_camHandle, bufPtr, _imageBufferSize);
     if (err) {
         throw std::runtime_error("can't requeue Andor3 buffer");
     }
+
+    return NewImageCopied;
 }
 
 void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, const std::string& valueStr) {
@@ -125,6 +173,8 @@ void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, co
 std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string& featureStr) const {
     int err = AT_SUCCESS;
 
+    std::vector<std::string> featureOptions = _enumerateParameterStringValues(featureStr);
+
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     int selectedIdx = 0;
     err = AT_GetEnumIndex(_camHandle, wFeatureStr.c_str(), &selectedIdx);
@@ -132,13 +182,27 @@ std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string&
         throw std::runtime_error("can't get Andor3 enum index");
     }
 
-    wchar_t buf[256];
-    err = AT_GetEnumStringByIndex(_camHandle, wFeatureStr.c_str(), selectedIdx, buf, sizeof(buf));
+    return featureOptions.at(selectedIdx);
+}
+
+std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const std::string& featureStr) const {
+    std::wstring wFeatureStr = utf8StringToWChar(featureStr);
+    int count = 0;
+    int err = AT_GetEnumCount(_camHandle, wFeatureStr.c_str(), &count);
     if (err != AT_SUCCESS) {
-        throw std::runtime_error("can't get Andor3 enum string");
+        throw std::runtime_error("can't get Andor3 enum count");
     }
 
-    return wcharStringToUtf8(buf);
+    std::vector<std::string> values;
+    for (int i = 0; i < count; ++i) {
+        wchar_t buf[256];
+        err = AT_GetEnumStringByIndex(_camHandle, wFeatureStr.c_str(), i, buf, sizeof(buf));
+        if (err != AT_SUCCESS) {
+            throw std::runtime_error("can't get Andor3 enum string");
+        }
+        values.push_back(wcharStringToUtf8(buf));
+    }
+    return values;
 }
 
 void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, double value) {
@@ -230,9 +294,21 @@ void AndorSDK3Camera::_sendCommand(const std::string& command) {
     }
 }
 
-AndorSDK3Camera::TriggerMode AndorSDK3Camera::_getSetTriggerMode(std::optional<TriggerMode> maybeMode) {
+std::string AndorSDK3Camera::_getSetPixelClock_SDK(std::optional<std::string> maybeClock) {
+    if (maybeClock.has_value()) {
+        const std::string& newClock = maybeClock.value();
+        _setParameterStringValue("PixelReadoutRate", newClock);
+    }
+
+    return _getSelectedParameterStringValue("PixelReadoutRate");
+}
+
+std::vector<std::string> AndorSDK3Camera::_getPossiblePixelClocks() const {
+    return _enumerateParameterStringValues("PixelReadoutRate");
+}
+
+AndorSDK3Camera::TriggerMode AndorSDK3Camera::_getSetTriggerMode_SDK(std::optional<TriggerMode> maybeMode) {
     std::string modeStr;
-    int err = AT_SUCCESS;
 
     if (maybeMode.has_value()) {
         switch (maybeMode.value()) {
@@ -262,6 +338,14 @@ void AndorSDK3Camera::_sendSoftwareTrigger() {
     _sendCommand("SoftwareTrigger");
 }
 
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> AndorSDK3Camera::_derivedGetAdditionalImageProcessingDescriptors() {
+    std::vector<std::shared_ptr<ImageProcessingDescriptor>> descriptors;
+    if (_getSizeOfRawImages() != _cropSize) {
+        descriptors.emplace_back(new IPDCrop(_cropSize.first, _cropSize.second));
+    }
+    return descriptors;
+}
+
 std::pair<int, int> AndorSDK3Camera::_getSizeOfRawImages() const {
     IntValue width = _getParameterIntValue("SensorWidth");
     IntValue height = _getParameterIntValue("SensorHeight");
@@ -280,3 +364,5 @@ double AndorSDK3Camera::_getExposureTime() const {
     FloatValue val = _getParameterFloatValue("ExposureTime");
     return val.currentValue;
 }
+
+#endif
