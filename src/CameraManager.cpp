@@ -11,6 +11,10 @@
 #include "AndorCamera.h"
 #endif
 
+#ifdef WITH_ANDORSDK3
+#include "AndorSDK3CameraHandler.h"
+#endif
+
 #ifdef WITH_HAMAMATSU
 #include "HamamatsuCameraHandler.h"
 #endif
@@ -39,6 +43,10 @@ CameraManager::CameraManager() {
 }
 
 CameraManager::~CameraManager() {
+#ifdef WITH_ANDORSDK3
+	CloseAndorSDK3Library();
+#endif
+
 #ifdef WITH_PHOTOMETRICS
 	ClosePhotometricsLibrary();
 #endif
@@ -58,7 +66,7 @@ void CameraManager::discoverCameras() {
 #ifdef WITH_PHOTOMETRICS
 	std::vector<std::shared_ptr<BaseCameraClass>> photometricsCameras = OpenPhotometricsCameras();
 	for (auto c : photometricsCameras) {
-		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(c->getIdentifierStr(), c));
+		_availableCameras.insert({c->getIdentifierStr(), c});
 	}
 #endif
 
@@ -66,17 +74,24 @@ void CameraManager::discoverCameras() {
 	try {
 		std::shared_ptr<BaseCameraClass> andorCamera(new AndorCamera());
 		std::string identifier = andorCamera->getIdentifierStr();
-		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(identifier, andorCamera));
+		_availableCameras.insert({andorCamera->getIdentifierStr(), andorCamera});
 	}
-	catch (std::runtime_error e) {
+	catch (const std::runtime_error& e) {
 		// no Andor camera available
+	}
+#endif
+
+#ifdef WITH_ANDORSDK3
+	std::vector<std::shared_ptr<BaseCameraClass>> andorCameras = OpenAndorSDK3Cameras();
+	for (auto& c : andorCameras) {
+		_availableCameras.insert({c->getIdentifierStr(), c});
 	}
 #endif
 
 #ifdef WITH_HAMAMATSU
 	std::vector<std::shared_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras();
 	for (auto c : hamamatsuCameras) {
-		_availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(c->getIdentifierStr(), c));
+		_availableCameras.insert({c->getIdentifierStr(), c});
 	}
 #endif
 
@@ -95,14 +110,14 @@ void CameraManager::discoverCameras() {
 			throw std::runtime_error("unable to open IDS camera");
         }
         std::shared_ptr<BaseCameraClass> idsCamera(new IDSCamera(camHandle));
-        _availableCameras.insert(std::pair<std::string, std::shared_ptr<BaseCameraClass>>(idsCamera->getIdentifierStr(), idsCamera));
+        _availableCameras.insert({idsCamera->getIdentifierStr(), idsCamera});
     }
 #endif
 
 #ifdef WITH_IDS_PEAK
 	std::vector<std::shared_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
 	for (auto& cam : idsCams) {
-		_availableCameras.insert(std::make_pair(cam->getIdentifierStr(), cam));
+		_availableCameras.insert({cam->getIdentifierStr(), cam});
 	}
 #endif
 
