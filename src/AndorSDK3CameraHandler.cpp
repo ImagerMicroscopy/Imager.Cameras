@@ -25,7 +25,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
     }
 
     AT_64 iNumberDevices = 0;
-    AT_GetInt(AT_HANDLE_SYSTEM, L"DeviceCount", &iNumberDevices);
+    AT_GetInt(AT_HANDLE_SYSTEM, L"Device Count", &iNumberDevices);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor 3 device count");
     }

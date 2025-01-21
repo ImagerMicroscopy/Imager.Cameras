@@ -88,7 +88,7 @@ private:
 	AT_H _camHandle;
 	std::vector<std::uint64_t> _bufferMemory;	// uint64_t to force 8 bit alignment required by the SDK
 	std::vector<std::uint16_t*> _imageBufferPtrs;
-	size_t _imageBufferSize;
+	size_t _singleImageSizeInBytes;
 	int _nextExpectedImageInSequenceIdx;
 
 	std::pair<int, int> _cropSize;

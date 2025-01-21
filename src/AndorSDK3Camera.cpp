@@ -12,7 +12,7 @@
 
 AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),
-    _imageBufferSize(0)
+    _singleImageSizeInBytes(0)
 {
     _setDefaults();
 
@@ -105,18 +105,22 @@ CameraProperty AndorSDK3Camera::_getSetPixelClock(std::optional<CameraProperty> 
 void AndorSDK3Camera::_derivedStartAsyncAcquisition() {
     AT_Flush(_camHandle); // remove pending buffers
 
+    // we base the buffers on uint64_t to make sure that the alignment is fine, since there is some mention of this in the docs
     IntValue imageSize = _getParameterIntValue("ImageSizeBytes");
-    size_t nBytesPerImage = imageSize.currentValue;
-    size_t nUInt64PerImage = nBytesPerImage / sizeof(std::uint64_t) + 1;    // +1 in case there is truncation in the division
-    _imageBufferSize = nUInt64PerImage * sizeof(std::uint64_t);
+    _singleImageSizeInBytes = imageSize.currentValue;
+    size_t nUInt64PerImage = _singleImageSizeInBytes / sizeof(std::uint64_t) + 1;    // +1 in case there is truncation in the division
+    size_t bufferSizePerImage = nUInt64PerImage * sizeof(std::uint64_t);
+    if (bufferSizePerImage < _singleImageSizeInBytes) {
+        throw std::logic_error("Andor3 buffer is too small");
+    }
 
     if (_bufferMemory.size() < nUInt64PerImage * kNBufferImages) {
         _bufferMemory.resize(nUInt64PerImage * kNBufferImages);
         _imageBufferPtrs.resize(kNBufferImages);
     }
     for (size_t i = 0; i < _imageBufferPtrs.size(); ++i) {
-        _imageBufferPtrs.at(i) = reinterpret_cast<std::uint16_t*>(&(_bufferMemory.at(nUInt64PerImage)));
-        int err = AT_QueueBuffer(_camHandle, reinterpret_cast<std::uint8_t*>(_imageBufferPtrs.at(i)), _imageBufferSize);
+        _imageBufferPtrs.at(i) = reinterpret_cast<std::uint16_t*>(&(_bufferMemory.at(i * nUInt64PerImage)));
+        int err = AT_QueueBuffer(_camHandle, reinterpret_cast<std::uint8_t*>(_imageBufferPtrs.at(i)), _singleImageSizeInBytes);
         if (err) {
             throw std::runtime_error("can't queue Andor3 buffer");
         }
@@ -147,12 +151,19 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
         throw std::runtime_error("unknown Andor3 buffer pointer");
     }
 
-    err = AT_ConvertBufferUsingMetadata(bufPtr, reinterpret_cast<std::uint8_t*>(bufferForThisImage), nBytes, L"Mono16");
-    if (err != AT_SUCCESS) {
+    auto [aoiWidth, aoiHeight] = _getSizeOfRawImages();
+    if (nBytes != aoiWidth * aoiHeight * sizeof(std::uint16_t)) {
+        throw std::runtime_error("buffer size doesn't match Andor3 image");
+    }
+    // the docs mention that the image rows may be padded so we'll use a conversion function
+    AT_64 aoiStrideInBytes = 0;
+    AT_GetInt(_camHandle, L"AOI Stride", &aoiStrideInBytes);
+    err = AT_ConvertBuffer(bufPtr, (std::uint8_t*)bufferForThisImage, aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
+    if (err) {
         throw std::runtime_error("can't convert Andor3 buffer");
     }
 
-    err = AT_QueueBuffer(_camHandle, bufPtr, _imageBufferSize);
+    err = AT_QueueBuffer(_camHandle, bufPtr, _singleImageSizeInBytes);
     if (err) {
         throw std::runtime_error("can't requeue Andor3 buffer");
     }
@@ -347,16 +358,16 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> AndorSDK3Camera::_derive
 }
 
 std::pair<int, int> AndorSDK3Camera::_getSizeOfRawImages() const {
-    IntValue width = _getParameterIntValue("SensorWidth");
-    IntValue height = _getParameterIntValue("SensorHeight");
+    IntValue width = _getParameterIntValue("AOIWidth");
+    IntValue height = _getParameterIntValue("AOIHeight");
 
     return {width.currentValue, height.currentValue};
 }
 
 void AndorSDK3Camera::_setExposureTime(const double exposureTime) {
     _setParameterFloatValue("ExposureTime", exposureTime);
-    FloatValue rateVals = _getParameterFloatValue("ExposureTime");
-    _setParameterFloatValue("FrameRate", rateVals.minValue);
+    FloatValue rateVals = _getParameterFloatValue("FrameRate");
+    _setParameterFloatValue("FrameRate", rateVals.maxValue);
 }
 
 double AndorSDK3Camera::_getExposureTime() const {
