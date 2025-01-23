@@ -465,13 +465,16 @@ void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
 	pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
-bool PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
-	if (_haveCameraDisconnectionError) {
+BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+    if (_haveCameraDisconnectionError) {
 		throw std::runtime_error("camera disconnected");
 	}
+
 	int dummy = 0;
-	return _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
-}
+	bool haveImage = _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
+	if (!haveImage) {
+		return NoImageBeforeTimeout;
+	}
 
 	uint16_t* address = nullptr;
 	int err = pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
