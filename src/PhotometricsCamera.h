@@ -158,6 +158,7 @@ private:
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
 	static void _pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
+	static void _pvcamCameraRemovedCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
 
 	std::vector<ReadoutPort> _listReadoutPorts();
 	std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings() const;
@@ -217,6 +218,7 @@ private:
 	std::vector<std::uint16_t> _asyncBuffer;
 	moodycamel::BlockingReaderWriterQueue<int> _pvcamCallbackQueue;
 	bool _installedCallbackFunction;
+	bool _haveCameraDisconnectionError;
 };
 
 #endif

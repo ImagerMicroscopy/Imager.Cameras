@@ -37,7 +37,8 @@ std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 	_installedCallbackFunction(false),
 	_binningFactor(1),
-	_crop(0, 0)
+	_crop(0, 0),
+	_haveCameraDisconnectionError(false)
 {
 	int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
 	if (!err)
@@ -405,9 +406,9 @@ std::string PhotometricsCamera::getPVCAMErrorMessage() {
 std::vector<std::pair<std::string, int>> PhotometricsCamera::_getTriggerModes() const {
 	std::vector<std::pair<std::string, int>> modes;
 	modes.push_back(std::make_pair("Internal", EXT_TRIG_INTERNAL | EXPOSE_OUT_FIRST_ROW));
-	modes.push_back(std::make_pair("External", EXT_TRIG_EDGE_RISING | EXPOSE_OUT_FIRST_ROW));
-	modes.push_back(std::make_pair("External Start", EXT_TRIG_TRIG_FIRST | EXPOSE_OUT_FIRST_ROW));
-	modes.push_back(std::make_pair("External Exposure (bulb)", EXT_TRIG_LEVEL | EXPOSE_OUT_FIRST_ROW));
+	modes.push_back(std::make_pair("External", EXT_TRIG_EDGE_RISING | EXPOSE_OUT_ALL_ROWS));
+	modes.push_back(std::make_pair("External Start", EXT_TRIG_TRIG_FIRST | EXPOSE_OUT_ALL_ROWS));
+	modes.push_back(std::make_pair("External Exposure (bulb)", EXT_TRIG_LEVEL | EXPOSE_OUT_ALL_ROWS));
 	return modes;
 }
 
@@ -428,6 +429,10 @@ void PhotometricsCamera::_derivedStartAsyncAcquisition() {
 
 	if (!_installedCallbackFunction) {
 		err = pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_EOF, &_pvcamCallbackFunction, (void*)(&_pvcamCallbackQueue));
+		if (err != PV_OK) {
+			throw std::runtime_error("error installing pvcam callback");
+		}
+		err = pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_CAM_REMOVED, &_pvcamCameraRemovedCallbackFunction, (void*)(&_haveCameraDisconnectionError));
 		if (err != PV_OK) {
 			throw std::runtime_error("error installing pvcam callback");
 		}
@@ -460,13 +465,13 @@ void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
 	pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
-BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
-    int dummy = 0;
-
-	bool haveImage = _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
-	if (!haveImage) {
-		return NoImageBeforeTimeout;
+bool PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
+	if (_haveCameraDisconnectionError) {
+		throw std::runtime_error("camera disconnected");
 	}
+	int dummy = 0;
+	return _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
+}
 
 	uint16_t* address = nullptr;
 	int err = pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
@@ -487,6 +492,11 @@ BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(
 void PhotometricsCamera::_pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr) {
 	moodycamel::BlockingReaderWriterQueue<int>* queuePtr = (moodycamel::BlockingReaderWriterQueue<int>*)(contextPtr);
 	queuePtr->enqueue(0);
+}
+
+void PhotometricsCamera::_pvcamCameraRemovedCallbackFunction(FRAME_INFO * infoPtr, void * contextPtr) {
+	bool* _haveCameraDisconnectionErrorPtr = (bool*)contextPtr;
+	*_haveCameraDisconnectionErrorPtr = true;
 }
 
 std::vector<PhotometricsCamera::ReadoutPort> PhotometricsCamera::_listReadoutPorts() {

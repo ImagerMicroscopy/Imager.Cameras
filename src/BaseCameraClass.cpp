@@ -42,9 +42,9 @@ std::vector<CameraProperty> BaseCameraClass::getCameraProperties() {
 }
 
 void BaseCameraClass::setCameraProperties(const std::vector<CameraProperty>& properties) {
-	if (isAsyncAcquisitionRunning()) {
-		throw std::runtime_error("BaseCameraClass::setCameraProperties() but acquisition running");
-	}
+	//if (isAsyncAcquisitionRunning()) {
+	//	throw std::runtime_error("BaseCameraClass::setCameraProperties() but acquisition running");
+	//}
 	_derivedSetCameraProperties(properties);
 }
 
