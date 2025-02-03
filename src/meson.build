@@ -19,7 +19,7 @@ abslibdir = join_paths(meson.source_root(), '../lib/win64')
 cc = meson.get_compiler('cpp')
 libs = []
 foreach lib : ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi',
-               'ids_peak_comfort_c', 'SC2_Cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
+               'ids_peak_comfort_c', 'sc2_cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
                'atmcd64m', 'atutilitym', 'atcorem'
               ]
         libs += cc.find_library(lib, dirs:[abslibdir])

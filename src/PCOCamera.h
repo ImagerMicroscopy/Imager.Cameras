@@ -3,12 +3,16 @@
 
 #include "BaseCameraClass.h"
 
+#include <limits>
 #include <string>
 #include <vector>
 
 #include "windows.h"
+#include "PCO/pco_err.h"
 #include "PCO/sc2_SDKStructures.h"
-#include "PCO/SC2_CamExport.h"
+#include "PCO/sc2_SDKAddendum.h"
+#include "PCO/sc2_CamExport.h"
+#include "PCO/sc2_Defs.h"
 
 const int kPCOImagesInBuffer = 4;
 
@@ -51,13 +55,16 @@ private:
 	bool _hasCustomAcquireSingleImage() const override { return false; }
 	// void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
 
-	void _derivedStartAsyncAcquisition() override;
+	void _derivedStartUnboundedAsyncAcquisition() override {_derivedStartBoundedAsyncAcquisition(std::numeric_limits<std::uint64_t>::max());};
+	bool _derivedHaveBoundedAsyncAcquisition() override {return true;}
+	void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) override;
 	void _derivedAbortAsyncAcquisition() override;
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 	
 	void _fetchCameraInfo();
 	void _initDefaults();
 
+	void _throwIfPCOError(int pcoErr) {if (pcoErr) throw pcoErrorAsString(pcoErr);};
 	double _pcoTimeToSeconds(DWORD time, DWORD timeBase) const;
 
 	HANDLE _camHandle;

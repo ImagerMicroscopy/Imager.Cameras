@@ -153,7 +153,7 @@ private:
 	int _getTriggerMode() const { return _triggerMode; }
 	std::vector<std::pair<std::string, int>> _getTriggerModes() const;
 
-	void _derivedStartAsyncAcquisition() override;
+	void _derivedStartUnboundedAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 

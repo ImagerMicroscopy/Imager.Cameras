@@ -102,7 +102,7 @@ CameraProperty AndorSDK3Camera::_getSetPixelClock(std::optional<CameraProperty> 
     return prop;
 }
 
-void AndorSDK3Camera::_derivedStartAsyncAcquisition() {
+void AndorSDK3Camera::_derivedStartUnboundedAsyncAcquisition() {
     AT_Flush(_camHandle); // remove pending buffers
 
     // we base the buffers on uint64_t to make sure that the alignment is fine, since there is some mention of this in the docs

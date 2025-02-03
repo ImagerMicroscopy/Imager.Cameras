@@ -127,7 +127,7 @@ void DummyCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, 
 	_fillImage(bufferForThisImage, nPixels);
 }
 
-void DummyCamera::_derivedStartAsyncAcquisition() {
+void DummyCamera::_derivedStartUnboundedAsyncAcquisition() {
 	_abortTimerThread = false;
     while (_imagesQueue.pop()) {
         ;

@@ -257,7 +257,7 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> IDSPeakCamera::_derivedG
     return descriptors;
 }
 
-void IDSPeakCamera::_derivedStartAsyncAcquisition() {
+void IDSPeakCamera::_derivedStartUnboundedAsyncAcquisition() {
     peak_status status = PEAK_STATUS_SUCCESS;
     status = peak_Acquisition_Start(_camHandle, PEAK_INFINITE);
     if (PEAK_ERROR(status)) {

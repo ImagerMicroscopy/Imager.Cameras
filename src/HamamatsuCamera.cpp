@@ -486,7 +486,7 @@ void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
 	}
 }
 
-void HamamatsuCamera::_derivedStartAsyncAcquisition() {
+void HamamatsuCamera::_derivedStartUnboundedAsyncAcquisition() {
 	
 	_stopSoftwareTriggeredAcquisitionIfRunning();
 

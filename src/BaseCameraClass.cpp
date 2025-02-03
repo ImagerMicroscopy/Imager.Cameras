@@ -176,7 +176,11 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint
             imageProcessingFuture.get();
         });
 
-		_derivedStartAsyncAcquisition();
+		if (_derivedHaveBoundedAsyncAcquisition()) {
+			_derivedStartBoundedAsyncAcquisition(nImagesToAcquire);
+		} else {
+			_derivedStartUnboundedAsyncAcquisition();
+		}
         CleanupRunner runner([&]() {
             this->_derivedAbortAsyncAcquisition();
         });

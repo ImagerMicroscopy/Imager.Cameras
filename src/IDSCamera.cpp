@@ -319,7 +319,7 @@ bool IDSCamera::_haveHotPixelCorrection() const {
 	return (modes != 0);
 }
 
-void IDSCamera::_derivedStartAsyncAcquisition() {
+void IDSCamera::_derivedStartUnboundedAsyncAcquisition() {
     int err;
     std::pair<int, int> sensorSize = _getSensorSize();
     int nPixelsInImage = sensorSize.first * sensorSize.second;

@@ -51,7 +51,7 @@ private:
 	void _setOffsetToSubtract(const double offset);
 	double _getOffsetToSubtract() const;
 
-	void _derivedStartAsyncAcquisition() override;
+	void _derivedStartUnboundedAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 

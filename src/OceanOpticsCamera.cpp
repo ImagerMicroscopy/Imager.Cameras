@@ -154,7 +154,7 @@ double OceanOpticsCamera::_getOffsetToSubtract() const {
 	return _offsetToSubtract;
 }
 
-void OceanOpticsCamera::_derivedStartAsyncAcquisition() {
+void OceanOpticsCamera::_derivedStartUnboundedAsyncAcquisition() {
 	_startAsyncSpectraGrabber();
 }
 

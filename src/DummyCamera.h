@@ -32,7 +32,7 @@ private:
 	bool _hasCustomAcquireSingleImage() const override { return true; }
 	void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
 
-	void _derivedStartAsyncAcquisition() override;
+	void _derivedStartUnboundedAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 

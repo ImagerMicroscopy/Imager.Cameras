@@ -63,7 +63,10 @@ private:
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue);
     void _clearAvailableImagesQueue();
-    virtual void _derivedStartAsyncAcquisition() = 0;
+	
+    virtual void _derivedStartUnboundedAsyncAcquisition() = 0;
+	virtual bool _derivedHaveBoundedAsyncAcquisition() {return false;}
+	virtual void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) {throw std::logic_error("_derivedStartBoundedAsyncAcquisition() not implemented");}
 	virtual void _derivedAbortAsyncAcquisition() = 0;
     virtual NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) = 0;
 

@@ -154,9 +154,13 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> PCOCamera::_derivedGetAd
     return descs;
 }
 
-void PCOCamera::_derivedStartAsyncAcquisition() {
+void PCOCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) {
     std::pair<int, int> imageSize = _getSensorSize();  // getActualImageSize();
     int nPixelsInImage = imageSize.first * imageSize.second;
+
+    if (nImagesToAcquire > (uint64_t)std::numeric_limits<std::uint32_t>::max()) {
+        nImagesToAcquire = std::numeric_limits<std::uint32_t>::max();
+    }
 
     if (_frameBuffer.empty()) {
         auto sensorSize = _getSensorSize();
@@ -175,25 +179,26 @@ void PCOCamera::_derivedStartAsyncAcquisition() {
     for (auto &waitH : _waitObjects) {
         ResetEvent(waitH);
     }
+    _throwIfPCOError(PCO_SetImageParameters(_camHandle, imageSize.first, imageSize.second, IMAGEPARAMETERS_READ_WHILE_RECORDING, nullptr, 0));
+    _throwIfPCOError(PCO_SetAcquireModeEx(_camHandle, ACQUIRE_MODE_IMAGE_SEQUENCE, nImagesToAcquire, nullptr));
+    _throwIfPCOError(PCO_SetStorageMode(_camHandle, STORAGE_MODE_FIFO_BUFFER));
+    _throwIfPCOError(PCO_SetTimestampMode(_camHandle, 0));  // no time stamp
+    _throwIfPCOError(PCO_ArmCamera(_camHandle));
 
-    int pcoErr = PCO_SetImageParameters(_camHandle, imageSize.first, imageSize.second, IMAGEPARAMETERS_READ_WHILE_RECORDING, nullptr, 0);
-    if (pcoErr) {
-        throw std::runtime_error("Error calling PCO_SetImageParameters()");
-    }
+    // start recording state but this should not do anything since we need to trigger
+    _throwIfPCOError(PCO_SetRecordingState(_camHandle, 1));
+    
+    // PCO example code has this sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
-    pcoErr = PCO_SetRecordingState(_camHandle, 1);
-    if (pcoErr) {
-        std::string errMsg = pcoErrorAsString(pcoErr);
-        throw std::runtime_error("Error calling PCO_SetRecordingState(): " + errMsg);
-    }
+    // generate the trigger that will start the acquisition
+    _throwIfPCOError(PCO_SetAcquireControl(_camHandle, ACQUIRE_CONTROL_FORCE_LOW, nullptr, 0));
+    _throwIfPCOError(PCO_SetAcquireControl(_camHandle, ACQUIRE_CONTROL_FORCE_HIGH, nullptr, 0));
+    _throwIfPCOError(PCO_SetAcquireControl(_camHandle, ACQUIRE_CONTROL_OFF, NULL, 0));
 
     for (int i = 0; i < kPCOImagesInBuffer; i += 1) {
         std::uint16_t *thisImagePtr = _frameBuffer.data() + i * nPixelsInImage;
-        pcoErr = PCO_AddBufferExtern(_camHandle, _waitObjects.at(i), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(i)));
-        if (pcoErr) {
-            std::string errMsg = pcoErrorAsString(pcoErr);
-            throw std::runtime_error("Error calling PCO_AddBufferExtern(): " + errMsg);
-        }
+        _throwIfPCOError(PCO_AddBufferExtern(_camHandle, _waitObjects.at(i), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(i))));
     }
     _nextBufferToReadIndex = 0;
 
@@ -201,16 +206,8 @@ void PCOCamera::_derivedStartAsyncAcquisition() {
 }
 
 void PCOCamera::_derivedAbortAsyncAcquisition() {
-    int pcoErr = PCO_SetRecordingState(_camHandle, 0);
-    if (pcoErr) {
-        std::string errMsg = pcoErrorAsString(pcoErr);
-        throw std::runtime_error("Error calling PCO_SetRecordingState(0): " + errMsg);
-    }
-    pcoErr = PCO_CancelImages(_camHandle);
-    if (pcoErr) {
-        std::string errMsg = pcoErrorAsString(pcoErr);
-        throw std::runtime_error("Error calling PCO_CancelImages: " + errMsg);
-    }
+    _throwIfPCOError(PCO_SetRecordingState(_camHandle, 0));
+    _throwIfPCOError(PCO_CancelImages(_camHandle));
 }
 
 BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {

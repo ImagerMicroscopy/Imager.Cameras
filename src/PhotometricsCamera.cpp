@@ -412,7 +412,7 @@ std::vector<std::pair<std::string, int>> PhotometricsCamera::_getTriggerModes() 
 	return modes;
 }
 
-void PhotometricsCamera::_derivedStartAsyncAcquisition() {
+void PhotometricsCamera::_derivedStartUnboundedAsyncAcquisition() {
 	int err = 0;
 	std::uint64_t exposureTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
 	std::uint32_t nBytesInImage;

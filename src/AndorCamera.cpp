@@ -525,7 +525,7 @@ void AndorCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, 
 	if (err != DRV_SUCCESS) throw std::runtime_error("Error calling GetMostRecentImage16() in single acquisition");
 }
 
-void AndorCamera::_derivedStartAsyncAcquisition() {
+void AndorCamera::_derivedStartUnboundedAsyncAcquisition() {
 	int result;
 	_numberOfImagesDelivered = 0;
 
