@@ -439,11 +439,9 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 		if (err != DCAMERR_SUCCESS) {
 			throw std::runtime_error("can't allocate DCAM buffers for single acquisition");
 		}
-
 		if (willDoSoftwareTriggering) {
 			_setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__SOFTWARE);
 		}
-
 		err = dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
 		if (err != DCAMERR_SUCCESS) {
 			throw std::runtime_error("couldn't start snap acq");
@@ -458,16 +456,10 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 	}
 	
 	int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
-	DCAMWAIT_START waitParams = { 0 };
-	waitParams.size = sizeof(DCAMWAIT_START);
-	waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
-	waitParams.timeout = waitMillis;
-	err = dcamwait_start(_camWaitHandle, &waitParams);
-	if (err == DCAMERR_TIMEOUT) {
+	NewImageResult result = _waitForNewImageWithTimeout(waitMillis, bufferForThisImage, nBytes);
+	if (result == NoImageBeforeTimeout) {
 		throw std::runtime_error("waiting for single dcam acquisition but timeout");
 	}
-
-	_copyLatestImage(bufferForThisImage, nBytes);
 
 	if (!_softwareTriggeredAcquisitionRunning) {
 		dcamcap_stop(_camHandle);
@@ -478,9 +470,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
 
 void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
 	if (_softwareTriggeredAcquisitionRunning) {
-		dcamcap_stop(_camHandle);
-		_releaseCamWaitHandle();
-		dcambuf_release(_camHandle);
+		_derivedAbortAsyncAcquisition();
 		_setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__INTERNAL);
 		_softwareTriggeredAcquisitionRunning = false;
 	}
