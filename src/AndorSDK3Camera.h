@@ -58,8 +58,6 @@ private:
 
 	void _setExposureTime(const double exposureTime);
 	double _getExposureTime() const;
-    void _setImageCrop(const std::pair<int, int>& crop);
-	std::pair<int, int> _getImageCrop();
 
 	std::string _getSetPixelClock_SDK(std::optional<std::string> maybeClock = std::optional<std::string>());
 	std::vector<std::string> _getPossiblePixelClocks() const;
@@ -68,11 +66,15 @@ private:
 
 	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
-	bool _hasCustomAcquireSingleImage() const override { return false; }
+	bool _hasCustomAcquireSingleImage() const override { return true; }
+	void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+	void _stopSoftwareTriggeredAcquisitionIfRunning();
 
 	void _derivedStartUnboundedAsyncAcquisition() override;
 	void _derivedAbortAsyncAcquisition() override;
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+
+	void _startUnboundedAsyncAcquisition(TriggerMode triggerMode);
 
 	void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr);
 	std::string _getSelectedParameterStringValue(const std::string& featureStr) const;
@@ -90,6 +92,7 @@ private:
 	std::vector<std::uint16_t*> _imageBufferPtrs;
 	size_t _singleImageSizeInBytes;
 	int _nextExpectedImageInSequenceIdx;
+	bool _softwareTriggeredAcquisitionRunning;
 
 	std::pair<int, int> _cropSize;
 };

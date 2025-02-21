@@ -12,7 +12,8 @@
 
 AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),
-    _singleImageSizeInBytes(0)
+    _singleImageSizeInBytes(0),
+    _softwareTriggeredAcquisitionRunning(false)
 {
     _setDefaults();
 
@@ -71,6 +72,8 @@ std::vector<CameraProperty> AndorSDK3Camera::_derivedGetCameraProperties() {
 }
 
 void AndorSDK3Camera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
+    _stopSoftwareTriggeredAcquisitionIfRunning();
+
     auto propsCopy = properties;
 
     auto [maybeExposureTime, maybeCropping, maybeBinning] = DecodeAndRemoveStandardProperties(propsCopy);
@@ -102,31 +105,35 @@ CameraProperty AndorSDK3Camera::_getSetPixelClock(std::optional<CameraProperty> 
     return prop;
 }
 
+void AndorSDK3Camera::_derivedAcquireSingleImage(std::uint16_t *bufferForThisImage, int nBytes) {
+    if (!_softwareTriggeredAcquisitionRunning) {
+        // start a new software triggered acquisition
+        _startUnboundedAsyncAcquisition(kTriggerSoftware);
+        _softwareTriggeredAcquisitionRunning = true;
+    }
+
+    _sendSoftwareTrigger();
+
+    int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
+    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, bufferForThisImage, nBytes);
+    if (result == NoImageBeforeTimeout) {
+        throw std::runtime_error("Andor 3 timeout in single image acquisition");
+    }
+}
+
+void AndorSDK3Camera::_stopSoftwareTriggeredAcquisitionIfRunning() {
+    if (_softwareTriggeredAcquisitionRunning) {
+        _derivedAbortAsyncAcquisition();
+        _softwareTriggeredAcquisitionRunning = false;
+    }
+}
+
 void AndorSDK3Camera::_derivedStartUnboundedAsyncAcquisition() {
-    AT_Flush(_camHandle); // remove pending buffers
-
-    // we base the buffers on uint64_t to make sure that the alignment is fine, since there is some mention of this in the docs
-    IntValue imageSize = _getParameterIntValue("ImageSizeBytes");
-    _singleImageSizeInBytes = imageSize.currentValue;
-    size_t nUInt64PerImage = _singleImageSizeInBytes / sizeof(std::uint64_t) + 1;    // +1 in case there is truncation in the division
-    size_t bufferSizePerImage = nUInt64PerImage * sizeof(std::uint64_t);
-    if (bufferSizePerImage < _singleImageSizeInBytes) {
-        throw std::logic_error("Andor3 buffer is too small");
-    }
-
-    if (_bufferMemory.size() < nUInt64PerImage * kNBufferImages) {
-        _bufferMemory.resize(nUInt64PerImage * kNBufferImages);
-        _imageBufferPtrs.resize(kNBufferImages);
-    }
-    for (size_t i = 0; i < _imageBufferPtrs.size(); ++i) {
-        _imageBufferPtrs.at(i) = reinterpret_cast<std::uint16_t*>(&(_bufferMemory.at(i * nUInt64PerImage)));
-        int err = AT_QueueBuffer(_camHandle, reinterpret_cast<std::uint8_t*>(_imageBufferPtrs.at(i)), _singleImageSizeInBytes);
-        if (err) {
-            throw std::runtime_error("can't queue Andor3 buffer");
-        }
-    }
-
-    _sendCommand("AcquisitionStart");
+    // if called here then we are not doing single image acquisitions,
+    // so we will run in internal trigger mode
+    _stopSoftwareTriggeredAcquisitionIfRunning();
+    
+    _startUnboundedAsyncAcquisition(kTriggerInternal);
 }
 
 void AndorSDK3Camera::_derivedAbortAsyncAcquisition() {
@@ -169,6 +176,35 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
     }
 
     return NewImageCopied;
+}
+
+void AndorSDK3Camera::_startUnboundedAsyncAcquisition(TriggerMode triggerMode) {
+    AT_Flush(_camHandle); // remove pending buffers
+
+    _getSetTriggerMode_SDK(triggerMode);
+
+    // we base the buffers on uint64_t to make sure that the alignment is fine, since there is some mention of this in the docs
+    IntValue imageSize = _getParameterIntValue("ImageSizeBytes");
+    _singleImageSizeInBytes = imageSize.currentValue;
+    size_t nUInt64PerImage = _singleImageSizeInBytes / sizeof(std::uint64_t) + 1;    // +1 in case there is truncation in the division
+    size_t bufferSizePerImage = nUInt64PerImage * sizeof(std::uint64_t);
+    if (bufferSizePerImage < _singleImageSizeInBytes) {
+        throw std::logic_error("Andor3 buffer is too small");
+    }
+
+    if (_bufferMemory.size() < nUInt64PerImage * kNBufferImages) {
+        _bufferMemory.resize(nUInt64PerImage * kNBufferImages);
+        _imageBufferPtrs.resize(kNBufferImages);
+    }
+    for (size_t i = 0; i < _imageBufferPtrs.size(); ++i) {
+        _imageBufferPtrs.at(i) = reinterpret_cast<std::uint16_t*>(&(_bufferMemory.at(i * nUInt64PerImage)));
+        int err = AT_QueueBuffer(_camHandle, reinterpret_cast<std::uint8_t*>(_imageBufferPtrs.at(i)), _singleImageSizeInBytes);
+        if (err) {
+            throw std::runtime_error("can't queue Andor3 buffer");
+        }
+    }
+
+    _sendCommand("AcquisitionStart");
 }
 
 void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, const std::string& valueStr) {
