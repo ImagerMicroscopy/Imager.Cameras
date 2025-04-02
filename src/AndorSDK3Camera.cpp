@@ -115,7 +115,7 @@ void AndorSDK3Camera::_derivedAcquireSingleImage(std::uint16_t *bufferForThisIma
 
     _sendSoftwareTrigger();
 
-    int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
+    int waitMillis = std::max(2500, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
     NewImageResult result = _waitForNewImageWithTimeout(waitMillis, bufferForThisImage, nBytes);
     if (result == NoImageBeforeTimeout) {
         throw std::runtime_error("Andor 3 timeout in single image acquisition");
