@@ -74,7 +74,7 @@ private:
 	void _derivedAbortAsyncAcquisition() override;
 	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
-	void _startUnboundedAsyncAcquisition(TriggerMode triggerMode);
+	void _startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode);
 
 	void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr);
 	std::string _getSelectedParameterStringValue(const std::string& featureStr) const;

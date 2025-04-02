@@ -21,6 +21,7 @@ AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
 }
 
 AndorSDK3Camera::~AndorSDK3Camera() {
+    _stopSoftwareTriggeredAcquisitionIfRunning();
     AT_Close(_camHandle);
 }
 
@@ -108,7 +109,7 @@ CameraProperty AndorSDK3Camera::_getSetPixelClock(std::optional<CameraProperty> 
 void AndorSDK3Camera::_derivedAcquireSingleImage(std::uint16_t *bufferForThisImage, int nBytes) {
     if (!_softwareTriggeredAcquisitionRunning) {
         // start a new software triggered acquisition
-        _startUnboundedAsyncAcquisition(kTriggerSoftware);
+        _startUnboundedAsyncAcquisitionWithTriggerMode(kTriggerSoftware);
         _softwareTriggeredAcquisitionRunning = true;
     }
 
@@ -133,7 +134,7 @@ void AndorSDK3Camera::_derivedStartUnboundedAsyncAcquisition() {
     // so we will run in internal trigger mode
     _stopSoftwareTriggeredAcquisitionIfRunning();
     
-    _startUnboundedAsyncAcquisition(kTriggerInternal);
+    _startUnboundedAsyncAcquisitionWithTriggerMode(kTriggerInternal);
 }
 
 void AndorSDK3Camera::_derivedAbortAsyncAcquisition() {
@@ -178,7 +179,7 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
     return NewImageCopied;
 }
 
-void AndorSDK3Camera::_startUnboundedAsyncAcquisition(TriggerMode triggerMode) {
+void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode) {
     AT_Flush(_camHandle); // remove pending buffers
 
     _getSetTriggerMode_SDK(triggerMode);
