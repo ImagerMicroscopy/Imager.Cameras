@@ -22,11 +22,14 @@ if (isWindows)
                                         'ids_peak_comfort_c', 'sc2_cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
                                          'atmcd64m', 'atutilitym', 'atcorem']
 else
-        incdirs = []
+        incdirs = include_directories([
+                        '../include',
+                        '/opt/intel/oneapi/ipp/latest/include/ipp'
+                        ])
 
-        abslibdir = ''
+        abslibdir = '/opt/intel/oneapi/ipp/latest/lib'
 
-        libNames = []
+        libNames = ['ippcore']
 endif
 
 cc = meson.get_compiler('cpp')
@@ -34,6 +37,8 @@ libs = []
 foreach lib : libNames
         libs += cc.find_library(lib, dirs:[abslibdir])
 endforeach
+
+nlohmann_json_dep = dependency('nlohmann_json')
 
 library('SCCamera',
         'AndorCamera.cpp',
@@ -57,6 +62,6 @@ library('SCCamera',
         'SCCameraDLL.cpp',
         'Utils.cpp',
 	include_directories : incdirs,
-        dependencies: libs,
+        dependencies: [libs, nlohmann_json_dep],
         cpp_args : '-DNOMINMAX',
         install : true)
