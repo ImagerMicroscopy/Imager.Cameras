@@ -6,22 +6,32 @@ project('src', 'cpp',
 		    ]
 )
 
-incdirs = include_directories(
-                ['../include',
-                 '../include/IPP2017',
-                 '../include/OceanOpticsSeabreeze'
-                ]
-          )
+isWindows = build_machine.system() == 'windows'
 
+if (isWindows)
+        incdirs = include_directories(
+                        ['../include',
+                        '../include/IPP2017',
+                        '../include/OceanOpticsSeabreeze'
+                        ]
+                )
 
-abslibdir = join_paths(meson.source_root(), '../lib/win64')
+        abslibdir = join_paths(meson.source_root(), '../lib/win64')
+
+        libNames = ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi',
+                                        'ids_peak_comfort_c', 'sc2_cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
+                                         'atmcd64m', 'atutilitym', 'atcorem']
+else
+        incdirs = []
+
+        abslibdir = ''
+
+        libNames = []
+endif
 
 cc = meson.get_compiler('cpp')
 libs = []
-foreach lib : ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi',
-               'ids_peak_comfort_c', 'sc2_cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
-               'atmcd64m', 'atutilitym', 'atcorem'
-              ]
+foreach lib : libNames
         libs += cc.find_library(lib, dirs:[abslibdir])
 endforeach
 
