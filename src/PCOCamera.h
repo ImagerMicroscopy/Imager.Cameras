@@ -19,66 +19,66 @@ const int kPCOImagesInBuffer = 4;
 class PCOCamera : public BaseCameraClass
 {
 public:
-	enum GetOrSetProperty {
-		GetProperty,
-		SetProperty
-	};
+    enum GetOrSetProperty {
+        GetProperty,
+        SetProperty
+    };
 
-	enum PCOPropIDs {
-		PropReadoutSpeed = CameraProperty::FirstAvailablePropertyID,
-	};
+    enum PCOPropIDs {
+        PropReadoutSpeed = CameraProperty::FirstAvailablePropertyID,
+    };
 
-	PCOCamera(HANDLE camHandle);
-	virtual ~PCOCamera();
+    PCOCamera(HANDLE camHandle);
+    virtual ~PCOCamera();
 
-	std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() const override;
 
-	double getFrameRate() const override;
+    double getFrameRate() const override;
 
-	static std::string pcoErrorAsString(const int errCode);
+    static std::string pcoErrorAsString(const int errCode);
 
 private:
-	std::vector<CameraProperty> _derivedGetCameraProperties() override;
-	void _derivedSetCameraProperties(const std::vector<CameraProperty> &properties) override;
+    std::vector<CameraProperty> _derivedGetCameraProperties() override;
+    void _derivedSetCameraProperties(const std::vector<CameraProperty> &properties) override;
 
-	std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() const override;
 
-	std::pair<int, int> _getSensorSize() const { return _sensorSize; }
-	// int _getBinningFactor() const override;
-	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string &mode);
+    std::pair<int, int> _getSensorSize() const { return _sensorSize; }
+    // int _getBinningFactor() const override;
+    CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string &mode);
 
-	void _setExposureTime(const double exposureTime);
-	double _getExposureTime() const;
+    void _setExposureTime(const double exposureTime);
+    double _getExposureTime() const;
 
-	std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
+    std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
-	bool _hasCustomAcquireSingleImage() const override { return false; }
-	// void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+    bool _hasCustomAcquireSingleImage() const override { return false; }
+    // void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
 
-	void _derivedStartUnboundedAsyncAcquisition() override {_derivedStartBoundedAsyncAcquisition(std::numeric_limits<std::uint64_t>::max());};
-	bool _derivedHaveBoundedAsyncAcquisition() override {return true;}
-	void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) override;
-	void _derivedAbortAsyncAcquisition() override;
-	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
-	
-	void _fetchCameraInfo();
-	void _initDefaults();
+    void _derivedStartUnboundedAsyncAcquisition() override {_derivedStartBoundedAsyncAcquisition(std::numeric_limits<std::uint64_t>::max());};
+    bool _derivedHaveBoundedAsyncAcquisition() override {return true;}
+    void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) override;
+    void _derivedAbortAsyncAcquisition() override;
+    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    
+    void _fetchCameraInfo();
+    void _initDefaults();
 
-	void _throwIfPCOError(int pcoErr) {if (pcoErr) throw pcoErrorAsString(pcoErr);};
-	double _pcoTimeToSeconds(DWORD time, DWORD timeBase) const;
+    void _throwIfPCOError(int pcoErr) {if (pcoErr) throw pcoErrorAsString(pcoErr);};
+    double _pcoTimeToSeconds(DWORD time, DWORD timeBase) const;
 
-	HANDLE _camHandle;
-	PCO_Description _camDescription;
-	std::string _camName;
-	std::pair<int, int> _sensorSize;
-	std::pair<int, int> _desiredCropSize;
-	int _desiredBinningFactor;
-	std::map<std::string, int> _readoutSpeeds;
-	std::vector<std::uint16_t> _frameBuffer;
-	std::vector<HANDLE> _waitObjects;
-	std::vector<DWORD> _bufferStatuses;
-	size_t _nextBufferToReadIndex;
-	int _numberOfImagesDelivered;
+    HANDLE _camHandle;
+    PCO_Description _camDescription;
+    std::string _camName;
+    std::pair<int, int> _sensorSize;
+    std::pair<int, int> _desiredCropSize;
+    int _desiredBinningFactor;
+    std::map<std::string, int> _readoutSpeeds;
+    std::vector<std::uint16_t> _frameBuffer;
+    std::vector<HANDLE> _waitObjects;
+    std::vector<DWORD> _bufferStatuses;
+    size_t _nextBufferToReadIndex;
+    int _numberOfImagesDelivered;
 };
 
 #endif

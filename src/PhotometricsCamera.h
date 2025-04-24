@@ -8,217 +8,217 @@
 
 class PhotometricsCamera : public BaseCameraClass {
 
-	enum GetOrSetProperty {
-		GetProperty,
-		SetProperty
-	};
+    enum GetOrSetProperty {
+        GetProperty,
+        SetProperty
+    };
 
-	enum PhotometricsPropIDs {
-		PropReadoutPort = CameraProperty::FirstAvailablePropertyID,
-		PropReadoutSpeed,
-		PropGain,
-		PropTriggerMode,
-		PropPostProcessingFeature,
-		PropFirstPostProcessingSettingID = CameraProperty::FirstAvailablePropertyID + 1000
-	};
+    enum PhotometricsPropIDs {
+        PropReadoutPort = CameraProperty::FirstAvailablePropertyID,
+        PropReadoutSpeed,
+        PropGain,
+        PropTriggerMode,
+        PropPostProcessingFeature,
+        PropFirstPostProcessingSettingID = CameraProperty::FirstAvailablePropertyID + 1000
+    };
 
-	class Gain {
-	public:
-		Gain(int index, int bitDepth, const std::string& description);
+    class Gain {
+    public:
+        Gain(int index, int bitDepth, const std::string& description);
 
-		int index() const { return _index; }
-		const std::string& descriptor() const { return _description; }
-		int bitDepth() const { return _bitDepth; }
+        int index() const { return _index; }
+        const std::string& descriptor() const { return _description; }
+        int bitDepth() const { return _bitDepth; }
 
-	private:
-		int _index;
-		std::string _description;
-		int _bitDepth;
-	};
-	
-	class SpeedEntry {
-	public:
-		SpeedEntry(int indexRHS, int pixelTimeRHS, const std::vector<Gain>& gains) :
-			_index(indexRHS),
-			_pixelTime(pixelTimeRHS),
-			_gains(gains)
-		{
-			_descriptor = _generateDescriptor();
-		}
+    private:
+        int _index;
+        std::string _description;
+        int _bitDepth;
+    };
+    
+    class SpeedEntry {
+    public:
+        SpeedEntry(int indexRHS, int pixelTimeRHS, const std::vector<Gain>& gains) :
+            _index(indexRHS),
+            _pixelTime(pixelTimeRHS),
+            _gains(gains)
+        {
+            _descriptor = _generateDescriptor();
+        }
 
-		int index() const { return _index; }
-		const std::string& descriptor() const { return _descriptor; }
-		const std::vector<Gain>& gains() const { return _gains; }
+        int index() const { return _index; }
+        const std::string& descriptor() const { return _descriptor; }
+        const std::vector<Gain>& gains() const { return _gains; }
 
-	private:
-		std::string _generateDescriptor() const;
+    private:
+        std::string _generateDescriptor() const;
 
-		int _index;
-		int _pixelTime;
-		std::string _descriptor;
-		std::vector<Gain> _gains;
-	};
+        int _index;
+        int _pixelTime;
+        std::string _descriptor;
+        std::vector<Gain> _gains;
+    };
 
-	class ReadoutPort {
-	public:
-		ReadoutPort(const std::string& name, int index, const std::vector<SpeedEntry>& speedTable) :
-			_name(name),
-			_index(index),
-			_speedTable(speedTable)
-		{}
+    class ReadoutPort {
+    public:
+        ReadoutPort(const std::string& name, int index, const std::vector<SpeedEntry>& speedTable) :
+            _name(name),
+            _index(index),
+            _speedTable(speedTable)
+        {}
 
-		const std::string& name() const { return _name; }
-		int index() const { return _index; }
-		const std::vector<SpeedEntry>& speedTable() const { return _speedTable; }
+        const std::string& name() const { return _name; }
+        int index() const { return _index; }
+        const std::vector<SpeedEntry>& speedTable() const { return _speedTable; }
 
-	private:
-		std::string _name;
-		int _index;
-		std::vector<SpeedEntry> _speedTable;
-	};
+    private:
+        std::string _name;
+        int _index;
+        std::vector<SpeedEntry> _speedTable;
+    };
 
-	class PostProcessingFeatureParameter {
-	public:
-		PostProcessingFeatureParameter(int pvcamID, int scCameraID, const std::string& descriptor) :
-			_pvcamID(pvcamID),
-			_scCameraID(scCameraID),
-			_descriptor(descriptor)
-		{}
+    class PostProcessingFeatureParameter {
+    public:
+        PostProcessingFeatureParameter(int pvcamID, int scCameraID, const std::string& descriptor) :
+            _pvcamID(pvcamID),
+            _scCameraID(scCameraID),
+            _descriptor(descriptor)
+        {}
 
-		const int pvcamID() const { return _pvcamID; }
-		const int scCameraID() const { return _scCameraID; }
-		const std::string& descriptor() const { return _descriptor; }
+        const int pvcamID() const { return _pvcamID; }
+        const int scCameraID() const { return _scCameraID; }
+        const std::string& descriptor() const { return _descriptor; }
 
-	private:
-		int _pvcamID;
-		int _scCameraID;
-		std::string _descriptor;
-	};
+    private:
+        int _pvcamID;
+        int _scCameraID;
+        std::string _descriptor;
+    };
 
-	class PostProcessingFeature {
-	public:
-		PostProcessingFeature(int index, const std::string& description, const std::vector<PostProcessingFeatureParameter>& postProcessingSettings) :
-			_index(index),
-			_description(description),
-			_postProcessingSettings(postProcessingSettings)
-		{}
+    class PostProcessingFeature {
+    public:
+        PostProcessingFeature(int index, const std::string& description, const std::vector<PostProcessingFeatureParameter>& postProcessingSettings) :
+            _index(index),
+            _description(description),
+            _postProcessingSettings(postProcessingSettings)
+        {}
 
-		int index() const { return _index; }
-		const std::string& descriptor() const { return _description; }
-		const std::vector<PostProcessingFeatureParameter> parameters() const { return _postProcessingSettings; }
+        int index() const { return _index; }
+        const std::string& descriptor() const { return _description; }
+        const std::vector<PostProcessingFeatureParameter> parameters() const { return _postProcessingSettings; }
 
-	private:
-		int _index;
-		std::string _description;
-		std::vector<PostProcessingFeatureParameter> _postProcessingSettings;
-	};
+    private:
+        int _index;
+        std::string _description;
+        std::vector<PostProcessingFeatureParameter> _postProcessingSettings;
+    };
 
 public:
-	PhotometricsCamera(const std::string& cameraName);
-	~PhotometricsCamera();
+    PhotometricsCamera(const std::string& cameraName);
+    ~PhotometricsCamera();
 
-	std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() const override;
 
-	double getFrameRate() const override;
+    double getFrameRate() const override;
 
-	static std::string getPVCAMErrorMessage();
+    static std::string getPVCAMErrorMessage();
 
 private:
-	void _setDefaults();
+    void _setDefaults();
 
-	std::vector<CameraProperty> _derivedGetCameraProperties() override;
-	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+    std::vector<CameraProperty> _derivedGetCameraProperties() override;
+    void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
 
-	CameraProperty _getSetReadoutPort(GetOrSetProperty getOrSet, const std::string& port);
-	CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
-	CameraProperty _getSetGain(GetOrSetProperty getOrSet, const std::string& descriptor);
-	CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
-	CameraProperty _getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode);
-	std::vector<CameraProperty> _getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value);
+    CameraProperty _getSetReadoutPort(GetOrSetProperty getOrSet, const std::string& port);
+    CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
+    CameraProperty _getSetGain(GetOrSetProperty getOrSet, const std::string& descriptor);
+    CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
+    CameraProperty _getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode);
+    std::vector<CameraProperty> _getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value);
 
-	bool _derivedIsConfiguredForHardwareTriggering() override;
+    bool _derivedIsConfiguredForHardwareTriggering() override;
 
-	std::pair<int, int> _getSizeOfRawImages() const override;
-	std::pair<int, int> _getSensorSize() const;
+    std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSensorSize() const;
 
-	double _getExposureTime() const;
-	void _setExposureTime(const double exposureTime);
-	void _updateCameraTimings();
-	void _setImageCrop(const std::pair<int, int>& crop);
-	std::pair<int, int> _getImageCrop() const;
-	void _setBinningFactor(const int binningFactor);
-	int _getBinningFactor() const;
-	rgn_type _getRegionForCurrentBinningAndCropping() const;
-	void _setTrigggerMode(const int triggerMode) { _triggerMode = triggerMode; }
-	int _getTriggerMode() const { return _triggerMode; }
-	std::vector<std::pair<std::string, int>> _getTriggerModes() const;
+    double _getExposureTime() const;
+    void _setExposureTime(const double exposureTime);
+    void _updateCameraTimings();
+    void _setImageCrop(const std::pair<int, int>& crop);
+    std::pair<int, int> _getImageCrop() const;
+    void _setBinningFactor(const int binningFactor);
+    int _getBinningFactor() const;
+    rgn_type _getRegionForCurrentBinningAndCropping() const;
+    void _setTrigggerMode(const int triggerMode) { _triggerMode = triggerMode; }
+    int _getTriggerMode() const { return _triggerMode; }
+    std::vector<std::pair<std::string, int>> _getTriggerModes() const;
 
-	void _derivedStartUnboundedAsyncAcquisition() override;
-	void _derivedAbortAsyncAcquisition() override;
-	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    void _derivedStartUnboundedAsyncAcquisition() override;
+    void _derivedAbortAsyncAcquisition() override;
+    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
-	static void _pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
-	static void _pvcamCameraRemovedCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
+    static void _pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
+    static void _pvcamCameraRemovedCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
 
-	std::vector<ReadoutPort> _listReadoutPorts();
-	std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings() const;
-	std::vector<PostProcessingFeature> _listPostProcessingFeatures();
-	const PostProcessingFeature& _getCurrentPostProcessingFeature() const;
+    std::vector<ReadoutPort> _listReadoutPorts();
+    std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings() const;
+    std::vector<PostProcessingFeature> _listPostProcessingFeatures();
+    const PostProcessingFeature& _getCurrentPostProcessingFeature() const;
 
-	template <typename T> T _getCameraParameter(int paramID, int attribute) const {
-		T value;
-		rs_bool result = pl_get_param(_pvcamHandle, paramID, attribute, &value);
-		if (result != PV_OK) {
-			throw std::runtime_error(getPVCAMErrorMessage());
-		}
-		return value;
-	}
+    template <typename T> T _getCameraParameter(int paramID, int attribute) const {
+        T value;
+        rs_bool result = pl_get_param(_pvcamHandle, paramID, attribute, &value);
+        if (result != PV_OK) {
+            throw std::runtime_error(getPVCAMErrorMessage());
+        }
+        return value;
+    }
 
-	void _fillCameraTextParameter(int paramID, char* buf) const {
-		rs_bool result = pl_get_param(_pvcamHandle, paramID, ATTR_CURRENT, buf);
-		if (result != PV_OK) {
-			throw std::runtime_error(getPVCAMErrorMessage());
-		}
-	}
+    void _fillCameraTextParameter(int paramID, char* buf) const {
+        rs_bool result = pl_get_param(_pvcamHandle, paramID, ATTR_CURRENT, buf);
+        if (result != PV_OK) {
+            throw std::runtime_error(getPVCAMErrorMessage());
+        }
+    }
 
-	template <typename T> T _getCameraParameterCurrentValue(int paramID) const {
-		return _getCameraParameter<T>(paramID, ATTR_CURRENT);
-	}
+    template <typename T> T _getCameraParameterCurrentValue(int paramID) const {
+        return _getCameraParameter<T>(paramID, ATTR_CURRENT);
+    }
 
-	bool _cameraSupportsParameter(int paramID) const {
-		rs_bool isAvailable = _getCameraParameter<rs_bool>(paramID, ATTR_AVAIL);
-		return (isAvailable != PV_FAIL);
-	}
+    bool _cameraSupportsParameter(int paramID) const {
+        rs_bool isAvailable = _getCameraParameter<rs_bool>(paramID, ATTR_AVAIL);
+        return (isAvailable != PV_FAIL);
+    }
 
-	template <typename T> std::pair<T,T> _getCameraParameterLimits(int paramID) const {
-		T min = _getCameraParameter<T>(paramID, ATTR_MIN);
-		T max = _getCameraParameter<T>(paramID, ATTR_MAX);
-		return std::pair<T,T>(min, max);
-	}
+    template <typename T> std::pair<T,T> _getCameraParameterLimits(int paramID) const {
+        T min = _getCameraParameter<T>(paramID, ATTR_MIN);
+        T max = _getCameraParameter<T>(paramID, ATTR_MAX);
+        return std::pair<T,T>(min, max);
+    }
 
-	std::uint32_t _getCameraParameterCount(int paramID) const {
-		return _getCameraParameter<std::uint32_t>(paramID, ATTR_COUNT);
-	}
-	std::vector<std::pair<std::int32_t, std::string>> _getCameraEnumParameters(int paramID) const;
+    std::uint32_t _getCameraParameterCount(int paramID) const {
+        return _getCameraParameter<std::uint32_t>(paramID, ATTR_COUNT);
+    }
+    std::vector<std::pair<std::int32_t, std::string>> _getCameraEnumParameters(int paramID) const;
 
-	template <typename T> void _setCameraParameter(int paramID, T paramValue) {
-		rs_bool result = pl_set_param(_pvcamHandle, paramID, &paramValue);
-		if (result != PV_OK) {
-			throw std::runtime_error(getPVCAMErrorMessage());
-		}
-	}
+    template <typename T> void _setCameraParameter(int paramID, T paramValue) {
+        rs_bool result = pl_set_param(_pvcamHandle, paramID, &paramValue);
+        if (result != PV_OK) {
+            throw std::runtime_error(getPVCAMErrorMessage());
+        }
+    }
 
-	std::string _identifier;
-	std::int16_t _pvcamHandle;
-	std::vector<ReadoutPort> _readoutPorts;
-	std::vector<PhotometricsCamera::PostProcessingFeature> _postProcessingFeatures;
-	int _binningFactor;
-	std::pair<int, int> _crop;
-	int _triggerMode;
-	std::vector<std::uint16_t> _asyncBuffer;
-	moodycamel::BlockingReaderWriterQueue<int> _pvcamCallbackQueue;
-	bool _installedCallbackFunction;
-	bool _haveCameraDisconnectionError;
+    std::string _identifier;
+    std::int16_t _pvcamHandle;
+    std::vector<ReadoutPort> _readoutPorts;
+    std::vector<PhotometricsCamera::PostProcessingFeature> _postProcessingFeatures;
+    int _binningFactor;
+    std::pair<int, int> _crop;
+    int _triggerMode;
+    std::vector<std::uint16_t> _asyncBuffer;
+    moodycamel::BlockingReaderWriterQueue<int> _pvcamCallbackQueue;
+    bool _installedCallbackFunction;
+    bool _haveCameraDisconnectionError;
 };
 
 #endif

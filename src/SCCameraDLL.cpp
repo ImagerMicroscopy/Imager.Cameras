@@ -21,10 +21,10 @@ bool StartCameraManager() {
             gCameraManager->discoverCameras();
         }
     }
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		StopCameraManager();
-	}
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        StopCameraManager();
+    }
 
     return (gCameraManager != nullptr);
 }
@@ -32,7 +32,7 @@ bool StartCameraManager() {
 void StopCameraManager() {
     if (gCameraManager != nullptr) {
         delete gCameraManager;
-		gCameraManager = nullptr;
+        gCameraManager = nullptr;
     }
 }
 
@@ -70,85 +70,85 @@ int ListConnectedCameraNames(char** namesPtr) {
 }
 
 LIBSPEC int GetCameraOptions(char * cameraName, char ** encodedOptionsPtr) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		*encodedOptionsPtr = nullptr;
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		std::vector<CameraProperty> properties = camPtr->getCameraProperties();
-		std::vector<nlohmann::json> encodedProps;
-		for (const auto& p : properties) {
-			encodedProps.push_back(p.encodeAsJSONObject());
-		}
-		nlohmann::json object;
-		object["properties"] = encodedProps;
-		std::string serialized = object.dump();
-		*encodedOptionsPtr = new char[serialized.size() + 1];
-		memcpy(*encodedOptionsPtr, serialized.data(), serialized.size() + 1);
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+    try {
+        *encodedOptionsPtr = nullptr;
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        std::vector<CameraProperty> properties = camPtr->getCameraProperties();
+        std::vector<nlohmann::json> encodedProps;
+        for (const auto& p : properties) {
+            encodedProps.push_back(p.encodeAsJSONObject());
+        }
+        nlohmann::json object;
+        object["properties"] = encodedProps;
+        std::string serialized = object.dump();
+        *encodedOptionsPtr = new char[serialized.size() + 1];
+        memcpy(*encodedOptionsPtr, serialized.data(), serialized.size() + 1);
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 LIBSPEC void ReleaseOptionsData(char* data) {
-	delete[] data;
+    delete[] data;
 }
 
 LIBSPEC int SetCameraOption(char * cameraName, char * encodedOption) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->setCameraProperties({ CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)) });
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        camPtr->setCameraProperties({ CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)) });
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 int GetFrameRate(char* cameraName, double* frameRate) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*frameRate = camPtr->getFrameRate();
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        *frameRate = camPtr->getFrameRate();
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHardwareTriggering) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		*isConfiguredForHardwareTriggering = camPtr->isConfiguredForHardwareTriggering();
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        *isConfiguredForHardwareTriggering = camPtr->isConfiguredForHardwareTriggering();
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
@@ -181,9 +181,9 @@ int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
         camPtr->setImageOrientationOps(ops);
     }
     catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
     return 0;
 }
 
@@ -191,48 +191,48 @@ std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 std::mutex gImagesInFlightMutex;
 
 int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
 
-		std::shared_ptr<std::uint16_t> imageData;
-		std::tie(imageData, *nRows, *nCols) = camPtr->acquireSingleImage();
-		*imagePtr = imageData.get();
-		{
-			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
-			gImagesInFlight.push_back(imageData);
-		}
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+        std::shared_ptr<std::uint16_t> imageData;
+        std::tie(imageData, *nRows, *nCols) = camPtr->acquireSingleImage();
+        *imagePtr = imageData.get();
+        {
+            std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+            gImagesInFlight.push_back(imageData);
+        }
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 int StartAsyncAcquisition(char* cameraName) {
-	return StartBoundedAsyncAcquisition(cameraName, std::numeric_limits<std::uint64_t>::max());
+    return StartBoundedAsyncAcquisition(cameraName, std::numeric_limits<std::uint64_t>::max());
 }
 
 int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquire) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
-		camPtr->startAsyncAcquisition(BaseCameraClass::AcqFillAndStop, nImagesToAcquire);
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
+        camPtr->startAsyncAcquisition(BaseCameraClass::AcqFillAndStop, nImagesToAcquire);
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
@@ -244,26 +244,26 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
         std::shared_ptr<std::uint16_t> imageData;
-		std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> result = camPtr->getOldestImageAsyncAcquiredWithTimeout(timeoutMillis);
-		if (result.has_value()) {	// got image
-			std::tie(imageData, *nRows, *nCols, *timeStamp) = result.value();
-			*imagePtr = imageData.get();
-			{
-				std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
-				gImagesInFlight.push_back(imageData);
-			}
-		} else {					// timeout
-			*imagePtr = nullptr;
-			*nRows = -1;
-			*nCols = -1;
-			*timeStamp = -1;
-		}
+        std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> result = camPtr->getOldestImageAsyncAcquiredWithTimeout(timeoutMillis);
+        if (result.has_value()) {	// got image
+            std::tie(imageData, *nRows, *nCols, *timeStamp) = result.value();
+            *imagePtr = imageData.get();
+            {
+                std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+                gImagesInFlight.push_back(imageData);
+            }
+        } else {					// timeout
+            *imagePtr = nullptr;
+            *nRows = -1;
+            *nCols = -1;
+            *timeStamp = -1;
+        }
         
     }
     catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
     return 0;
 }
 
@@ -273,43 +273,43 @@ void ReleaseImageData(uint16_t* imagePtr) {
 
     try {
         std::shared_ptr<std::uint16_t> imageData;
-		{
-			std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
-			auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [=](const std::shared_ptr<std::uint16_t>& ptr) -> bool {
-				return (ptr.get() == imagePtr);
-			});
-			if (it == gImagesInFlight.end()) {
-				throw std::runtime_error("trying to release unknown image pointer");
-			}
-			gImagesInFlight.erase(it);
-		}
+        {
+            std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+            auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [=](const std::shared_ptr<std::uint16_t>& ptr) -> bool {
+                return (ptr.get() == imagePtr);
+            });
+            if (it == gImagesInFlight.end()) {
+                throw std::runtime_error("trying to release unknown image pointer");
+            }
+            gImagesInFlight.erase(it);
+        }
     }
     catch (const std::exception& e) {
-		gLastError = e.what();
-	}
+        gLastError = e.what();
+    }
 }
 
 int AbortAsyncAcquisition(char* cameraName) {
-	if (!gHaveInit)
-		return NO_INIT;
+    if (!gHaveInit)
+        return NO_INIT;
 
-	try {
-		std::shared_ptr<BaseCameraClass> camPtr;
-		std::string identifier(cameraName);
-		camPtr = gCameraManager->getCamera(identifier);
+    try {
+        std::shared_ptr<BaseCameraClass> camPtr;
+        std::string identifier(cameraName);
+        camPtr = gCameraManager->getCamera(identifier);
         camPtr->abortAsyncAquisitionIfRunning();
-	}
-	catch (const std::exception& e) {
-		gLastError = e.what();
-		return GENERIC_ERROR;
-	}
-	return 0;
+    }
+    catch (const std::exception& e) {
+        gLastError = e.what();
+        return GENERIC_ERROR;
+    }
+    return 0;
 }
 
 LIBSPEC void GetLastSCCamError(char* msgBuf, size_t bufSize) {
-	if (bufSize > 1) {
-		size_t nBytesToCopy = std::min(gLastError.length(), bufSize - 1);
-		memcpy(msgBuf, gLastError.c_str(), nBytesToCopy);
-		msgBuf[nBytesToCopy] = 0;
-	}
+    if (bufSize > 1) {
+        size_t nBytesToCopy = std::min(gLastError.length(), bufSize - 1);
+        memcpy(msgBuf, gLastError.c_str(), nBytesToCopy);
+        msgBuf[nBytesToCopy] = 0;
+    }
 }

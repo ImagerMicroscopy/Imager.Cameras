@@ -11,20 +11,20 @@ class BaseCameraClass;
 
 class CameraManager {
 public:
-	CameraManager();
-	~CameraManager();
+    CameraManager();
+    ~CameraManager();
 
-	void discoverCameras();
-	
-	std::vector<std::string> getCameraIdentifiers() const;
-	
-	std::shared_ptr<BaseCameraClass> getCamera(const std::string& identifier) const;
-	std::shared_ptr<BaseCameraClass> getFirstCamera() const;
+    void discoverCameras();
+    
+    std::vector<std::string> getCameraIdentifiers() const;
+    
+    std::shared_ptr<BaseCameraClass> getCamera(const std::string& identifier) const;
+    std::shared_ptr<BaseCameraClass> getFirstCamera() const;
 
-	void abortRunningAcquisitions();
+    void abortRunningAcquisitions();
 
 private:
-	std::map<std::string, std::shared_ptr<BaseCameraClass>> _availableCameras;
+    std::map<std::string, std::shared_ptr<BaseCameraClass>> _availableCameras;
 };
 
 #endif

@@ -14,65 +14,65 @@
 
 class OceanOpticsCamera : public BaseCameraClass {
 public:
-	enum GetOrSetProperty {
-		GetProperty,
-		SetProperty
-	};
+    enum GetOrSetProperty {
+        GetProperty,
+        SetProperty
+    };
 
-	enum OOPropIDs {
-		PropExposureTime = CameraProperty::FirstAvailablePropertyID,
-		PropNSpectraToAverage,
-		PropOffsetToSubtract
-	};
+    enum OOPropIDs {
+        PropExposureTime = CameraProperty::FirstAvailablePropertyID,
+        PropNSpectraToAverage,
+        PropOffsetToSubtract
+    };
 
-	OceanOpticsCamera(long deviceID);
-	virtual ~OceanOpticsCamera();
+    OceanOpticsCamera(long deviceID);
+    virtual ~OceanOpticsCamera();
 
-	std::string getIdentifierStr() const final;
+    std::string getIdentifierStr() const final;
 
-	double getFrameRate() const override;
+    double getFrameRate() const override;
 
 private:
-	std::vector<CameraProperty> _derivedGetCameraProperties() override;
-	void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
+    std::vector<CameraProperty> _derivedGetCameraProperties() override;
+    void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
 
-	std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() const override;
 
-	CameraProperty _getSetExposureTime(GetOrSetProperty getOrSet, const double exposureTime);
-	CameraProperty _getSetNSpectraToAverage(GetOrSetProperty getOrSet, const double nSpectra);
-	CameraProperty _getSetOffsetToSubtract(GetOrSetProperty getOrSet, const double offset);
+    CameraProperty _getSetExposureTime(GetOrSetProperty getOrSet, const double exposureTime);
+    CameraProperty _getSetNSpectraToAverage(GetOrSetProperty getOrSet, const double nSpectra);
+    CameraProperty _getSetOffsetToSubtract(GetOrSetProperty getOrSet, const double offset);
 
-	void _setDefaults();
+    void _setDefaults();
 
-	void _setExposureTime(const double exposureTime);
-	double _getExposureTime() const;
-	void _setNSpectraToAverage(const double nSpectra);
-	double _getNSpectraToAverage() const;
-	void _setOffsetToSubtract(const double offset);
-	double _getOffsetToSubtract() const;
+    void _setExposureTime(const double exposureTime);
+    double _getExposureTime() const;
+    void _setNSpectraToAverage(const double nSpectra);
+    double _getNSpectraToAverage() const;
+    void _setOffsetToSubtract(const double offset);
+    double _getOffsetToSubtract() const;
 
-	void _derivedStartUnboundedAsyncAcquisition() override;
-	void _derivedAbortAsyncAcquisition() override;
-	NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    void _derivedStartUnboundedAsyncAcquisition() override;
+    void _derivedAbortAsyncAcquisition() override;
+    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
-	void _asyncSpectraGrabberWorker();
-	void _startAsyncSpectraGrabber();
-	void _stopAsyncSpectraGrabber();
+    void _asyncSpectraGrabberWorker();
+    void _startAsyncSpectraGrabber();
+    void _stopAsyncSpectraGrabber();
 
-	SeaBreezeAPI* _seabreezeAPI;
-	long _deviceID;
-	std::vector<long> _spectrometerFeatures;
-	int _spectrumLength;
-	long _integrationTimeMicros;
-	long _minIntegrationTimeMicros;
-	long _maxIntegrationTimeMicros;
-	int _nSpectraToAverage;
-	double _offsetToSubtract;
+    SeaBreezeAPI* _seabreezeAPI;
+    long _deviceID;
+    std::vector<long> _spectrometerFeatures;
+    int _spectrumLength;
+    long _integrationTimeMicros;
+    long _minIntegrationTimeMicros;
+    long _maxIntegrationTimeMicros;
+    int _nSpectraToAverage;
+    double _offsetToSubtract;
 
-	std::future<void> _spectraGrabberFuture;
-	bool _spectraGrabberShouldAbort;
-	bool _spectraGrabberHasError;
-	moodycamel::BlockingReaderWriterQueue<std::vector<double>> _availableSpectraQueue;
+    std::future<void> _spectraGrabberFuture;
+    bool _spectraGrabberShouldAbort;
+    bool _spectraGrabberHasError;
+    moodycamel::BlockingReaderWriterQueue<std::vector<double>> _availableSpectraQueue;
 };
 
 #endif
