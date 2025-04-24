@@ -5,9 +5,6 @@
 #include <functional>
 #include <stdexcept>
 #include <string>
-#include <wchar.h>
-
-#include "Windows.h"
 
 template <typename T>
 T clamp(const T& a, const T& min, const T& max) {

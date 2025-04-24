@@ -1,9 +1,8 @@
 #ifndef IMAGEPROCESSINGUTILS_H
 #define IMAGEPROCESSINGUTILS_H
 
+#include <cstddef>
 #include <cstdint>
-
-#include "ippi.h"
 
 void RotateCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage);
 void RotateCCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage);

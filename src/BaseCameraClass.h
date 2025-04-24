@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <thread>
@@ -29,7 +31,7 @@ public:
 		NoImageBeforeTimeout
 	};
 
-	BaseCameraClass();
+	BaseCameraClass() {;}
 	virtual ~BaseCameraClass();
 
 	virtual std::string getIdentifierStr() const = 0;
@@ -78,11 +80,9 @@ private:
 												 size_t& nOutputRows, size_t& nOutputCols);
     std::shared_ptr<std::uint16_t> _doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
 
-    std::uint64_t _getTimeStamp() const;
-
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _imageOrientationOps;
 
-    std::uint64_t _acquisitionStartTimeStamp;
+	std::chrono::steady_clock::time_point _acquisitionStartTimeStamp;
     std::uint64_t _performanceCounterFrequency;
 	std::string _asyncErrorStr;
 	volatile bool _asyncWantAbort;

@@ -1,10 +1,6 @@
 
 #include "BaseCameraClass.h"
 
-#include <chrono>
-
-#include "Windows.h"
-
 #ifdef WITH_IGOR
 #include "XOPStandardHeaders.h"
 #endif
@@ -27,29 +23,23 @@ private:
     T _value;
 };
 
-BaseCameraClass::BaseCameraClass() {
-    LARGE_INTEGER freq;
-    QueryPerformanceFrequency(&freq);
-    _performanceCounterFrequency = freq.QuadPart;
-}
-
 BaseCameraClass::~BaseCameraClass() {
     abortAsyncAquisitionIfRunning();
 }
 
 std::vector<CameraProperty> BaseCameraClass::getCameraProperties() {
-	return _derivedGetCameraProperties();
+    return _derivedGetCameraProperties();
 }
 
 void BaseCameraClass::setCameraProperties(const std::vector<CameraProperty>& properties) {
-	//if (isAsyncAcquisitionRunning()) {
-	//	throw std::runtime_error("BaseCameraClass::setCameraProperties() but acquisition running");
-	//}
-	_derivedSetCameraProperties(properties);
+    //if (isAsyncAcquisitionRunning()) {
+    //	throw std::runtime_error("BaseCameraClass::setCameraProperties() but acquisition running");
+    //}
+    _derivedSetCameraProperties(properties);
 }
 
 bool BaseCameraClass::isConfiguredForHardwareTriggering() {
-	return _derivedIsConfiguredForHardwareTriggering();
+    return _derivedIsConfiguredForHardwareTriggering();
 }
 
 void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops) {
@@ -57,67 +47,67 @@ void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<I
 }
 
 std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleImage() {
-	abortAsyncAquisitionIfRunning();
-	if (!_hasCustomAcquireSingleImage()) {
-		std::shared_ptr<std::uint16_t> imageData;
-		int nRows, nCols;
-		double timeStamp;
+    abortAsyncAquisitionIfRunning();
+    if (!_hasCustomAcquireSingleImage()) {
+        std::shared_ptr<std::uint16_t> imageData;
+        int nRows, nCols;
+        double timeStamp;
 
-		startAsyncAcquisition(AcqFillAndStop, 1);
-		std::tie(imageData, nRows, nCols, timeStamp) = getOldestImageAsyncAcquired();
-		abortAsyncAquisitionIfRunning();
+        startAsyncAcquisition(AcqFillAndStop, 1);
+        std::tie(imageData, nRows, nCols, timeStamp) = getOldestImageAsyncAcquired();
+        abortAsyncAquisitionIfRunning();
 
-		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
-	} else {
-		std::pair<int, int> imageSize = _getSizeOfRawImages();
-		int nPixels = imageSize.first * imageSize.second;
-		std::shared_ptr<std::uint16_t> imageData(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
-		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
-		_derivedAcquireSingleImage(imageData.get(), nPixels * sizeof(std::uint16_t));
+        return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, nRows, nCols);
+    } else {
+        std::pair<int, int> imageSize = _getSizeOfRawImages();
+        int nPixels = imageSize.first * imageSize.second;
+        std::shared_ptr<std::uint16_t> imageData(new std::uint16_t[nPixels], [](std::uint16_t* ptr) {delete[] ptr; });
+        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
+        _derivedAcquireSingleImage(imageData.get(), nPixels * sizeof(std::uint16_t));
 
-		size_t nOutputRows, nOutputCols;
-		imageData = _processImage(imageSize.first, imageSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
-		return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, (int)nOutputRows, (int)nOutputCols);
-	}
+        size_t nOutputRows, nOutputCols;
+        imageData = _processImage(imageSize.first, imageSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
+        return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, (int)nOutputRows, (int)nOutputCols);
+    }
 }
 
 int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire) {
-	_acquisitionStartTimeStamp = _getTimeStamp();
-	
-	abortAsyncAquisitionIfRunning();
-	_asyncErrorStr.clear();
-	_asyncWantAbort = false;
-	_asyncNImagesStored = 0;
+    _acquisitionStartTimeStamp = std::chrono::steady_clock::now();
+    
+    abortAsyncAquisitionIfRunning();
+    _asyncErrorStr.clear();
+    _asyncWantAbort = false;
+    _asyncNImagesStored = 0;
     _clearAvailableImagesQueue();
-	std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue(new moodycamel::BlockingReaderWriterQueue<int>());
+    std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue(new moodycamel::BlockingReaderWriterQueue<int>());
 
-	_asyncWorkerFuture = std::async(std::launch::async, [=]() {
-		_asyncAcquisitionWorker(acqMode, nImagesToAcquire, startedNotificationQueue);
-	});
+    _asyncWorkerFuture = std::async(std::launch::async, [=]() {
+        _asyncAcquisitionWorker(acqMode, nImagesToAcquire, startedNotificationQueue);
+    });
 
-	int dummy = -1;
-	bool hadValue = startedNotificationQueue->wait_dequeue_timed(dummy, std::chrono::seconds(5));	// wait until acquisition has really started
-	if (!hadValue) {
-		throw std::runtime_error("Waiting excessively long on camera acquisition start");
-	}
+    int dummy = -1;
+    bool hadValue = startedNotificationQueue->wait_dequeue_timed(dummy, std::chrono::seconds(5));	// wait until acquisition has really started
+    if (!hadValue) {
+        throw std::runtime_error("Waiting excessively long on camera acquisition start");
+    }
 
-	return 0;
+    return 0;
 }
 
 bool BaseCameraClass::isAsyncAcquisitionRunning() const {
-	if (!_asyncWorkerFuture.valid()) {
-		return false;
-	}
-	std::future_status status = _asyncWorkerFuture.wait_for(std::chrono::seconds(0));
-	return (status != std::future_status::ready);
+    if (!_asyncWorkerFuture.valid()) {
+        return false;
+    }
+    std::future_status status = _asyncWorkerFuture.wait_for(std::chrono::seconds(0));
+    return (status != std::future_status::ready);
 }
 
 void BaseCameraClass::abortAsyncAquisitionIfRunning() {
-	if (isAsyncAcquisitionRunning()) {
-		_asyncWantAbort = true;
-		_asyncWorkerFuture.wait();
-		_asyncWorkerFuture.get();
-	}
+    if (isAsyncAcquisitionRunning()) {
+        _asyncWantAbort = true;
+        _asyncWorkerFuture.wait();
+        _asyncWorkerFuture.get();
+    }
 }
 
 std::uint64_t BaseCameraClass::getNImagesAsyncAcquired() {
@@ -125,45 +115,45 @@ std::uint64_t BaseCameraClass::getNImagesAsyncAcquired() {
 }
 
 std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> BaseCameraClass::getOldestImageAsyncAcquired() {
-	auto result = getOldestImageAsyncAcquiredWithTimeout(std::numeric_limits<uint32_t>::max());
-	return result.value();
+    auto result = getOldestImageAsyncAcquiredWithTimeout(std::numeric_limits<uint32_t>::max());
+    return result.value();
 }
 
 std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> BaseCameraClass::getOldestImageAsyncAcquiredWithTimeout(const std::uint32_t timeoutMillis) {
-	std::uint32_t maybeCorrectedTimeoutMillis = std::max(timeoutMillis, (std::uint32_t)1);
+    std::uint32_t maybeCorrectedTimeoutMillis = std::max(timeoutMillis, (std::uint32_t)1);
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> start(std::chrono::high_resolution_clock::now());
-	std::chrono::time_point<std::chrono::high_resolution_clock> end = start + std::chrono::milliseconds(maybeCorrectedTimeoutMillis);
-	std::chrono::milliseconds singleWaitDuration(std::min(maybeCorrectedTimeoutMillis, (std::uint32_t)250));
+    std::chrono::time_point<std::chrono::high_resolution_clock> start(std::chrono::high_resolution_clock::now());
+    std::chrono::time_point<std::chrono::high_resolution_clock> end = start + std::chrono::milliseconds(maybeCorrectedTimeoutMillis);
+    std::chrono::milliseconds singleWaitDuration(std::min(maybeCorrectedTimeoutMillis, (std::uint32_t)250));
 
-	std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
+    std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData;
 
-	for ( ; ; ) {
-		if (!isAsyncAcquisitionRunning()) {
-			if (!_asyncErrorStr.empty()) {
-				throw std::runtime_error(std::string("async worker found error: ") + _asyncErrorStr);
-			} else {
-				throw std::runtime_error("waiting for new image but no acquisition running");
-			}
-		}
+    for ( ; ; ) {
+        if (!isAsyncAcquisitionRunning()) {
+            if (!_asyncErrorStr.empty()) {
+                throw std::runtime_error(std::string("async worker found error: ") + _asyncErrorStr);
+            } else {
+                throw std::runtime_error("waiting for new image but no acquisition running");
+            }
+        }
 
-		if (std::chrono::high_resolution_clock::now() > end) {
-			// timeout
-			return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
-		}
+        if (std::chrono::high_resolution_clock::now() > end) {
+            // timeout
+            return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>();
+        }
 
-		bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(singleWaitDuration));
-		if (haveImage) {
-			return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>(imageData);
-		}
-	}
+        bool haveImage = _availableImagesQueue.wait_dequeue_timed(imageData, std::chrono::milliseconds(singleWaitDuration));
+        if (haveImage) {
+            return std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>(imageData);
+        }
+    }
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue) {
     auto actualImageSize = _getSizeOfRawImages();
 
-	try {
-		std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
+    try {
+        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
 
         moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> processingQueue;
         _processingAsyncHasError = false;
@@ -172,52 +162,53 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint
         });
         CleanupRunner ipRunner([&]() {
             processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>());
-			imageProcessingFuture.wait();
+            imageProcessingFuture.wait();
             imageProcessingFuture.get();
         });
 
-		if (_derivedHaveBoundedAsyncAcquisition()) {
-			_derivedStartBoundedAsyncAcquisition(nImagesToAcquire);
-		} else {
-			_derivedStartUnboundedAsyncAcquisition();
-		}
+        if (_derivedHaveBoundedAsyncAcquisition()) {
+            _derivedStartBoundedAsyncAcquisition(nImagesToAcquire);
+        } else {
+            _derivedStartUnboundedAsyncAcquisition();
+        }
         CleanupRunner runner([&]() {
             this->_derivedAbortAsyncAcquisition();
         });
 
-		startedNotificationQueue->enqueue(0);
+        startedNotificationQueue->enqueue(0);
 
-		for ( ; ;) {
-			std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(actualImageSize);
-			for ( ; ; ) {
-				if (_asyncWantAbort) {
-					return;
-				}
-				if (_processingAsyncHasError) {
-					_asyncErrorStr = "image processing async had error";
-					return;
-				}
-            	NewImageResult result = _waitForNewImageWithTimeout(250, theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
-				if (result == NewImageCopied) {
-					double acqTimeStamp = static_cast<double>(_getTimeStamp() - _acquisitionStartTimeStamp) / static_cast<double>(_performanceCounterFrequency);
-					processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
-					_asyncNImagesStored += 1;
-					
-					if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesToAcquire)) {
-						return;
-					}
-				}
-			}
-		}
-	}
-	catch (const std::exception& e) {
-		_asyncErrorStr = e.what();
-		return;
-	}
-	catch (...) {
-		_asyncErrorStr = "unknown exception in async";
-		return;
-	}
+        for ( ; ;) {
+            std::shared_ptr<std::uint16_t> theImage = NewRecycledImage(actualImageSize);
+            for ( ; ; ) {
+                if (_asyncWantAbort) {
+                    return;
+                }
+                if (_processingAsyncHasError) {
+                    _asyncErrorStr = "image processing async had error";
+                    return;
+                }
+                NewImageResult result = _waitForNewImageWithTimeout(250, theImage.get(), actualImageSize.first * actualImageSize.second * sizeof(std::uint16_t));
+                if (result == NewImageCopied) {
+                    auto duration = std::chrono::duration<double>(std::chrono::steady_clock::now() - _acquisitionStartTimeStamp);
+                    double acqTimeStamp = duration.count();
+                    processingQueue.enqueue(std::pair<std::shared_ptr<std::uint16_t>, double>(theImage, acqTimeStamp));
+                    _asyncNImagesStored += 1;
+                    
+                    if ((acqMode == AcqFillAndStop) && (_asyncNImagesStored == nImagesToAcquire)) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        _asyncErrorStr = e.what();
+        return;
+    }
+    catch (...) {
+        _asyncErrorStr = "unknown exception in async";
+        return;
+    }
 }
 
 void BaseCameraClass::_clearAvailableImagesQueue() {
@@ -229,54 +220,54 @@ void BaseCameraClass::_clearAvailableImagesQueue() {
 }
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getImageProcessingDescriptors() {
-	std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
-	imageProcessingDescriptors = _derivedGetAdditionalImageProcessingDescriptors();
-	for (const auto& pd : _imageOrientationOps) {
-		imageProcessingDescriptors.push_back(pd);
-	}
-	return imageProcessingDescriptors;
+    std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors;
+    imageProcessingDescriptors = _derivedGetAdditionalImageProcessingDescriptors();
+    for (const auto& pd : _imageOrientationOps) {
+        imageProcessingDescriptors.push_back(pd);
+    }
+    return imageProcessingDescriptors;
 }
 
 void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-											 moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue) {
-	try {
-		std::shared_ptr<std::uint16_t> inputImage;
-		double timeStamp;
-		std::pair<std::shared_ptr<std::uint16_t>, double> queuedData;
+                                             moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue) {
+    try {
+        std::shared_ptr<std::uint16_t> inputImage;
+        double timeStamp;
+        std::pair<std::shared_ptr<std::uint16_t>, double> queuedData;
 
-		for (; ; ) {
-			queue.wait_dequeue(queuedData);
-			std::tie(inputImage, timeStamp) = queuedData;
-			if (inputImage.get() == nullptr) {
-				return;
-			}
+        for (; ; ) {
+            queue.wait_dequeue(queuedData);
+            std::tie(inputImage, timeStamp) = queuedData;
+            if (inputImage.get() == nullptr) {
+                return;
+            }
 
-			size_t nInputRows = nRows, nInputCols = nCols;
-			size_t nOutputRows = nRows, nOutputCols = nCols;
-			std::shared_ptr<std::uint16_t> outputImage = _processImage(nInputRows, nInputCols, inputImage, processingDescriptors, nOutputRows, nOutputCols);
-			std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData(outputImage, nOutputRows, nOutputCols, timeStamp);
-			_availableImagesQueue.enqueue(imageData);
-		}
-	}
-	catch (...) {
-		_processingAsyncHasError = true;
-		return;
-	}
+            size_t nInputRows = nRows, nInputCols = nCols;
+            size_t nOutputRows = nRows, nOutputCols = nCols;
+            std::shared_ptr<std::uint16_t> outputImage = _processImage(nInputRows, nInputCols, inputImage, processingDescriptors, nOutputRows, nOutputCols);
+            std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData(outputImage, nOutputRows, nOutputCols, timeStamp);
+            _availableImagesQueue.enqueue(imageData);
+        }
+    }
+    catch (...) {
+        _processingAsyncHasError = true;
+        return;
+    }
 }
 
 std::shared_ptr<std::uint16_t> BaseCameraClass::_processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-															  size_t& nOutputRows, size_t& nOutputCols) {
-	size_t nInputRows = nRows, nInputCols = nCols;
-	nOutputRows = nRows;
-	nOutputCols = nCols;
-	std::shared_ptr<std::uint16_t> outputImage = inputImage;
-	for (const auto& pd : processingDescriptors) {
-		nInputRows = nOutputRows;
-		nInputCols = nOutputCols;
-		inputImage = outputImage;
-		outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
-	}
-	return outputImage;
+                                                              size_t& nOutputRows, size_t& nOutputCols) {
+    size_t nInputRows = nRows, nInputCols = nCols;
+    nOutputRows = nRows;
+    nOutputCols = nCols;
+    std::shared_ptr<std::uint16_t> outputImage = inputImage;
+    for (const auto& pd : processingDescriptors) {
+        nInputRows = nOutputRows;
+        nInputCols = nOutputCols;
+        inputImage = outputImage;
+        outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
+    }
+    return outputImage;
 }
 
 std::shared_ptr<std::uint16_t> BaseCameraClass::_doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, 
@@ -336,10 +327,4 @@ std::shared_ptr<std::uint16_t> BaseCameraClass::_doProcessingStep(std::shared_pt
             throw std::logic_error("no processing in _doProcessingStep()");
             break;
     }
-}
-
-std::uint64_t BaseCameraClass::_getTimeStamp() const {
-    LARGE_INTEGER ts;
-    QueryPerformanceCounter(&ts);
-    return ts.QuadPart;
 }

@@ -1,9 +1,12 @@
 #include "ImageProcessingUtils.h"
 
 #include <algorithm>
+#include <cstring>
 #include <limits>
 #include <string>
 #include <stdexcept>
+
+#include "ippi.h"
 
 void RotateCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage) {
     IppiSize roiSize = { (int)nRows, (int)nCols };

@@ -29,13 +29,13 @@ else
 
         abslibdir = '/opt/intel/oneapi/ipp/latest/lib'
 
-        libNames = ['ippcore']
+        libNames = ['ippcore', 'ippi', 'ipps']
 endif
 
 cc = meson.get_compiler('cpp')
 libs = []
 foreach lib : libNames
-        libs += cc.find_library(lib, dirs:[abslibdir])
+        libs += cc.find_library(lib, dirs: [abslibdir], static: true)
 endforeach
 
 nlohmann_json_dep = dependency('nlohmann_json')

@@ -1,6 +1,7 @@
 #include "ImageRecycler.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <thread>
 #include <mutex>
 
