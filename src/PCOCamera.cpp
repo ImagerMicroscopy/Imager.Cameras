@@ -9,6 +9,7 @@ PCOCamera::PCOCamera(HANDLE camHandle) : _camHandle(camHandle), _camDescription(
     _initDefaults();
     _desiredCropSize = _getSensorSize();
     _desiredBinningFactor = 1;
+    _numberOfImagesDelivered = 0;
 }
 
 PCOCamera::~PCOCamera() {
@@ -45,7 +46,10 @@ std::string PCOCamera::pcoErrorAsString(const int errCode) {
 
 std::vector<CameraProperty> PCOCamera::_derivedGetCameraProperties() {
     std::vector<CameraProperty> properties;
-    properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
+    properties = GetStandardProperties(_getExposureTime(), _desiredCropSize,
+                                       StandardCroppingOptions(_getSensorSize().first),
+                                       StandardCroppingOptions(_getSensorSize().second),
+                                       _desiredBinningFactor, StandardBinningOptions());
 
     properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
 
@@ -55,19 +59,19 @@ std::vector<CameraProperty> PCOCamera::_derivedGetCameraProperties() {
 void PCOCamera::_derivedSetCameraProperties(const std::vector<CameraProperty> &properties) {
     std::vector<CameraProperty> propsCopy(properties);
 
-    std::optional<double> exposureTime = 0;
-    std::optional<std::pair<int, int>> cropping(std::pair<int, int>(512, 512));
-    std::optional<int> binningFactor = 1;
-    std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
+    DecodedStandardProperties decodedStandardProperties = DecodeAndRemoveStandardProperties(propsCopy);
 
-    if (cropping.has_value()) {
-        _desiredCropSize = cropping.value();
+    if (decodedStandardProperties.crop1.has_value()) {
+        _desiredCropSize.first = decodedStandardProperties.crop1.value();
     }
-    if (binningFactor.has_value()) {
-        _desiredBinningFactor = binningFactor.value();
+    if (decodedStandardProperties.crop2.has_value()) {
+        _desiredCropSize.second = decodedStandardProperties.crop2.value();
     }
-    if (exposureTime.has_value()) {
-        _setExposureTime(exposureTime.value());
+    if (decodedStandardProperties.binningFactor.has_value()) {
+        _desiredBinningFactor = decodedStandardProperties.binningFactor.value();
+    }
+    if (decodedStandardProperties.exposureTime.has_value()) {
+        _setExposureTime(decodedStandardProperties.exposureTime.value());
     }
 
     for (const auto &prop : propsCopy) {
@@ -107,7 +111,7 @@ CameraProperty PCOCamera::_getSetReadoutSpeed(GetOrSetProperty getOrSet, const s
     if (pcoErr) {
         throw std::runtime_error("Error calling PCO_GetPixelRate()");
     }
-    auto it = std::find_if(_readoutSpeeds.cbegin(), _readoutSpeeds.cend(), [=](const std::pair<std::string, int> p) { return (p.second == currentRate); });
+    auto it = std::find_if(_readoutSpeeds.cbegin(), _readoutSpeeds.cend(), [=](const std::pair<std::string, int>& p) { return (p.second == currentRate); });
     if (it == _readoutSpeeds.cend()) {
         throw std::runtime_error("Can't find pixel rate");
     }
