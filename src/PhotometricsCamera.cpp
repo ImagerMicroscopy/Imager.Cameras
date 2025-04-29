@@ -35,6 +35,7 @@ std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
 }
 
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
+    _pvcamHandle(0),
     _installedCallbackFunction(false),
     _binningFactor(1),
     _crop(0, 0),
@@ -102,7 +103,9 @@ void PhotometricsCamera::_setDefaults() {
 
 std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
     std::vector<CameraProperty> properties;
-    properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2});
+    properties = GetStandardProperties(_getExposureTime(), _getImageCrop(),
+                                       StandardCroppingOptions(_getSensorSize().first), StandardCroppingOptions(_getSensorSize().second),
+                                       _getBinningFactor(), { 1, 2});
 
     properties.push_back(_getSetReadoutPort(GetProperty, std::string()));
     properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
@@ -121,19 +124,25 @@ std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
 void PhotometricsCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
     std::vector<CameraProperty> propsCopy(properties);
 
-    std::optional<double> exposureTime;
-    std::optional<std::pair<int, int>> cropping;
-    std::optional<int> binningFactor;
-    std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
-
-    if (cropping.has_value()) {
-        _setImageCrop(cropping.value());
+    DecodedStandardProperties decodedStandardProperties = DecodeAndRemoveStandardProperties(propsCopy);
+    auto currentCrop = _getImageCrop();
+    bool haveCrop = false;
+    if (decodedStandardProperties.crop1.has_value()) {
+        currentCrop.first = decodedStandardProperties.crop1.value();
+        haveCrop = true;
     }
-    if (binningFactor.has_value()) {
-        _setBinningFactor(binningFactor.value());
+    if (decodedStandardProperties.crop2.has_value()) {
+        currentCrop.second = decodedStandardProperties.crop2.value();
+        haveCrop = true;
     }
-    if (exposureTime.has_value()) {
-        _setExposureTime(exposureTime.value());
+    if (haveCrop) {
+        _setImageCrop(currentCrop);
+    }
+    if (decodedStandardProperties.binningFactor.has_value()) {
+        _setBinningFactor(decodedStandardProperties.binningFactor.value());
+    }
+    if (decodedStandardProperties.exposureTime.has_value()) {
+        _setExposureTime(decodedStandardProperties.exposureTime.value());
     }
 
     for (const auto& prop : propsCopy) {
