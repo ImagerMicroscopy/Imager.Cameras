@@ -17,7 +17,8 @@ public:
 
     enum StandardCameraPropertyIDs {
         ReqPropExposureTime,
-        ReqPropCropping,
+        ReqPropCroppingDim1,
+        ReqPropCroppingDim2,
         ReqPropBinning,
         FirstAvailablePropertyID
     };
@@ -51,12 +52,20 @@ private:
     std::vector<std::string> _availableOptions;
 };
 
-std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<std::pair<int, int>>& allowableCropping,
-                                                  const int currentBinning, const std::vector<int>& allowableBinning);
+class DecodedStandardProperties {
+    public:
+        std::optional<double> exposureTime;
+        std::optional<int> crop1;
+        std::optional<int> crop2;
+        std::optional<int> binningFactor;
+};
 
-std::tuple<std::optional<double>, std::optional<std::pair<int, int>>, std::optional<int>> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
+std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<int> &allowableCropping1,
+                                                  const std::vector<int> &allowableCropping2, const int currentBinning, const std::vector<int>& allowableBinning);
 
-std::vector <std::pair<int, int>> StandardCroppingOptions(const std::pair<int, int>& uncroppedImageDimensions);
+DecodedStandardProperties DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
+
+std::vector<int> StandardCroppingOptions(int uncroppedDimension);
 std::vector<int> StandardBinningOptions();
 
 #endif

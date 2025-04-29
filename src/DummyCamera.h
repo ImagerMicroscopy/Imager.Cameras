@@ -41,7 +41,7 @@ private:
     double _getExposureTime() const { return _exposureTime; }
     void _setExposureTime(const double exposureTime);
     std::pair<int, int> _getCurrentCropping() const { return _currentCropping; }
-    void _setCurrentCropping(const std::pair<int, int>& cropping);
+    void _setCurrentCropping(const std::optional<int> crop1, const std::optional<int> crop2);
     int _getCurrentBinning() const { return _currentBinFactor; }
     void _setCurrentBinning(int binFactor);
     double _limitExposureTime(const double reqExposureTime) const;

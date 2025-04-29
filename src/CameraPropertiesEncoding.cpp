@@ -70,7 +70,8 @@ CameraProperty CameraProperty::decodeFromJSONObject(const nlohmann::json& encode
     return cameraProperty;
 }
 
-std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<std::pair<int,int>>& allowableCropping,
+std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop,
+                                                  const std::vector<int>& allowableCropping1, const std::vector<int>& allowableCropping2,
                                                   const int currentBinning, const std::vector<int>& allowableBinning) {
     std::vector<CameraProperty> properties;
     // exposure time
@@ -82,19 +83,21 @@ std::vector<CameraProperty> GetStandardProperties(const double currentExposureTi
     // cropping
     {
         int first, second;
-        std::vector<std::string> strCropSizes;
-        auto cropSizes = allowableCropping;
-        for (const auto& size : cropSizes) {
-            char buf[128];
-            sprintf(buf, "%dx%d", size.first, size.second);
-            strCropSizes.emplace_back(buf);
+        std::vector<std::string> strCropSizes1, strCropSizes2;
+        for (const int size : allowableCropping1) {
+            strCropSizes1.push_back(std::to_string(size));
         }
+        for (const int size : allowableCropping2) {
+            strCropSizes2.push_back(std::to_string(size));
+        }
+
         std::tie(first, second) = currentCrop;
-        char actual[32];
-        sprintf(actual, "%dx%d", first, second);
-        CameraProperty prop(CameraProperty::ReqPropCropping, "Sensor cropping");
-        prop.setDiscrete(actual, strCropSizes);
-        properties.push_back(prop);
+        CameraProperty prop1(CameraProperty::ReqPropCroppingDim1, "Sensor cropping 1");
+        prop1.setDiscrete(std::to_string(first), strCropSizes1);
+        properties.push_back(prop1);
+        CameraProperty prop2(CameraProperty::ReqPropCroppingDim2, "Sensor cropping 2");
+        prop2.setDiscrete(std::to_string(second), strCropSizes2);
+        properties.push_back(prop2);
     }
     // binning
     {
@@ -115,36 +118,25 @@ std::vector<CameraProperty> GetStandardProperties(const double currentExposureTi
     return properties;
 }
 
-std::tuple<std::optional<double>, std::optional<std::pair<int, int>>, std::optional<int>> DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties) {
-    std::optional<double> exposureTime;
-    std::optional<std::pair<int, int>> cropping;
-    std::optional<int> binning;
+DecodedStandardProperties DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties) {
+    DecodedStandardProperties decodedProperties;
 
     for (int i = properties.size() - 1; i >= 0; i -= 1) {
         const CameraProperty& prop = properties.at(i);
         int propertyCode = prop.getPropertyCode();
         switch (propertyCode) {
             case CameraProperty::ReqPropExposureTime:
-                exposureTime.emplace(prop.getValue());
+                decodedProperties.exposureTime = prop.getValue();
                 break;
-            case CameraProperty::ReqPropCropping:
-            {
-                int first, second;
-                if (sscanf(prop.getCurrentOption().c_str(), "%dx%d", &first, &second) != 2) {
-                    throw std::runtime_error("decoding cropping from invalid string");
-                }
-                cropping.emplace(first, second);
+            case CameraProperty::ReqPropCroppingDim1:
+                decodedProperties.crop1 = std::stoi(prop.getCurrentOption());
                 break;
-            }
+            case CameraProperty::ReqPropCroppingDim2:
+                decodedProperties.crop2 = std::stoi(prop.getCurrentOption());
+                break;
             case CameraProperty::ReqPropBinning:
-            {
-                int theFactor = 0;
-                if ((sscanf(prop.getCurrentOption().c_str(), "%d", &theFactor) != 1) || (theFactor <= 0)) {
-                    throw std::runtime_error("decoding binning from invalid string");
-                }
-                binning.emplace(theFactor);
+                decodedProperties.binningFactor = std::stoi(prop.getCurrentOption());
                 break;
-            }
             default:
                 continue;
                 break;
@@ -153,18 +145,17 @@ std::tuple<std::optional<double>, std::optional<std::pair<int, int>>, std::optio
         i -= 1;
     }
 
-    return std::make_tuple(exposureTime, cropping, binning);
+    return decodedProperties;
 }
 
-std::vector <std::pair<int, int>> StandardCroppingOptions(const std::pair<int, int>& uncroppedImageDimensions) {
+std::vector<int> StandardCroppingOptions(const int uncroppedDimension) {
     int cropDimensions[] = { 16,32,64,128,256,512,1024,1280,1536,2048,3072,4096 };
-    std::vector<std::pair<int, int>> result;
-    for (int s : cropDimensions) {
-        if ((s < uncroppedImageDimensions.first) && (s < uncroppedImageDimensions.second)) {
-            result.push_back(std::make_pair(s, s));
-        }
-    }
-    result.push_back(uncroppedImageDimensions);
+    std::vector<int> result;
+    std::copy_if(std::cbegin(cropDimensions), std::cend(cropDimensions), std::back_inserter(result),
+                 [=](int i) -> bool {
+                     return (i < uncroppedDimension);
+                 });
+    result.push_back(uncroppedDimension);
     return result;
 }
 
