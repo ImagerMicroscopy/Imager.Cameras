@@ -13,7 +13,8 @@
 AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),
     _singleImageSizeInBytes(0),
-    _softwareTriggeredAcquisitionRunning(false)
+    _softwareTriggeredAcquisitionRunning(false),
+    _nextExpectedImageInSequenceIdx(0)
 {
     _setDefaults();
 
@@ -60,12 +61,15 @@ void AndorSDK3Camera::_setDefaults() {
 
 std::vector<CameraProperty> AndorSDK3Camera::_derivedGetCameraProperties() {
     double exposureTime = _getExposureTime();
-    std::vector<std::pair<int, int>> allowableCropping = StandardCroppingOptions(_getSizeOfRawImages());
+    const auto sensorSize = _getSizeOfRawImages();
+    const auto allowableCrop1 = StandardCroppingOptions(sensorSize.first);
+    const auto allowableCrop2 = StandardCroppingOptions(sensorSize.second);
     int currentBinning = 1;
     std::vector<int> allowableBinning({1});
 
     std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize, 
-                                                                   allowableCropping, currentBinning, allowableBinning);
+                                                                   allowableCrop1, allowableCrop2,
+                                                                   currentBinning, allowableBinning);
     properties.push_back(_getSetPixelClock());
     //properties.push_back(_getSetGain());
 
@@ -77,12 +81,15 @@ void AndorSDK3Camera::_derivedSetCameraProperties(const std::vector<CameraProper
 
     auto propsCopy = properties;
 
-    auto [maybeExposureTime, maybeCropping, maybeBinning] = DecodeAndRemoveStandardProperties(propsCopy);
-    if (maybeExposureTime.has_value()) {
-        _setExposureTime(maybeExposureTime.value());
+    DecodedStandardProperties decodedStandardProperties = DecodeAndRemoveStandardProperties(propsCopy);
+    if (decodedStandardProperties.exposureTime.has_value()) {
+        _setExposureTime(decodedStandardProperties.exposureTime.value());
     }
-    if (maybeCropping.has_value()) {
-        _cropSize = maybeCropping.value();
+    if (decodedStandardProperties.crop1.has_value()) {
+        _cropSize.first = decodedStandardProperties.crop1.value();
+    }
+    if (decodedStandardProperties.crop2.has_value()) {
+        _cropSize.second = decodedStandardProperties.crop2.value();
     }
 
     for (const CameraProperty& prop : propsCopy) {
@@ -96,7 +103,7 @@ void AndorSDK3Camera::_derivedSetCameraProperties(const std::vector<CameraProper
     }
 }
 
-CameraProperty AndorSDK3Camera::_getSetPixelClock(std::optional<CameraProperty> maybeValueToSet) {
+CameraProperty AndorSDK3Camera::_getSetPixelClock(const std::optional<CameraProperty>& maybeValueToSet) {
     if (maybeValueToSet.has_value()) {
         _getSetPixelClock_SDK(maybeValueToSet.value().getCurrentOption());
     }
@@ -208,7 +215,7 @@ void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode
     _sendCommand("AcquisitionStart");
 }
 
-void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, const std::string& valueStr) {
+void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, const std::string& valueStr) const {
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     std::wstring wValueStr = utf8StringToWChar(valueStr);
 
@@ -253,7 +260,7 @@ std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const 
     return values;
 }
 
-void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, double value) {
+void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, double value) const {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     err = AT_SetFloat(_camHandle, wFeatureStr.c_str(), value);
@@ -283,7 +290,7 @@ AndorSDK3Camera::FloatValue AndorSDK3Camera::_getParameterFloatValue(const std::
     return FloatValue(current, min, max);
 }
 
-void AndorSDK3Camera::_setParameterIntValue(const std::string& featureStr, int value) {
+void AndorSDK3Camera::_setParameterIntValue(const std::string& featureStr, int value) const {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     err = AT_SetInt(_camHandle, wFeatureStr.c_str(), value);
@@ -313,7 +320,7 @@ AndorSDK3Camera::IntValue AndorSDK3Camera::_getParameterIntValue(const std::stri
     return IntValue(current, min, max);
 }
 
-void AndorSDK3Camera::_setParameterBoolValue(const std::string& featureStr, bool value) {
+void AndorSDK3Camera::_setParameterBoolValue(const std::string& featureStr, bool value) const {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     AT_BOOL asATBool = (value) ? AT_TRUE : AT_FALSE;
@@ -342,7 +349,7 @@ void AndorSDK3Camera::_sendCommand(const std::string& command) {
     }
 }
 
-std::string AndorSDK3Camera::_getSetPixelClock_SDK(std::optional<std::string> maybeClock) {
+std::string AndorSDK3Camera::_getSetPixelClock_SDK(const std::optional<std::string> &maybeClock) {
     if (maybeClock.has_value()) {
         const std::string& newClock = maybeClock.value();
         _setParameterStringValue("PixelReadoutRate", newClock);
@@ -408,7 +415,6 @@ void AndorSDK3Camera::_setExposureTime(const double exposureTime) {
 }
 
 double AndorSDK3Camera::_getExposureTime() const {
-    double expTime;
     FloatValue val = _getParameterFloatValue("ExposureTime");
     return val.currentValue;
 }

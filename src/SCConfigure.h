@@ -3,7 +3,7 @@
 
 //#define WITH_PHOTOMETRICS
 //#define WITH_ANDOR
-//#define WITH_ANDORSDK3
+#define WITH_ANDORSDK3
 #define WITH_DUMMYCAM
 //#define WITH_HAMAMATSU
 //#define WITH_IDS

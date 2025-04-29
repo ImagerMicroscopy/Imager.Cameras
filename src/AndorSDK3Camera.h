@@ -52,14 +52,14 @@ private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
     void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
 
-    CameraProperty _getSetPixelClock(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
+    CameraProperty _getSetPixelClock(const std::optional<CameraProperty> &maybeValueToSet = std::optional<CameraProperty>());
 
     std::pair<int, int> _getSizeOfRawImages() const override;
 
     void _setExposureTime(const double exposureTime);
     double _getExposureTime() const;
 
-    std::string _getSetPixelClock_SDK(std::optional<std::string> maybeClock = std::optional<std::string>());
+    std::string _getSetPixelClock_SDK(const std::optional<std::string> &maybeClock = std::optional<std::string>());
     std::vector<std::string> _getPossiblePixelClocks() const;
     TriggerMode _getSetTriggerMode_SDK(std::optional<TriggerMode> maybeMode = std::optional<TriggerMode>());
     void _sendSoftwareTrigger();
@@ -76,14 +76,14 @@ private:
 
     void _startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode);
 
-    void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr);
+    void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr) const;
     std::string _getSelectedParameterStringValue(const std::string& featureStr) const;
     std::vector<std::string> _enumerateParameterStringValues(const std::string& featureStr) const;
-    void _setParameterFloatValue(const std::string& featureStr, double value);
+    void _setParameterFloatValue(const std::string& featureStr, double value) const;
     FloatValue _getParameterFloatValue(const std::string& featureStr) const;
-    void _setParameterIntValue(const std::string& featureStr, int value);
+    void _setParameterIntValue(const std::string& featureStr, int value) const;
     IntValue _getParameterIntValue(const std::string& featureStr) const;
-    void _setParameterBoolValue(const std::string& featureStr, bool value);
+    void _setParameterBoolValue(const std::string& featureStr, bool value) const;
     bool _getParameterBoolValue(const std::string& featureStr) const;
     void _sendCommand(const std::string& command);
 
