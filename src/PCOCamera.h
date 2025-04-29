@@ -64,7 +64,7 @@ private:
     void _fetchCameraInfo();
     void _initDefaults();
 
-    void _throwIfPCOError(int pcoErr) {if (pcoErr) throw pcoErrorAsString(pcoErr);};
+    void _throwIfPCOError(int pcoErr) {if (pcoErr) throw std::runtime_error(pcoErrorAsString(pcoErr));}
     double _pcoTimeToSeconds(DWORD time, DWORD timeBase) const;
 
     HANDLE _camHandle;
