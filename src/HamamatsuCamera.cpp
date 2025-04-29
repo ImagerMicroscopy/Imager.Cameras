@@ -42,7 +42,8 @@ double HamamatsuCamera::getFrameRate() const {
 
 std::vector<CameraProperty> HamamatsuCamera::_derivedGetCameraProperties() {
     std::vector<CameraProperty> properties;
-    properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize()), _getBinningFactor(), { 1, 2, 4 });
+    properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize().first),
+                                       StandardCroppingOptions(_getSensorSize().second), _getBinningFactor(), { 1, 2, 4 });
 
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_CCDMODE)) {
         properties.push_back(_getSetEMMode(GetProperty, std::string()));
@@ -79,20 +80,27 @@ void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProper
     std::vector<CameraProperty> propsCopy(properties);
 
     _stopSoftwareTriggeredAcquisitionIfRunning();
-    
-    std::optional<double> exposureTime = 0;
-    std::optional<std::pair<int, int>> cropping(std::pair<int, int>(512, 512));
-    std::optional<int> binningFactor = 1;
-    std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
 
-    if (cropping.has_value()) {
-        _setImageCrop(cropping.value());
+    DecodedStandardProperties decodedStandardProperties = DecodeAndRemoveStandardProperties(propsCopy);
+
+    std::pair<int, int> currentCrop = _getImageCrop();
+    bool haveCrop = false;
+    if (decodedStandardProperties.crop1.has_value()) {
+        currentCrop.first = decodedStandardProperties.crop1.value();
+        haveCrop = true;
     }
-    if (binningFactor.has_value()) {
-        _setBinningFactor(binningFactor.value());
+    if (decodedStandardProperties.crop2.has_value()) {
+        currentCrop.second = decodedStandardProperties.crop2.value();
+        haveCrop = true;
     }
-    if (exposureTime.has_value()) {
-        _setExposureTime(exposureTime.value());
+    if (haveCrop) {
+        _setImageCrop(currentCrop);
+    }
+    if (decodedStandardProperties.binningFactor.has_value()) {
+        _setBinningFactor(decodedStandardProperties.binningFactor.value());
+    }
+    if (decodedStandardProperties.exposureTime.has_value()) {
+        _setExposureTime(decodedStandardProperties.exposureTime.value());
     }
 
     for (const auto& prop : propsCopy) {
