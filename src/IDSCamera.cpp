@@ -36,7 +36,9 @@ double IDSCamera::getFrameRate() const {
 
 std::vector<CameraProperty> IDSCamera::_derivedGetCameraProperties() {
     std::vector<CameraProperty> properties;
-    properties = GetStandardProperties(_getExposureTime(), _desiredCropSize, StandardCroppingOptions(_getSensorSize()), _desiredBinningFactor, StandardBinningOptions());
+    properties = GetStandardProperties(_getExposureTime(), _desiredCropSize,
+                                       StandardCroppingOptions(_getSensorSize().first), StandardCroppingOptions(_getSensorSize().second),
+                                       _desiredBinningFactor, StandardBinningOptions());
 
     if (_haveGainBoost()) {
         properties.push_back(_getSetGainBoost(GetProperty, std::string()));
@@ -55,19 +57,18 @@ std::vector<CameraProperty> IDSCamera::_derivedGetCameraProperties() {
 void IDSCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>& properties) {
     std::vector<CameraProperty> propsCopy(properties);
 
-    std::optional<double> exposureTime = 0;
-    std::optional<std::pair<int, int>> cropping(std::pair<int, int>(512, 512));
-    std::optional<int> binningFactor = 1;
-    std::tie(exposureTime, cropping, binningFactor) = DecodeAndRemoveStandardProperties(propsCopy);
-
-    if (cropping.has_value()) {
-        _desiredCropSize = cropping.value();
+    DecodedStandardProperties decodedStandardProperties = DecodeAndRemoveStandardProperties(propsCopy);
+    if (decodedStandardProperties.crop1.has_value()) {
+        _desiredCropSize.first = decodedStandardProperties.crop1.value();
     }
-    if (binningFactor.has_value()) {
-        _desiredBinningFactor = binningFactor.value();
+    if (decodedStandardProperties.crop2.has_value()) {
+        _desiredCropSize.second = decodedStandardProperties.crop2.value();
     }
-    if (exposureTime.has_value()) {
-        _setExposureTime(exposureTime.value());
+    if (decodedStandardProperties.binningFactor.has_value()) {
+        _desiredBinningFactor = decodedStandardProperties.binningFactor.value();
+    }
+    if (decodedStandardProperties.exposureTime.has_value()) {
+        _setExposureTime(decodedStandardProperties.exposureTime.value());
     }
 
     for (const auto& prop : propsCopy) {
@@ -387,7 +388,7 @@ BaseCameraClass::NewImageResult IDSCamera::_waitForNewImageWithTimeout(int timeo
     if (err != IS_SUCCESS) {
         throw std::runtime_error("error from is_CopyImageMem()");
     }
-    is_UnlockSeqBuf(_camHandle, idOfMemoryWithOldestImage, ptrToMemoryWithOldestImage);
+    err = is_UnlockSeqBuf(_camHandle, idOfMemoryWithOldestImage, ptrToMemoryWithOldestImage);
     if (err != IS_SUCCESS) {
         throw std::runtime_error("error from is_UnlockSeqBuf()");
     }
