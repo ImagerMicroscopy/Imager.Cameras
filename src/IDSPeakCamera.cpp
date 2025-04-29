@@ -61,12 +61,13 @@ double IDSPeakCamera::getFrameRate() const {
 
 std::vector<CameraProperty> IDSPeakCamera::_derivedGetCameraProperties() {
     double exposureTime = _getExposureTime();
-    std::vector<std::pair<int, int>> allowableCropping = StandardCroppingOptions(_getSizeOfRawImages());
     int currentBinning = 1;
     std::vector<int> allowableBinning({1});
 
-    std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize, 
-                                                                   allowableCropping, currentBinning, allowableBinning);
+    std::vector<CameraProperty> properties = GetStandardProperties(exposureTime, _cropSize,
+                                                                   StandardCroppingOptions(_getSizeOfRawImages().first),
+                                                                   StandardCroppingOptions(_getSizeOfRawImages().second),
+                                                                   currentBinning, allowableBinning);
     properties.push_back(_getSetPixelClock());
     //properties.push_back(_getSetGain());
 
@@ -76,12 +77,18 @@ std::vector<CameraProperty> IDSPeakCamera::_derivedGetCameraProperties() {
 void IDSPeakCamera::_derivedSetCameraProperties(const std::vector<CameraProperty> &properties) {
     auto propsCopy = properties;
 
-    auto [maybeExposureTime, maybeCropping, maybeBinning] = DecodeAndRemoveStandardProperties(propsCopy);
-    if (maybeExposureTime.has_value()) {
-        _setExposureTime(maybeExposureTime.value());
+    DecodedStandardProperties decodedStandardProperties = DecodeAndRemoveStandardProperties(propsCopy);
+    if (decodedStandardProperties.crop1.has_value()) {
+        _cropSize.first = decodedStandardProperties.crop1.value();
     }
-    if (maybeCropping.has_value()) {
-        _cropSize = maybeCropping.value();
+    if (decodedStandardProperties.crop2.has_value()) {
+        _cropSize.second = decodedStandardProperties.crop2.value();
+    }
+    if (decodedStandardProperties.exposureTime.has_value()) {
+        _setExposureTime(decodedStandardProperties.exposureTime.value());
+    }
+    if (decodedStandardProperties.binningFactor.has_value()) {
+        // not implemented
     }
 
     for (const CameraProperty& prop : propsCopy) {
