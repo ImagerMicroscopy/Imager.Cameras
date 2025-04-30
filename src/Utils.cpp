@@ -6,6 +6,24 @@
     #include "Windows.h"
 #endif
 
+void AtomicString::set(const std::string& val) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _theString = val;
+}
+std::string AtomicString::get() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _theString;
+}
+void AtomicString::clear() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _theString.clear();
+}
+
+bool AtomicString::empty() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _theString.empty();
+}
+
 std::string wcharStringToUtf8(const std::wstring& str) {
     size_t strlen = wcslen(str.c_str());
 

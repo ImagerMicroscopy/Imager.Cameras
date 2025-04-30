@@ -18,6 +18,7 @@
 
 #include "CameraPropertiesEncoding.h"
 #include "ImageProcessingUtils.h"
+#include "Utils.h"
 
 class BaseCameraClass {
 public:
@@ -47,8 +48,8 @@ public:
 
     int startAsyncAcquisition(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire);
     bool isAsyncAcquisitionRunning() const;
-    void abortAsyncAquisitionIfRunning();
-    std::uint64_t getNImagesAsyncAcquired();
+    void abortAsyncAcquisitionIfRunning();
+    std::uint64_t getNImagesAsyncAcquired() const;
     std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> getOldestImageAsyncAcquired();
     std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> getOldestImageAsyncAcquiredWithTimeout(const std::uint32_t timeoutMillis);
 
@@ -63,7 +64,7 @@ private:
     virtual bool _hasCustomAcquireSingleImage() const { return false; }
     virtual void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) { throw std::logic_error("custom single acquire but not implemented"); }
 
-    void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue);
+    void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, const std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>>& startedNotificationQueue);
     void _clearAvailableImagesQueue();
     
     virtual void _derivedStartUnboundedAsyncAcquisition() = 0;
@@ -75,7 +76,9 @@ private:
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _getImageProcessingDescriptors();
     virtual std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() { return {}; }
     void _imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-                                moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &queue);
+                                moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &incomingImagesQueue,
+                                moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>& outgoingImagesQueue,
+                                AtomicString& errorString);
     std::shared_ptr<std::uint16_t> _processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
                                                  size_t& nOutputRows, size_t& nOutputCols);
     std::shared_ptr<std::uint16_t> _doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
@@ -83,10 +86,8 @@ private:
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _imageOrientationOps;
 
     std::chrono::steady_clock::time_point _acquisitionStartTimeStamp;
-    std::uint64_t _performanceCounterFrequency;
-    std::string _asyncErrorStr;
+    AtomicString _asyncAcquisitionErrorStr;
     volatile bool _asyncWantAbort;
-    volatile bool _processingAsyncHasError;
     std::uint64_t _asyncNImagesStored;
     moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> _availableImagesQueue;
     std::future<void> _asyncWorkerFuture;

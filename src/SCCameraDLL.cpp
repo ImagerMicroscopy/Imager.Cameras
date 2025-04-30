@@ -297,7 +297,7 @@ int AbortAsyncAcquisition(char* cameraName) {
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
-        camPtr->abortAsyncAquisitionIfRunning();
+        camPtr->abortAsyncAcquisitionIfRunning();
     }
     catch (const std::exception& e) {
         gLastError = e.what();

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 
@@ -18,6 +19,19 @@ public:
 
 private:
     std::function<void()> _func;
+};
+
+class AtomicString {
+public:
+    AtomicString() {;}
+
+    void set(const std::string& val);
+    std::string get();
+    void clear();
+    bool empty();
+private:
+    std::string _theString;
+    std::mutex _mutex;
 };
 
 std::string wcharStringToUtf8(const std::wstring& str);
