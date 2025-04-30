@@ -185,7 +185,10 @@ void PCOCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcqu
     }
     _throwIfPCOError(PCO_SetImageParameters(_camHandle, imageSize.first, imageSize.second, IMAGEPARAMETERS_READ_WHILE_RECORDING, nullptr, 0));
     _throwIfPCOError(PCO_SetAcquireModeEx(_camHandle, ACQUIRE_MODE_IMAGE_SEQUENCE, nImagesToAcquire, nullptr));
-    _throwIfPCOError(PCO_SetStorageMode(_camHandle, STORAGE_MODE_FIFO_BUFFER));
+    PCO_SetStorageMode(_camHandle, STORAGE_MODE_FIFO_BUFFER);
+    // We ignore the return code for PCO_SetStorageMode because it will only work for PCO.edge cameras connected via USB. It will fail
+    // for cameras connected via CLHS. However, according to PCO support this failure is benign, so we just ignore it so that the code
+    // will work on all cameras.
     _throwIfPCOError(PCO_SetTimestampMode(_camHandle, 0));  // no time stamp
     _throwIfPCOError(PCO_ArmCamera(_camHandle));
 
