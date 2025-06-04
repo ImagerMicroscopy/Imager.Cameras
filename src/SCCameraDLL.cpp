@@ -22,12 +22,19 @@ void (*gPrinterFunc)(const char*) = nullptr;
 std::string gLastError = std::string();
 CameraManager* gCameraManager = nullptr;
 
+void PrintOutput(const std::string& output) {
+    if (gPrinterFunc != nullptr) {
+        gPrinterFunc(output.c_str());
+    }
+}
+
 // Define a function to handle exceptions
 int HandleExceptions(const std::function<void()>& func) {
     try {
         func(); // Execute the provided function
         return 0; // Return success
     } catch (const std::exception& e) {
+        PrintOutput(e.what());
         gLastError = e.what();
         return GENERIC_ERROR; // Return error code
     }
@@ -51,12 +58,6 @@ bool StartCameraManager() {
 
 bool CameraManagerIsAvailable() {
     return StartCameraManager();
-}
-
-void PrintOutput(const std::string& output) {
-    if (gPrinterFunc != nullptr) {
-        gPrinterFunc(output.c_str());
-    }
 }
 
 bool gHaveInit = false;
