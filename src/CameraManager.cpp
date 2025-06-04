@@ -122,18 +122,21 @@ void CameraManager::discoverCameras() {
 #endif
 
 #ifdef WITH_PCO
-    for (; ; ) {
-        HANDLE pcoCamHandle = nullptr;
-        int pcoErr = PCO_OpenCamera(&pcoCamHandle, 0);
-        if (pcoErr) {
-            std::string errMessage = PCOCamera::pcoErrorAsString(pcoErr);
-            //throw std::runtime_error(errMessage);
+    PCOAPIWrapper pcoAPIWrapper = GetPCOAPIWrapper();
+    if (pcoAPIWrapper.allFunctionsLoaded) {
+        for (; ; ) {
+            HANDLE pcoCamHandle = nullptr;
+            int pcoErr = pcoAPIWrapper.PCO_OpenCamera(&pcoCamHandle, 0);
+            if (pcoErr) {
+                std::string errMessage = PCOCamera::pcoErrorAsString(pcoErr);
+                //throw std::runtime_error(errMessage);
+            }
+            if (pcoCamHandle == nullptr) {
+                break;
+            }
+            std::shared_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
+            _availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), pcoCamera));
         }
-        if (pcoCamHandle == nullptr) {
-            break;
-        }
-        std::shared_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
-        _availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), pcoCamera));
     }
 #endif
 

@@ -14,6 +14,9 @@
 #include "PCO/sc2_CamExport.h"
 #include "PCO/sc2_Defs.h"
 
+
+#include "PCOAPIWrapper.h"
+
 const int kPCOImagesInBuffer = 4;
 
 class PCOCamera : public BaseCameraClass
@@ -33,7 +36,7 @@ public:
 
     std::string getIdentifierStr() const override;
 
-    double getFrameRate() const override;
+    double getFrameRate() override;
 
     static std::string pcoErrorAsString(const int errCode);
 
@@ -41,14 +44,14 @@ private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
     void _derivedSetCameraProperties(const std::vector<CameraProperty> &properties) override;
 
-    std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() override;
 
     std::pair<int, int> _getSensorSize() const { return _sensorSize; }
     // int _getBinningFactor() const override;
     CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string &mode);
 
     void _setExposureTime(const double exposureTime);
-    double _getExposureTime() const;
+    double _getExposureTime();
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
@@ -68,6 +71,7 @@ private:
     double _pcoTimeToSeconds(DWORD time, DWORD timeBase) const;
 
     HANDLE _camHandle;
+    PCOAPIWrapper _pcoAPIWrapper;
     PCO_Description _camDescription;
     std::string _camName;
     std::pair<int, int> _sensorSize;

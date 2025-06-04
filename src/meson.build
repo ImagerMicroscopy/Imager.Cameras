@@ -19,7 +19,7 @@ if (isWindows)
         abslibdir = join_paths(meson.source_root(), '../lib/win64')
 
         libNames = ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt',
-                                        'ids_peak_comfort_c', 'sc2_cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
+                                        'ids_peak_comfort_c', 'uEye_api_64', 'pvcam64','SeaBreeze',
                                          'atmcd64m', 'atutilitym', 'atcorem']
 else
         incdirs = include_directories([
@@ -57,6 +57,7 @@ library('SCCamera',
         'ImageProcessingUtils.cpp',
         'ImageRecycler.cpp',
         'OceanOpticsCamera.cpp',
+        'PCOAPIWrapper.cpp',
         'PCOCamera.cpp',
         'PhotometricsCamera.cpp',
         'PhotometricsCameraHandler.cpp',
