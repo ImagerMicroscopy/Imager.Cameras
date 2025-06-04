@@ -35,13 +35,13 @@ public:
     virtual ~HamamatsuCamera();
 
     std::string getIdentifierStr() const override;
-    double getFrameRate() const override;
+    double getFrameRate() override;
 
 private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
     void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
     bool _derivedIsConfiguredForHardwareTriggering() override;
-    std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() override;
 
     std::pair<int, int> _getSensorSize() const { return _sensorSize; }
     CameraProperty _getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);
@@ -55,7 +55,7 @@ private:
     CameraProperty _getSetTriggerPolarity(GetOrSetProperty getOrSet, const std::string& mode);
 
     void _setExposureTime(const double exposureTime);
-    double _getExposureTime() const;
+    double _getExposureTime();
     void _setImageCrop(const std::pair<int, int>& crop);
     std::pair<int, int> _getImageCrop();
     void _setBinningFactor(const int binningFactor);
@@ -74,11 +74,11 @@ private:
     void _copyLatestImage(std::uint16_t* bufferForThisImage, int nBytes);
     void _initializeCamWaitHandle();
     void _releaseCamWaitHandle();
-    std::string _getDCAMString(HDCAM camHandle, int stringID) const;
-    bool _propertyIsSupported(HDCAM camHandle, int propertyID) const;
-    double _getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors = false) const;
-    void _setPropertyValue(HDCAM camHandle, int propertyID, double value, bool ignoreErrors = false) const;
-    std::pair<double, double> _getPropertyLimits(HDCAM camHandle, int propertyID) const;
+    std::string _getDCAMString(HDCAM camHandle, int stringID);
+    bool _propertyIsSupported(HDCAM camHandle, int propertyID);
+    double _getPropertyValue(HDCAM camHandle, int propertyID, bool ignoreErrors = false);
+    void _setPropertyValue(HDCAM camHandle, int propertyID, double value, bool ignoreErrors = false);
+    std::pair<double, double> _getPropertyLimits(HDCAM camHandle, int propertyID);
 
     HDCAM _camHandle;
     HamamatsuAPIWrapper _apiWrapper;
@@ -86,7 +86,7 @@ private:
     std::pair<int, int> _sensorSize;
     bool _softwareTriggeredAcquisitionRunning;
     HDCAMWAIT _camWaitHandle;
-    int _numberOfImagesDelivered;
+    int _numberOfImagesDelivered{};
 };
 
 #endif // HAMAMATSUCAMERA_H

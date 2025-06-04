@@ -4,8 +4,11 @@
 #include <iostream>
 #include <string>
 #include <functional>
+#include <memory>
 #include <map>
 #include <any>
+
+#include "Hamamatsu/dcamapi4.h"
 
 // Platform-specific includes and definitions
 #ifdef _WIN32
@@ -83,39 +86,39 @@ public:
 
         // Define a map of function names to their pointer types
         functionMap = {
-            {"dcamapi_init", std::make_pair(std::any(dcamapi_init_func()), (void**)&dcamapi_init)},
-            {"dcamapi_uninit", std::make_pair(std::any(dcamapi_uninit_func()), (void**)&dcamapi_uninit)},
-            {"dcamdev_open", std::make_pair(std::any(dcamdev_open_func()), (void**)&dcamdev_open)},
-            {"dcamdev_close", std::make_pair(std::any(dcamdev_close_func()), (void**)&dcamdev_close)},
-            {"dcamdev_showpanel", std::make_pair(std::any(dcamdev_showpanel_func()), (void**)&dcamdev_showpanel)},
-            {"dcamdev_getcapability", std::make_pair(std::any(dcamdev_getcapability_func()), (void**)&dcamdev_getcapability)},
-            {"dcamdev_getstring", std::make_pair(std::any(dcamdev_getstring_func()), (void**)&dcamdev_getstring)},
-            {"dcamdev_setdata", std::make_pair(std::any(dcamdev_setdata_func()), (void**)&dcamdev_setdata)},
-            {"dcamdev_getdata", std::make_pair(std::any(dcamdev_getdata_func()), (void**)&dcamdev_getdata)},
-            {"dcambuf_alloc", std::make_pair(std::any(dcambuf_alloc_func()), (void**)&dcambuf_alloc)},
-            {"dcambuf_attach", std::make_pair(std::any(dcambuf_attach_func()), (void**)&dcambuf_attach)},
-            {"dcambuf_release", std::make_pair(std::any(dcambuf_release_func()), (void**)&dcambuf_release)},
-            {"dcambuf_lockframe", std::make_pair(std::any(dcambuf_lockframe_func()), (void**)&dcambuf_lockframe)},
-            {"dcambuf_copyframe", std::make_pair(std::any(dcambuf_copyframe_func()), (void**)&dcambuf_copyframe)},
-            {"dcambuf_copymetadata", std::make_pair(std::any(dcambuf_copymetadata_func()), (void**)&dcambuf_copymetadata)},
-            {"dcamcap_start", std::make_pair(std::any(dcamcap_start_func()), (void**)&dcamcap_start)},
-            {"dcamcap_stop", std::make_pair(std::any(dcamcap_stop_func()), (void**)&dcamcap_stop)},
-            {"dcamcap_status", std::make_pair(std::any(dcamcap_status_func()), (void**)&dcamcap_status)},
-            {"dcamcap_transferinfo", std::make_pair(std::any(dcamcap_transferinfo_func()), (void**)&dcamcap_transferinfo)},
-            {"dcamcap_firetrigger", std::make_pair(std::any(dcamcap_firetrigger_func()), (void**)&dcamcap_firetrigger)},
-            {"dcamcap_record", std::make_pair(std::any(dcamcap_record_func()), (void**)&dcamcap_record)},
-            {"dcamwait_open", std::make_pair(std::any(dcamwait_open_func()), (void**)&dcamwait_open)},
-            {"dcamwait_close", std::make_pair(std::any(dcamwait_close_func()), (void**)&dcamwait_close)},
-            {"dcamwait_start", std::make_pair(std::any(dcamwait_start_func()), (void**)&dcamwait_start)},
-            {"dcamwait_abort", std::make_pair(std::any(dcamwait_abort_func()), (void**)&dcamwait_abort)},
-            {"dcamprop_getattr", std::make_pair(std::any(dcamprop_getattr_func()), (void**)&dcamprop_getattr)},
-            {"dcamprop_getvalue", std::make_pair(std::any(dcamprop_getvalue_func()), (void**)&dcamprop_getvalue)},
-            {"dcamprop_setvalue", std::make_pair(std::any(dcamprop_setvalue_func()), (void**)&dcamprop_setvalue)},
-            {"dcamprop_setgetvalue", std::make_pair(std::any(dcamprop_setgetvalue_func()), (void**)&dcamprop_setgetvalue)},
-            {"dcamprop_queryvalue", std::make_pair(std::any(dcamprop_queryvalue_func()), (void**)&dcamprop_queryvalue)},
-            {"dcamprop_getnextid", std::make_pair(std::any(dcamprop_getnextid_func()), (void**)&dcamprop_getnextid)},
-            {"dcamprop_getname", std::make_pair(std::any(dcamprop_getname_func()), (void**)&dcamprop_getname)},
-            {"dcamprop_getvaluetext", std::make_pair(std::any(dcamprop_getvaluetext_func()), (void**)&dcamprop_getvaluetext)},
+            {"dcamapi_init", std::make_pair(std::any(dcamapi_init_func()), (void**)&_dcamapi_init)},
+            {"dcamapi_uninit", std::make_pair(std::any(dcamapi_uninit_func()), (void**)&_dcamapi_uninit)},
+            {"dcamdev_open", std::make_pair(std::any(dcamdev_open_func()), (void**)&_dcamdev_open)},
+            {"dcamdev_close", std::make_pair(std::any(dcamdev_close_func()), (void**)&_dcamdev_close)},
+            {"dcamdev_showpanel", std::make_pair(std::any(dcamdev_showpanel_func()), (void**)&_dcamdev_showpanel)},
+            {"dcamdev_getcapability", std::make_pair(std::any(dcamdev_getcapability_func()), (void**)&_dcamdev_getcapability)},
+            {"dcamdev_getstring", std::make_pair(std::any(dcamdev_getstring_func()), (void**)&_dcamdev_getstring)},
+            {"dcamdev_setdata", std::make_pair(std::any(dcamdev_setdata_func()), (void**)&_dcamdev_setdata)},
+            {"dcamdev_getdata", std::make_pair(std::any(dcamdev_getdata_func()), (void**)&_dcamdev_getdata)},
+            {"dcambuf_alloc", std::make_pair(std::any(dcambuf_alloc_func()), (void**)&_dcambuf_alloc)},
+            {"dcambuf_attach", std::make_pair(std::any(dcambuf_attach_func()), (void**)&_dcambuf_attach)},
+            {"dcambuf_release", std::make_pair(std::any(dcambuf_release_func()), (void**)&_dcambuf_release)},
+            {"dcambuf_lockframe", std::make_pair(std::any(dcambuf_lockframe_func()), (void**)&_dcambuf_lockframe)},
+            {"dcambuf_copyframe", std::make_pair(std::any(dcambuf_copyframe_func()), (void**)&_dcambuf_copyframe)},
+            {"dcambuf_copymetadata", std::make_pair(std::any(dcambuf_copymetadata_func()), (void**)&_dcambuf_copymetadata)},
+            {"dcamcap_start", std::make_pair(std::any(dcamcap_start_func()), (void**)&_dcamcap_start)},
+            {"dcamcap_stop", std::make_pair(std::any(dcamcap_stop_func()), (void**)&_dcamcap_stop)},
+            {"dcamcap_status", std::make_pair(std::any(dcamcap_status_func()), (void**)&_dcamcap_status)},
+            {"dcamcap_transferinfo", std::make_pair(std::any(dcamcap_transferinfo_func()), (void**)&_dcamcap_transferinfo)},
+            {"dcamcap_firetrigger", std::make_pair(std::any(dcamcap_firetrigger_func()), (void**)&_dcamcap_firetrigger)},
+            {"dcamcap_record", std::make_pair(std::any(dcamcap_record_func()), (void**)&_dcamcap_record)},
+            {"dcamwait_open", std::make_pair(std::any(dcamwait_open_func()), (void**)&_dcamwait_open)},
+            {"dcamwait_close", std::make_pair(std::any(dcamwait_close_func()), (void**)&_dcamwait_close)},
+            {"dcamwait_start", std::make_pair(std::any(dcamwait_start_func()), (void**)&_dcamwait_start)},
+            {"dcamwait_abort", std::make_pair(std::any(dcamwait_abort_func()), (void**)&_dcamwait_abort)},
+            {"dcamprop_getattr", std::make_pair(std::any(dcamprop_getattr_func()), (void**)&_dcamprop_getattr)},
+            {"dcamprop_getvalue", std::make_pair(std::any(dcamprop_getvalue_func()), (void**)&_dcamprop_getvalue)},
+            {"dcamprop_setvalue", std::make_pair(std::any(dcamprop_setvalue_func()), (void**)&_dcamprop_setvalue)},
+            {"dcamprop_setgetvalue", std::make_pair(std::any(dcamprop_setgetvalue_func()), (void**)&_dcamprop_setgetvalue)},
+            {"dcamprop_queryvalue", std::make_pair(std::any(dcamprop_queryvalue_func()), (void**)&_dcamprop_queryvalue)},
+            {"dcamprop_getnextid", std::make_pair(std::any(dcamprop_getnextid_func()), (void**)&_dcamprop_getnextid)},
+            {"dcamprop_getname", std::make_pair(std::any(dcamprop_getname_func()), (void**)&_dcamprop_getname)},
+            {"dcamprop_getvaluetext", std::make_pair(std::any(dcamprop_getvaluetext_func()), (void**)&_dcamprop_getvaluetext)},
         };
 
         // Load each function
@@ -125,7 +128,7 @@ public:
                 allFunctionsLoaded = false;
                 continue;
             }
-            *func.second.second = reinterpret_cast<LIB_HANDLE>(funcPtr);
+            *func.second.second = funcPtr;
         }
     }
 
@@ -137,175 +140,274 @@ public:
 
     // Wrapper methods for each function
     DCAMERR dcamapi_init(DCAMAPI_INIT* param) {
-        return dcamapi_init(param);
+        if (!_dcamapi_init) {
+            throw std::logic_error("Function dcamapi_init is not loaded.");
+        }
+        return _dcamapi_init(param);
     }
 
     DCAMERR dcamapi_uninit() {
-        return dcamapi_uninit();
+        if (!_dcamapi_uninit) {
+            throw std::logic_error("Function dcamapi_uninit is not loaded.");
+        }
+        return _dcamapi_uninit();
     }
 
     DCAMERR dcamdev_open(DCAMDEV_OPEN* param) {
-        return dcamdev_open(param);
+        if (!_dcamdev_open) {
+            throw std::logic_error("Function dcamdev_open is not loaded.");
+        }
+        return _dcamdev_open(param);
     }
 
     DCAMERR dcamdev_close(HDCAM h) {
-        return dcamdev_close(h);
+        if (!_dcamdev_close) {
+            throw std::logic_error("Function dcamdev_close is not loaded.");
+        }
+        return _dcamdev_close(h);
     }
 
     DCAMERR dcamdev_showpanel(HDCAM h, int32 iKind) {
-        return dcamdev_showpanel(h, iKind);
+        if (!_dcamdev_showpanel) {
+            throw std::logic_error("Function dcamdev_showpanel is not loaded.");
+        }
+        return _dcamdev_showpanel(h, iKind);
     }
 
     DCAMERR dcamdev_getcapability(HDCAM h, DCAMDEV_CAPABILITY* param) {
-        return dcamdev_getcapability(h, param);
+        if (!_dcamdev_getcapability) {
+            throw std::logic_error("Function dcamdev_getcapability is not loaded.");
+        }
+        return _dcamdev_getcapability(h, param);
     }
 
     DCAMERR dcamdev_getstring(HDCAM h, DCAMDEV_STRING* param) {
-        return dcamdev_getstring(h, param);
+        if (!_dcamdev_getstring) {
+            throw std::logic_error("Function dcamdev_getstring is not loaded.");
+        }
+        return _dcamdev_getstring(h, param);
     }
 
     DCAMERR dcamdev_setdata(HDCAM h, DCAMDATA_HDR* param) {
-        return dcamdev_setdata(h, param);
+        if (!_dcamdev_setdata) {
+            throw std::logic_error("Function dcamdev_setdata is not loaded.");
+        }
+        return _dcamdev_setdata(h, param);
     }
 
     DCAMERR dcamdev_getdata(HDCAM h, DCAMDATA_HDR* param) {
-        return dcamdev_getdata(h, param);
+        if (!_dcamdev_getdata) {
+            throw std::logic_error("Function dcamdev_getdata is not loaded.");
+        }
+        return _dcamdev_getdata(h, param);
     }
 
     DCAMERR dcambuf_alloc(HDCAM h, int32 framecount) {
-        return dcambuf_alloc(h, framecount);
+        if (!_dcambuf_alloc) {
+            throw std::logic_error("Function dcambuf_alloc is not loaded.");
+        }
+        return _dcambuf_alloc(h, framecount);
     }
 
     DCAMERR dcambuf_attach(HDCAM h, const DCAMBUF_ATTACH* param) {
-        return dcambuf_attach(h, param);
+        if (!_dcambuf_attach) {
+            throw std::logic_error("Function dcambuf_attach is not loaded.");
+        }
+        return _dcambuf_attach(h, param);
     }
 
     DCAMERR dcambuf_release(HDCAM h, int32 iKind) {
-        return dcambuf_release(h, iKind);
+        if (!_dcambuf_release) {
+            throw std::logic_error("Function dcambuf_release is not loaded.");
+        }
+        return _dcambuf_release(h, iKind);
     }
 
     DCAMERR dcambuf_lockframe(HDCAM h, DCAMBUF_FRAME* pFrame) {
-        return dcambuf_lockframe(h, pFrame);
+        if (!_dcambuf_lockframe) {
+            throw std::logic_error("Function dcambuf_lockframe is not loaded.");
+        }
+        return _dcambuf_lockframe(h, pFrame);
     }
 
     DCAMERR dcambuf_copyframe(HDCAM h, DCAMBUF_FRAME* pFrame) {
-        return dcambuf_copyframe(h, pFrame);
+        if (!_dcambuf_copyframe) {
+            throw std::logic_error("Function dcambuf_copyframe is not loaded.");
+        }
+        return _dcambuf_copyframe(h, pFrame);
     }
 
     DCAMERR dcambuf_copymetadata(HDCAM h, DCAM_METADATAHDR* hdr) {
-        return dcambuf_copymetadata(h, hdr);
+        if (!_dcambuf_copymetadata) {
+            throw std::logic_error("Function dcambuf_copymetadata is not loaded.");
+        }
+        return _dcambuf_copymetadata(h, hdr);
     }
 
     DCAMERR dcamcap_start(HDCAM h, int32 mode) {
-        return dcamcap_start(h, mode);
+        if (!_dcamcap_start) {
+            throw std::logic_error("Function dcamcap_start is not loaded.");
+        }
+        return _dcamcap_start(h, mode);
     }
 
     DCAMERR dcamcap_stop(HDCAM h) {
-        return dcamcap_stop(h);
+        if (!_dcamcap_stop) {
+            throw std::logic_error("Function dcamcap_stop is not loaded.");
+        }
+        return _dcamcap_stop(h);
     }
 
     DCAMERR dcamcap_status(HDCAM h, int32* pStatus) {
-        return dcamcap_status(h, pStatus);
+        if (!_dcamcap_status) {
+            throw std::logic_error("Function dcamcap_status is not loaded.");
+        }
+        return _dcamcap_status(h, pStatus);
     }
 
     DCAMERR dcamcap_transferinfo(HDCAM h, DCAMCAP_TRANSFERINFO* param) {
-        return dcamcap_transferinfo(h, param);
+        if (!_dcamcap_transferinfo) {
+            throw std::logic_error("Function dcamcap_transferinfo is not loaded.");
+        }
+        return _dcamcap_transferinfo(h, param);
     }
 
     DCAMERR dcamcap_firetrigger(HDCAM h, int32 iKind) {
-        return dcamcap_firetrigger(h, iKind);
+        if (!_dcamcap_firetrigger) {
+            throw std::logic_error("Function dcamcap_firetrigger is not loaded.");
+        }
+        return _dcamcap_firetrigger(h, iKind);
     }
 
     DCAMERR dcamcap_record(HDCAM h, HDCAMREC hrec) {
-        return dcamcap_record(h, hrec);
+        if (!_dcamcap_record) {
+            throw std::logic_error("Function dcamcap_record is not loaded.");
+        }
+        return _dcamcap_record(h, hrec);
     }
 
     DCAMERR dcamwait_open(DCAMWAIT_OPEN* param) {
-        return dcamwait_open(param);
+        if (!_dcamwait_open) {
+            throw std::logic_error("Function dcamwait_open is not loaded.");
+        }
+        return _dcamwait_open(param);
     }
 
     DCAMERR dcamwait_close(HDCAMWAIT hWait) {
-        return dcamwait_close(hWait);
+        if (!_dcamwait_close) {
+            throw std::logic_error("Function dcamwait_close is not loaded.");
+        }
+        return _dcamwait_close(hWait);
     }
 
     DCAMERR dcamwait_start(HDCAMWAIT hWait, DCAMWAIT_START* param) {
-        return dcamwait_start(hWait, param);
+        if (!_dcamwait_start) {
+            throw std::logic_error("Function dcamwait_start is not loaded.");
+        }
+        return _dcamwait_start(hWait, param);
     }
 
     DCAMERR dcamwait_abort(HDCAMWAIT hWait) {
-        return dcamwait_abort(hWait);
+        if (!_dcamwait_abort) {
+            throw std::logic_error("Function dcamwait_abort is not loaded.");
+        }
+        return _dcamwait_abort(hWait);
     }
 
     DCAMERR dcamprop_getattr(HDCAM h, DCAMPROP_ATTR* param) {
-        return dcamprop_getattr(h, param);
+        if (!_dcamprop_getattr) {
+            throw std::logic_error("Function dcamprop_getattr is not loaded.");
+        }
+        return _dcamprop_getattr(h, param);
     }
 
     DCAMERR dcamprop_getvalue(HDCAM h, int32 iProp, double* pValue) {
-        return dcamprop_getvalue(h, iProp, pValue);
+        if (!_dcamprop_getvalue) {
+            throw std::logic_error("Function dcamprop_getvalue is not loaded.");
+        }
+        return _dcamprop_getvalue(h, iProp, pValue);
     }
 
     DCAMERR dcamprop_setvalue(HDCAM h, int32 iProp, double fValue) {
-        return dcamprop_setvalue(h, iProp, fValue);
+        if (!_dcamprop_setvalue) {
+            throw std::logic_error("Function dcamprop_setvalue is not loaded.");
+        }
+        return _dcamprop_setvalue(h, iProp, fValue);
     }
 
     DCAMERR dcamprop_setgetvalue(HDCAM h, int32 iProp, double* pValue, int32 option) {
-        return dcamprop_setgetvalue(h, iProp, pValue, option);
+        if (!_dcamprop_setgetvalue) {
+            throw std::logic_error("Function dcamprop_setgetvalue is not loaded.");
+        }
+        return _dcamprop_setgetvalue(h, iProp, pValue, option);
     }
 
     DCAMERR dcamprop_queryvalue(HDCAM h, int32 iProp, double* pValue, int32 option) {
-        return dcamprop_queryvalue(h, iProp, pValue, option);
+        if (!_dcamprop_queryvalue) {
+            throw std::logic_error("Function dcamprop_queryvalue is not loaded.");
+        }
+        return _dcamprop_queryvalue(h, iProp, pValue, option);
     }
 
     DCAMERR dcamprop_getnextid(HDCAM h, int32* pProp, int32 option) {
-        return dcamprop_getnextid(h, pProp, option);
+        if (!_dcamprop_getnextid) {
+            throw std::logic_error("Function dcamprop_getnextid is not loaded.");
+        }
+        return _dcamprop_getnextid(h, pProp, option);
     }
 
     DCAMERR dcamprop_getname(HDCAM h, int32 iProp, char* text, int32 textbytes) {
-        return dcamprop_getname(h, iProp, text, textbytes);
+        if (!_dcamprop_getname) {
+            throw std::logic_error("Function dcamprop_getname is not loaded.");
+        }
+        return _dcamprop_getname(h, iProp, text, textbytes);
     }
 
     DCAMERR dcamprop_getvaluetext(HDCAM h, DCAMPROP_VALUETEXT* param) {
-        return dcamprop_getvaluetext(h, param);
+        if (!_dcamprop_getvaluetext) {
+            throw std::logic_error("Function dcamprop_getvaluetext is not loaded.");
+        }
+        return _dcamprop_getvaluetext(h, param);
     }
 
 private:
     LIB_HANDLE handle;
     std::map<std::string, std::pair<std::any, void**>> functionMap;
 
-    // Function pointers
-    dcamapi_init_func dcamapi_init;
-    dcamapi_uninit_func dcamapi_uninit;
-    dcamdev_open_func dcamdev_open;
-    dcamdev_close_func dcamdev_close;
-    dcamdev_showpanel_func dcamdev_showpanel;
-    dcamdev_getcapability_func dcamdev_getcapability;
-    dcamdev_getstring_func dcamdev_getstring;
-    dcamdev_setdata_func dcamdev_setdata;
-    dcamdev_getdata_func dcamdev_getdata;
-    dcambuf_alloc_func dcambuf_alloc;
-    dcambuf_attach_func dcambuf_attach;
-    dcambuf_release_func dcambuf_release;
-    dcambuf_lockframe_func dcambuf_lockframe;
-    dcambuf_copyframe_func dcambuf_copyframe;
-    dcambuf_copymetadata_func dcambuf_copymetadata;
-    dcamcap_start_func dcamcap_start;
-    dcamcap_stop_func dcamcap_stop;
-    dcamcap_status_func dcamcap_status;
-    dcamcap_transferinfo_func dcamcap_transferinfo;
-    dcamcap_firetrigger_func dcamcap_firetrigger;
-    dcamcap_record_func dcamcap_record;
-    dcamwait_open_func dcamwait_open;
-    dcamwait_close_func dcamwait_close;
-    dcamwait_start_func dcamwait_start;
-    dcamwait_abort_func dcamwait_abort;
-    dcamprop_getattr_func dcamprop_getattr;
-    dcamprop_getvalue_func dcamprop_getvalue;
-    dcamprop_setvalue_func dcamprop_setvalue;
-    dcamprop_setgetvalue_func dcamprop_setgetvalue;
-    dcamprop_queryvalue_func dcamprop_queryvalue;
-    dcamprop_getnextid_func dcamprop_getnextid;
-    dcamprop_getname_func dcamprop_getname;
-    dcamprop_getvaluetext_func dcamprop_getvaluetext;
+    // Function pointers with leading underscore
+    dcamapi_init_func _dcamapi_init = nullptr;
+    dcamapi_uninit_func _dcamapi_uninit = nullptr;
+    dcamdev_open_func _dcamdev_open = nullptr;
+    dcamdev_close_func _dcamdev_close = nullptr;
+    dcamdev_showpanel_func _dcamdev_showpanel = nullptr;
+    dcamdev_getcapability_func _dcamdev_getcapability = nullptr;
+    dcamdev_getstring_func _dcamdev_getstring = nullptr;
+    dcamdev_setdata_func _dcamdev_setdata = nullptr;
+    dcamdev_getdata_func _dcamdev_getdata = nullptr;
+    dcambuf_alloc_func _dcambuf_alloc = nullptr;
+    dcambuf_attach_func _dcambuf_attach = nullptr;
+    dcambuf_release_func _dcambuf_release = nullptr;
+    dcambuf_lockframe_func _dcambuf_lockframe = nullptr;
+    dcambuf_copyframe_func _dcambuf_copyframe = nullptr;
+    dcambuf_copymetadata_func _dcambuf_copymetadata = nullptr;
+    dcamcap_start_func _dcamcap_start = nullptr;
+    dcamcap_stop_func _dcamcap_stop = nullptr;
+    dcamcap_status_func _dcamcap_status = nullptr;
+    dcamcap_transferinfo_func _dcamcap_transferinfo = nullptr;
+    dcamcap_firetrigger_func _dcamcap_firetrigger = nullptr;
+    dcamcap_record_func _dcamcap_record = nullptr;
+    dcamwait_open_func _dcamwait_open = nullptr;
+    dcamwait_close_func _dcamwait_close = nullptr;
+    dcamwait_start_func _dcamwait_start = nullptr;
+    dcamwait_abort_func _dcamwait_abort = nullptr;
+    dcamprop_getattr_func _dcamprop_getattr = nullptr;
+    dcamprop_getvalue_func _dcamprop_getvalue = nullptr;
+    dcamprop_setvalue_func _dcamprop_setvalue = nullptr;
+    dcamprop_setgetvalue_func _dcamprop_setgetvalue = nullptr;
+    dcamprop_queryvalue_func _dcamprop_queryvalue = nullptr;
+    dcamprop_getnextid_func _dcamprop_getnextid = nullptr;
+    dcamprop_getname_func _dcamprop_getname = nullptr;
+    dcamprop_getvaluetext_func _dcamprop_getvaluetext = nullptr;
 };
 
 HamamatsuAPIWrapper GetHamamatsuAPIWrapper();

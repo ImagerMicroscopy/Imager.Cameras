@@ -34,7 +34,7 @@ public:
 
     std::string getIdentifierStr() const override;
 
-    double getFrameRate() const override;
+    double getFrameRate() override;
 
 private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;

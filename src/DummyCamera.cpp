@@ -19,7 +19,7 @@ DummyCamera::DummyCamera() :
     _currentCropping = _getSensorSize();
 }
 
-double DummyCamera::getFrameRate() const {
+double DummyCamera::getFrameRate() {
     return (1.0 / _getExposureTime());
 }
 
@@ -49,7 +49,7 @@ void DummyCamera::_derivedSetCameraProperties(const std::vector<CameraProperty>&
     }
 }
 
-std::pair<int, int> DummyCamera::_getSizeOfRawImages() const {
+std::pair<int, int> DummyCamera::_getSizeOfRawImages() {
     return _getSensorSize();
 }
 
