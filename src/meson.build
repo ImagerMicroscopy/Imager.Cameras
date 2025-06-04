@@ -2,7 +2,7 @@ project('src', 'cpp',
   version : '0.1',
   default_options : ['warning_level=3',
                      'cpp_std=c++17',
-		     'default_library=shared',
+		             'default_library=shared',
 		    ]
 )
 
@@ -18,7 +18,7 @@ if (isWindows)
 
         abslibdir = join_paths(meson.source_root(), '../lib/win64')
 
-        libNames = ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt', 'dcamapi',
+        libNames = ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt',
                                         'ids_peak_comfort_c', 'sc2_cam', 'uEye_api_64', 'pvcam64','SeaBreeze',
                                          'atmcd64m', 'atutilitym', 'atcorem']
 else

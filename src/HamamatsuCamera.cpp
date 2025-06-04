@@ -452,7 +452,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
         if (willDoSoftwareTriggering) {
             _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__SOFTWARE);
         }
-        err = dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
+        err = _apiWrapper.dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
         if (err != DCAMERR_SUCCESS) {
             throw std::runtime_error("couldn't start snap acq");
         }
@@ -462,7 +462,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
     }
 
     if (_softwareTriggeredAcquisitionRunning) {
-        dcamcap_firetrigger(_camHandle, 0);
+        _apiWrapper.dcamcap_firetrigger(_camHandle, 0);
     }
     
     int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
@@ -472,7 +472,7 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
     }
 
     if (!_softwareTriggeredAcquisitionRunning) {
-        dcamcap_stop(_camHandle);
+        _apiWrapper.dcamcap_stop(_camHandle);
         _releaseCamWaitHandle();
         _apiWrapper.dcambuf_release(_camHandle, 0);
     }
@@ -497,7 +497,7 @@ void HamamatsuCamera::_derivedStartUnboundedAsyncAcquisition() {
 
     _initializeCamWaitHandle();
 
-    err = dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
+    err = _apiWrapper.dcamcap_start(_camHandle, DCAMCAP_START_SEQUENCE);
     if (err != DCAMERR_SUCCESS) {
         throw std::runtime_error("couldn't start async acq");
     }
@@ -505,7 +505,7 @@ void HamamatsuCamera::_derivedStartUnboundedAsyncAcquisition() {
 }
 
 void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
-    DCAMERR err = dcamcap_stop(_camHandle);
+    DCAMERR err = _apiWrapper.dcamcap_stop(_camHandle);
     if (err != DCAMERR_SUCCESS) {
         throw std::runtime_error("couldn't abort async acq");
     }
