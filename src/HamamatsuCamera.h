@@ -2,6 +2,7 @@
 #define HAMAMATSUCAMERA_H
 
 #include "BaseCameraClass.h"
+#include "HamamatsuAPIWrapper.h"
 
 #include <string>
 #include <vector>
@@ -34,15 +35,12 @@ public:
     virtual ~HamamatsuCamera();
 
     std::string getIdentifierStr() const override;
-
     double getFrameRate() const override;
 
 private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
     void _derivedSetCameraProperties(const std::vector<CameraProperty>& properties) override;
-
     bool _derivedIsConfiguredForHardwareTriggering() override;
-
     std::pair<int, int> _getSizeOfRawImages() const override;
 
     std::pair<int, int> _getSensorSize() const { return _sensorSize; }
@@ -83,6 +81,7 @@ private:
     std::pair<double, double> _getPropertyLimits(HDCAM camHandle, int propertyID) const;
 
     HDCAM _camHandle;
+    HamamatsuAPIWrapper _apiWrapper;
     std::string _camName;
     std::pair<int, int> _sensorSize;
     bool _softwareTriggeredAcquisitionRunning;
@@ -90,4 +89,4 @@ private:
     int _numberOfImagesDelivered;
 };
 
-#endif
+#endif // HAMAMATSUCAMERA_H
