@@ -36,7 +36,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    LIBSPEC int InitCameraDLL();
+    LIBSPEC int InitCameraDLL(void(*printer)(const char*));
     LIBSPEC void ShutdownCameraDLL();
 
     LIBSPEC int ListConnectedCameraNames(char** namesPtr);
