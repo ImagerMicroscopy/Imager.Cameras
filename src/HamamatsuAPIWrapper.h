@@ -6,7 +6,7 @@
 #include <functional>
 #include <memory>
 #include <map>
-#include <any>
+#include <stdexcept> // For std::runtime_error
 
 #include "Hamamatsu/dcamapi4.h"
 
@@ -27,7 +27,7 @@
 
 // Macro to define function pointer types
 #define DEFINE_FUNC_PTR(name, return_type, ...) \
-    using name##_func = return_type(__stdcall*)(__VA_ARGS__);
+    using name##_func = return_type(DCAMAPI *)(__VA_ARGS__);
 
 // Define function pointer types for each function in the library
 DEFINE_FUNC_PTR(dcamapi_init, DCAMERR, DCAMAPI_INIT*);
@@ -40,7 +40,6 @@ DEFINE_FUNC_PTR(dcamdev_getstring, DCAMERR, HDCAM, DCAMDEV_STRING*);
 DEFINE_FUNC_PTR(dcamdev_setdata, DCAMERR, HDCAM, DCAMDATA_HDR*);
 DEFINE_FUNC_PTR(dcamdev_getdata, DCAMERR, HDCAM, DCAMDATA_HDR*);
 
-// Define function pointer types for dcambuf functions
 DEFINE_FUNC_PTR(dcambuf_alloc, DCAMERR, HDCAM, int32);
 DEFINE_FUNC_PTR(dcambuf_attach, DCAMERR, HDCAM, const DCAMBUF_ATTACH*);
 DEFINE_FUNC_PTR(dcambuf_release, DCAMERR, HDCAM, int32);
@@ -48,7 +47,6 @@ DEFINE_FUNC_PTR(dcambuf_lockframe, DCAMERR, HDCAM, DCAMBUF_FRAME*);
 DEFINE_FUNC_PTR(dcambuf_copyframe, DCAMERR, HDCAM, DCAMBUF_FRAME*);
 DEFINE_FUNC_PTR(dcambuf_copymetadata, DCAMERR, HDCAM, DCAM_METADATAHDR*);
 
-// Define function pointer types for dcamcap functions
 DEFINE_FUNC_PTR(dcamcap_start, DCAMERR, HDCAM, int32);
 DEFINE_FUNC_PTR(dcamcap_stop, DCAMERR, HDCAM);
 DEFINE_FUNC_PTR(dcamcap_status, DCAMERR, HDCAM, int32*);
@@ -56,13 +54,11 @@ DEFINE_FUNC_PTR(dcamcap_transferinfo, DCAMERR, HDCAM, DCAMCAP_TRANSFERINFO*);
 DEFINE_FUNC_PTR(dcamcap_firetrigger, DCAMERR, HDCAM, int32);
 DEFINE_FUNC_PTR(dcamcap_record, DCAMERR, HDCAM, HDCAMREC);
 
-// Define function pointer types for dcamwait functions
 DEFINE_FUNC_PTR(dcamwait_open, DCAMERR, DCAMWAIT_OPEN*);
 DEFINE_FUNC_PTR(dcamwait_close, DCAMERR, HDCAMWAIT);
 DEFINE_FUNC_PTR(dcamwait_start, DCAMERR, HDCAMWAIT, DCAMWAIT_START*);
 DEFINE_FUNC_PTR(dcamwait_abort, DCAMERR, HDCAMWAIT);
 
-// Define function pointer types for dcamprop functions
 DEFINE_FUNC_PTR(dcamprop_getattr, DCAMERR, HDCAM, DCAMPROP_ATTR*);
 DEFINE_FUNC_PTR(dcamprop_getvalue, DCAMERR, HDCAM, int32, double*);
 DEFINE_FUNC_PTR(dcamprop_setvalue, DCAMERR, HDCAM, int32, double);
@@ -74,67 +70,75 @@ DEFINE_FUNC_PTR(dcamprop_getvaluetext, DCAMERR, HDCAM, DCAMPROP_VALUETEXT*);
 
 class HamamatsuAPIWrapper {
 public:
+    // Custom exception for Hamamatsu API loading errors
+    class HamamatsuAPILoadError : public std::runtime_error {
+    public:
+        explicit HamamatsuAPILoadError(const std::string& msg) : std::runtime_error(msg) {}
+    };
+
     bool allFunctionsLoaded;
 
-    HamamatsuAPIWrapper(const std::string& libraryPath) : allFunctionsLoaded(true) {
+    explicit HamamatsuAPIWrapper(const std::string& libraryPath) : allFunctionsLoaded(true) {
         // Load the library
         handle = LOAD_LIBRARY(libraryPath.c_str());
         if (!handle) {
             allFunctionsLoaded = false;
-            return;
+            throw HamamatsuAPILoadError("Failed to load Hamamatsu DLL: " + libraryPath);
         }
 
-        // Define a map of function names to their pointer types
-        functionMap = {
-            {"dcamapi_init", std::make_pair(std::any(dcamapi_init_func()), (void**)&_dcamapi_init)},
-            {"dcamapi_uninit", std::make_pair(std::any(dcamapi_uninit_func()), (void**)&_dcamapi_uninit)},
-            {"dcamdev_open", std::make_pair(std::any(dcamdev_open_func()), (void**)&_dcamdev_open)},
-            {"dcamdev_close", std::make_pair(std::any(dcamdev_close_func()), (void**)&_dcamdev_close)},
-            {"dcamdev_showpanel", std::make_pair(std::any(dcamdev_showpanel_func()), (void**)&_dcamdev_showpanel)},
-            {"dcamdev_getcapability", std::make_pair(std::any(dcamdev_getcapability_func()), (void**)&_dcamdev_getcapability)},
-            {"dcamdev_getstring", std::make_pair(std::any(dcamdev_getstring_func()), (void**)&_dcamdev_getstring)},
-            {"dcamdev_setdata", std::make_pair(std::any(dcamdev_setdata_func()), (void**)&_dcamdev_setdata)},
-            {"dcamdev_getdata", std::make_pair(std::any(dcamdev_getdata_func()), (void**)&_dcamdev_getdata)},
-            {"dcambuf_alloc", std::make_pair(std::any(dcambuf_alloc_func()), (void**)&_dcambuf_alloc)},
-            {"dcambuf_attach", std::make_pair(std::any(dcambuf_attach_func()), (void**)&_dcambuf_attach)},
-            {"dcambuf_release", std::make_pair(std::any(dcambuf_release_func()), (void**)&_dcambuf_release)},
-            {"dcambuf_lockframe", std::make_pair(std::any(dcambuf_lockframe_func()), (void**)&_dcambuf_lockframe)},
-            {"dcambuf_copyframe", std::make_pair(std::any(dcambuf_copyframe_func()), (void**)&_dcambuf_copyframe)},
-            {"dcambuf_copymetadata", std::make_pair(std::any(dcambuf_copymetadata_func()), (void**)&_dcambuf_copymetadata)},
-            {"dcamcap_start", std::make_pair(std::any(dcamcap_start_func()), (void**)&_dcamcap_start)},
-            {"dcamcap_stop", std::make_pair(std::any(dcamcap_stop_func()), (void**)&_dcamcap_stop)},
-            {"dcamcap_status", std::make_pair(std::any(dcamcap_status_func()), (void**)&_dcamcap_status)},
-            {"dcamcap_transferinfo", std::make_pair(std::any(dcamcap_transferinfo_func()), (void**)&_dcamcap_transferinfo)},
-            {"dcamcap_firetrigger", std::make_pair(std::any(dcamcap_firetrigger_func()), (void**)&_dcamcap_firetrigger)},
-            {"dcamcap_record", std::make_pair(std::any(dcamcap_record_func()), (void**)&_dcamcap_record)},
-            {"dcamwait_open", std::make_pair(std::any(dcamwait_open_func()), (void**)&_dcamwait_open)},
-            {"dcamwait_close", std::make_pair(std::any(dcamwait_close_func()), (void**)&_dcamwait_close)},
-            {"dcamwait_start", std::make_pair(std::any(dcamwait_start_func()), (void**)&_dcamwait_start)},
-            {"dcamwait_abort", std::make_pair(std::any(dcamwait_abort_func()), (void**)&_dcamwait_abort)},
-            {"dcamprop_getattr", std::make_pair(std::any(dcamprop_getattr_func()), (void**)&_dcamprop_getattr)},
-            {"dcamprop_getvalue", std::make_pair(std::any(dcamprop_getvalue_func()), (void**)&_dcamprop_getvalue)},
-            {"dcamprop_setvalue", std::make_pair(std::any(dcamprop_setvalue_func()), (void**)&_dcamprop_setvalue)},
-            {"dcamprop_setgetvalue", std::make_pair(std::any(dcamprop_setgetvalue_func()), (void**)&_dcamprop_setgetvalue)},
-            {"dcamprop_queryvalue", std::make_pair(std::any(dcamprop_queryvalue_func()), (void**)&_dcamprop_queryvalue)},
-            {"dcamprop_getnextid", std::make_pair(std::any(dcamprop_getnextid_func()), (void**)&_dcamprop_getnextid)},
-            {"dcamprop_getname", std::make_pair(std::any(dcamprop_getname_func()), (void**)&_dcamprop_getname)},
-            {"dcamprop_getvaluetext", std::make_pair(std::any(dcamprop_getvaluetext_func()), (void**)&_dcamprop_getvaluetext)},
+        // Define a map of function names to their raw pointer locations
+        // This avoids std::any and simplifies the map
+        std::map<std::string, void**> functionPointersToLoad = {
+            {"dcamapi_init", (void**)&_dcamapi_init},
+            {"dcamapi_uninit", (void**)&_dcamapi_uninit},
+            {"dcamdev_open", (void**)&_dcamdev_open},
+            {"dcamdev_close", (void**)&_dcamdev_close},
+            {"dcamdev_showpanel", (void**)&_dcamdev_showpanel},
+            {"dcamdev_getcapability", (void**)&_dcamdev_getcapability},
+            {"dcamdev_getstring", (void**)&_dcamdev_getstring},
+            {"dcamdev_setdata", (void**)&_dcamdev_setdata},
+            {"dcamdev_getdata", (void**)&_dcamdev_getdata},
+            {"dcambuf_alloc", (void**)&_dcambuf_alloc},
+            {"dcambuf_attach", (void**)&_dcambuf_attach},
+            {"dcambuf_release", (void**)&_dcambuf_release},
+            {"dcambuf_lockframe", (void**)&_dcambuf_lockframe},
+            {"dcambuf_copyframe", (void**)&_dcambuf_copyframe},
+            {"dcambuf_copymetadata", (void**)&_dcambuf_copymetadata},
+            {"dcamcap_start", (void**)&_dcamcap_start},
+            {"dcamcap_stop", (void**)&_dcamcap_stop},
+            {"dcamcap_status", (void**)&_dcamcap_status},
+            {"dcamcap_transferinfo", (void**)&_dcamcap_transferinfo},
+            {"dcamcap_firetrigger", (void**)&_dcamcap_firetrigger},
+            {"dcamcap_record", (void**)&_dcamcap_record},
+            {"dcamwait_open", (void**)&_dcamwait_open},
+            {"dcamwait_close", (void**)&_dcamwait_close},
+            {"dcamwait_start", (void**)&_dcamwait_start},
+            {"dcamwait_abort", (void**)&_dcamwait_abort},
+            {"dcamprop_getattr", (void**)&_dcamprop_getattr},
+            {"dcamprop_getvalue", (void**)&_dcamprop_getvalue},
+            {"dcamprop_setvalue", (void**)&_dcamprop_setvalue},
+            {"dcamprop_setgetvalue", (void**)&_dcamprop_setgetvalue},
+            {"dcamprop_queryvalue", (void**)&_dcamprop_queryvalue},
+            {"dcamprop_getnextid", (void**)&_dcamprop_getnextid},
+            {"dcamprop_getname", (void**)&_dcamprop_getname},
+            {"dcamprop_getvaluetext", (void**)&_dcamprop_getvaluetext},
         };
 
         // Load each function
-        for (auto& func : functionMap) {
-            void* funcPtr = GET_PROC_ADDRESS(handle, func.first.c_str());
-            if (!funcPtr) {
+        for (auto const& [funcName, funcPtrAddress] : functionPointersToLoad) {
+            void* loadedFuncPtr = GET_PROC_ADDRESS(handle, funcName.c_str());
+            if (!loadedFuncPtr) {
                 allFunctionsLoaded = false;
                 continue;
             }
-            *func.second.second = funcPtr;
+            *funcPtrAddress = loadedFuncPtr;
         }
     }
 
     ~HamamatsuAPIWrapper() {
         if (handle) {
             FREE_LIBRARY(handle);
+            handle = nullptr; // Clear handle after freeing
         }
     }
 
@@ -371,8 +375,7 @@ public:
     }
 
 private:
-    LIB_HANDLE handle;
-    std::map<std::string, std::pair<std::any, void**>> functionMap;
+    LIB_HANDLE handle = nullptr; // Initialize handle to nullptr
 
     // Function pointers with leading underscore
     dcamapi_init_func _dcamapi_init = nullptr;
