@@ -11,7 +11,7 @@
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
     HamamatsuAPIWrapper apiWrapper = GetHamamatsuAPIWrapper();
-    if (!apiWrapper.allFunctionsLoaded) {
+    if (!apiWrapper.areAllFunctionsLoaded()) {
         return std::vector<std::shared_ptr<BaseCameraClass>>();
     }
 
@@ -46,7 +46,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
 
 void CloseHamamatsuLibrary() {
     HamamatsuAPIWrapper apiWrapper = GetHamamatsuAPIWrapper();
-    if (apiWrapper.allFunctionsLoaded) {
+    if (apiWrapper.areAllFunctionsLoaded()) {
         apiWrapper.dcamapi_uninit();
     }
 }

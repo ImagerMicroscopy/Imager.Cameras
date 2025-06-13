@@ -70,20 +70,12 @@ DEFINE_FUNC_PTR(dcamprop_getvaluetext, DCAMERR, HDCAM, DCAMPROP_VALUETEXT*);
 
 class HamamatsuAPIWrapper {
 public:
-    // Custom exception for Hamamatsu API loading errors
-    class HamamatsuAPILoadError : public std::runtime_error {
-    public:
-        explicit HamamatsuAPILoadError(const std::string& msg) : std::runtime_error(msg) {}
-    };
-
-    bool allFunctionsLoaded;
-
-    explicit HamamatsuAPIWrapper(const std::string& libraryPath) : allFunctionsLoaded(true) {
+    explicit HamamatsuAPIWrapper(const std::string& libraryPath) : _allFunctionsLoaded(true) {
         // Load the library
-        handle = LOAD_LIBRARY(libraryPath.c_str());
-        if (!handle) {
-            allFunctionsLoaded = false;
-            throw HamamatsuAPILoadError("Failed to load Hamamatsu DLL: " + libraryPath);
+        _dllHandle = LOAD_LIBRARY(libraryPath.c_str());
+        if (!_dllHandle) {
+            _allFunctionsLoaded = false;
+            // the Hamamatsu API is not installed
         }
 
         // Define a map of function names to their raw pointer locations
@@ -126,20 +118,30 @@ public:
 
         // Load each function
         for (auto const& [funcName, funcPtrAddress] : functionPointersToLoad) {
-            void* loadedFuncPtr = GET_PROC_ADDRESS(handle, funcName.c_str());
+            void* loadedFuncPtr = GET_PROC_ADDRESS(_dllHandle, funcName.c_str());
             if (!loadedFuncPtr) {
-                allFunctionsLoaded = false;
+                _allFunctionsLoaded = false;
                 continue;
             }
             *funcPtrAddress = loadedFuncPtr;
         }
     }
 
+    // Delete the copy constructor to prevent copying
+    HamamatsuAPIWrapper(const HamamatsuAPIWrapper&) = delete;
+    // Optionally, delete the copy assignment operator as well
+    HamamatsuAPIWrapper& operator=(const HamamatsuAPIWrapper&) = delete;
+
     ~HamamatsuAPIWrapper() {
-        if (handle) {
-            FREE_LIBRARY(handle);
-            handle = nullptr; // Clear handle after freeing
+        if (_dllHandle) {
+            FREE_LIBRARY(_dllHandle);
+            _dllHandle = nullptr; // Clear handle after freeing
         }
+    }
+
+    // Accessor function for _allFunctionsLoaded
+    bool areAllFunctionsLoaded() const {
+        return _allFunctionsLoaded;
     }
 
     // Wrapper methods for each function
@@ -375,7 +377,8 @@ public:
     }
 
 private:
-    LIB_HANDLE handle = nullptr; // Initialize handle to nullptr
+    LIB_HANDLE _dllHandle = nullptr; // Renamed from 'handle'
+    bool _allFunctionsLoaded; // Made private and renamed
 
     // Function pointers with leading underscore
     dcamapi_init_func _dcamapi_init = nullptr;
@@ -413,6 +416,8 @@ private:
     dcamprop_getvaluetext_func _dcamprop_getvaluetext = nullptr;
 };
 
-HamamatsuAPIWrapper GetHamamatsuAPIWrapper();
+inline HamamatsuAPIWrapper GetHamamatsuAPIWrapper() {
+    return HamamatsuAPIWrapper("dcamapi.dll");
+}
 
 #endif
