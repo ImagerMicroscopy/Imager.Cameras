@@ -6,8 +6,10 @@
 
 #include "windows.h"
 #include "Hamamatsu/dcamapi4.h"
+
 #include "HamamatsuAPIWrapper.h"
 #include "HamamatsuCamera.h"
+#include "SCPrinter.h"
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
     HamamatsuAPIWrapper apiWrapper = GetHamamatsuAPIWrapper();
@@ -15,6 +17,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
         return std::vector<std::shared_ptr<BaseCameraClass>>();
     }
 
+    Print("Found Hamamatsu runtime library\n");
     std::vector<std::shared_ptr<BaseCameraClass>> cameras;
 
     DCAMAPI_INIT paraminit;
