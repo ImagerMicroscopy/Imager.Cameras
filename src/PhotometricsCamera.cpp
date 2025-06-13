@@ -35,13 +35,14 @@ std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
 }
 
 PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
+    _apiWrapper(GetPhotometricsAPIWrapper()),
     _pvcamHandle(0),
     _installedCallbackFunction(false),
     _binningFactor(1),
     _crop(0, 0),
     _haveCameraDisconnectionError(false)
 {
-    int err = pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
+    int err = _apiWrapper.pl_cam_open(const_cast<char*>(cameraName.c_str()), &_pvcamHandle, OPEN_EXCLUSIVE);
     if (!err)
         throw std::runtime_error(getPVCAMErrorMessage());
 
@@ -60,14 +61,14 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
 }
 
 PhotometricsCamera::~PhotometricsCamera() {
-    pl_cam_close(_pvcamHandle);
+    _apiWrapper.pl_cam_close(_pvcamHandle);
 }
 
 std::string PhotometricsCamera::getIdentifierStr() const {
     return _identifier;
 }
 
-double PhotometricsCamera::getFrameRate() const {
+double PhotometricsCamera::getFrameRate() {
     double exposureTime = _getExposureTime();
     std::uint32_t readoutTimeus = _getCameraParameterCurrentValue<std::uint32_t>(PARAM_READOUT_TIME);
     return (1.0 / (exposureTime + static_cast<double>(readoutTimeus) / 1.0e6));
@@ -337,7 +338,7 @@ bool PhotometricsCamera::_derivedIsConfiguredForHardwareTriggering() {
     }
 }
 
-std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() const {
+std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() {
     std::pair<int, int> cropped = _getImageCrop();
     cropped.first /= _getBinningFactor();
     cropped.second /= _getBinningFactor();
@@ -360,7 +361,7 @@ void PhotometricsCamera::_setExposureTime(const double exposureTime) {
     std::uint64_t clamped = clamp((std::uint64_t)(exposureTime * 1.0e6), limits.first, limits.second);
     rgn_type region = _getRegionForCurrentBinningAndCropping();
     std::uint32_t nBytesInImage = 0;
-    int err = pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, clamped, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+    int err = _apiWrapper.pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, clamped, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
@@ -370,7 +371,7 @@ void PhotometricsCamera::_updateCameraTimings() {
     std::uint64_t expTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
     rgn_type region = _getRegionForCurrentBinningAndCropping();
     std::uint32_t nBytesInImage = 0;
-    int err = pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, expTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+    int err = _apiWrapper.pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, expTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
@@ -407,8 +408,9 @@ rgn_type PhotometricsCamera::_getRegionForCurrentBinningAndCropping() const {
 }
 
 std::string PhotometricsCamera::getPVCAMErrorMessage() {
+    PhotometricsAPIWrapper wrapper = GetPhotometricsAPIWrapper();
     char buf[ERROR_MSG_LEN];
-    pl_error_message(pl_error_code(), buf);
+    wrapper.pl_error_message(wrapper.pl_error_code(), buf);
     return std::string(buf);
 }
 
@@ -437,11 +439,11 @@ void PhotometricsCamera::_derivedStartUnboundedAsyncAcquisition() {
     }
 
     if (!_installedCallbackFunction) {
-        err = pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_EOF, &_pvcamCallbackFunction, (void*)(&_pvcamCallbackQueue));
+        err = _apiWrapper.pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_EOF, &_pvcamCallbackFunction, (void*)(&_pvcamCallbackQueue));
         if (err != PV_OK) {
             throw std::runtime_error("error installing pvcam callback");
         }
-        err = pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_CAM_REMOVED, &_pvcamCameraRemovedCallbackFunction, (void*)(&_haveCameraDisconnectionError));
+        err = _apiWrapper.pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_CAM_REMOVED, &_pvcamCameraRemovedCallbackFunction, (void*)(&_haveCameraDisconnectionError));
         if (err != PV_OK) {
             throw std::runtime_error("error installing pvcam callback");
         }
@@ -458,20 +460,20 @@ void PhotometricsCamera::_derivedStartUnboundedAsyncAcquisition() {
     region.pbin = _binningFactor;
 
 
-    err = pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, exposureTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
+    err = _apiWrapper.pl_exp_setup_cont(_pvcamHandle, 1, &region, _triggerMode, exposureTime, reinterpret_cast<uns32_ptr>(&nBytesInImage), CIRC_OVERWRITE);
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
     _asyncBuffer.resize(nBytesInImage * nImagesInBuffer);
 
-    err = pl_exp_start_cont(_pvcamHandle, _asyncBuffer.data(), _asyncBuffer.size() * sizeof(std::uint16_t));
+    err = _apiWrapper.pl_exp_start_cont(_pvcamHandle, _asyncBuffer.data(), _asyncBuffer.size() * sizeof(std::uint16_t));
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
 }
 
 void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
-    pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
+    _apiWrapper.pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
 BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
@@ -486,14 +488,14 @@ BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(
     }
 
     uint16_t* address = nullptr;
-    int err = pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
+    int err = _apiWrapper.pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
 
     memcpy(bufferForThisImage, address, nBytes);
 
-    err = pl_exp_unlock_oldest_frame(_pvcamHandle);
+    err = _apiWrapper.pl_exp_unlock_oldest_frame(_pvcamHandle);
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
@@ -616,13 +618,13 @@ const PhotometricsCamera::PostProcessingFeature& PhotometricsCamera::_getCurrent
     return *it;
 }
 
-std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCameraEnumParameters(int paramID) const {
+std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCameraEnumParameters(int paramID) {
     std::vector<std::pair<std::int32_t, std::string>> params;
     std::uint32_t count = _getCameraParameterCount(paramID);
     for (std::uint32_t i = 0; i < count; ++i) {
         std::int32_t value = 0;
         char desc[128] = { 0 };
-        rs_bool result = pl_get_enum_param(_pvcamHandle, paramID, i, &value, desc, 127);
+        rs_bool result = _apiWrapper.pl_get_enum_param(_pvcamHandle, paramID, i, &value, desc, 127);
         if (result != PV_OK) {
             throw std::runtime_error("invalid result in PhotometricsCamera::_getCameraEnumParameters()");
         }

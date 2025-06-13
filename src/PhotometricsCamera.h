@@ -5,6 +5,7 @@
 #include "PVCAM/pvcam.h"
 
 #include "BaseCameraClass.h"
+#include "PhotometricsAPIWrapper.h"
 
 class PhotometricsCamera : public BaseCameraClass {
 
@@ -119,7 +120,7 @@ public:
 
     std::string getIdentifierStr() const override;
 
-    double getFrameRate() const override;
+    double getFrameRate() override;
 
     static std::string getPVCAMErrorMessage();
 
@@ -138,7 +139,7 @@ private:
 
     bool _derivedIsConfiguredForHardwareTriggering() override;
 
-    std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() override;
     std::pair<int, int> _getSensorSize() const;
 
     double _getExposureTime() const;
@@ -199,7 +200,7 @@ private:
     std::uint32_t _getCameraParameterCount(int paramID) const {
         return _getCameraParameter<std::uint32_t>(paramID, ATTR_COUNT);
     }
-    std::vector<std::pair<std::int32_t, std::string>> _getCameraEnumParameters(int paramID) const;
+    std::vector<std::pair<std::int32_t, std::string>> _getCameraEnumParameters(int paramID);
 
     template <typename T> void _setCameraParameter(int paramID, T paramValue) {
         rs_bool result = pl_set_param(_pvcamHandle, paramID, &paramValue);
@@ -208,6 +209,7 @@ private:
         }
     }
 
+    PhotometricsAPIWrapper _apiWrapper;
     std::string _identifier;
     std::int16_t _pvcamHandle;
     std::vector<ReadoutPort> _readoutPorts;
