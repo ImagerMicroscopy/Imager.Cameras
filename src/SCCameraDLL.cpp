@@ -17,16 +17,10 @@
 
 #include "CameraPropertiesEncoding.h"
 #include "ImageProcessingUtils.h"
+#include "SCPrinter.h"
 
-void (*gPrinterFunc)(const char*) = nullptr;
 std::string gLastError = std::string();
 CameraManager* gCameraManager = nullptr;
-
-void PrintOutput(const std::string& output) {
-    if (gPrinterFunc != nullptr) {
-        gPrinterFunc(output.c_str());
-    }
-}
 
 // Define a function to handle exceptions
 int HandleExceptions(const std::function<void()>& func) {
@@ -34,7 +28,7 @@ int HandleExceptions(const std::function<void()>& func) {
         func(); // Execute the provided function
         return 0; // Return success
     } catch (const std::exception& e) {
-        PrintOutput(e.what());
+        Print(e.what());
         gLastError = e.what();
         return GENERIC_ERROR; // Return error code
     }
@@ -66,14 +60,16 @@ int InitCameraDLL(void(*printer)(const char*)) {
     if (printer == nullptr) {
         return -1;
     }
-    gPrinterFunc = printer;
+    InitPrinter([=] (const std::string& str) -> void {
+        printer(str.c_str());
+    });
 
     StartCameraManager();
     if (CameraManagerIsAvailable()) {
         gHaveInit = true;
         return 0;
     } else {
-        PrintOutput("the camera manager is unavailable");
+        Print("the camera manager is unavailable");
         return GENERIC_ERROR;
     }
 }
@@ -97,7 +93,7 @@ int ListConnectedCameraNames(char** namesPtr) {
 
 int GetCameraOptions(char* cameraName, char** encodedOptionsPtr) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -125,7 +121,7 @@ void ReleaseOptionsData(char* data) {
 
 int SetCameraOption(char* cameraName, char* encodedOption) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -139,7 +135,7 @@ int SetCameraOption(char* cameraName, char* encodedOption) {
 
 int GetFrameRate(char* cameraName, double* frameRate) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -153,7 +149,7 @@ int GetFrameRate(char* cameraName, double* frameRate) {
 
 int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHardwareTriggering) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -200,7 +196,7 @@ std::mutex gImagesInFlightMutex;
 
 int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -225,7 +221,7 @@ int StartAsyncAcquisition(char* cameraName) {
 
 int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquire) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -239,7 +235,7 @@ int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquir
 
 int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
@@ -267,7 +263,7 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16
 
 void ReleaseImageData(uint16_t* imagePtr) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return;
     }
 
@@ -285,7 +281,7 @@ void ReleaseImageData(uint16_t* imagePtr) {
 
 int AbortAsyncAcquisition(char* cameraName) {
     if (!gHaveInit) {
-        PrintOutput("didn't init SCCamera");
+        Print("didn't init SCCamera");
         return NO_INIT;
     }
 
