@@ -15,9 +15,7 @@
 #include "AndorSDK3CameraHandler.h"
 #endif
 
-#ifdef WITH_HAMAMATSU
 #include "HamamatsuCameraHandler.h"
-#endif
 
 #ifdef WITH_IDS
 #include "IDSCamera.h"
@@ -51,9 +49,7 @@ CameraManager::~CameraManager() {
     ClosePhotometricsLibrary();
 #endif
 
-#ifdef WITH_HAMAMATSU
     CloseHamamatsuLibrary();
-#endif
 
 #ifdef WITH_IDS_PEAK
     CloseIDSPeakLibrary();
@@ -88,12 +84,10 @@ void CameraManager::discoverCameras() {
     }
 #endif
 
-#ifdef WITH_HAMAMATSU
     std::vector<std::shared_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras();
     for (auto c : hamamatsuCameras) {
         _availableCameras.insert({c->getIdentifierStr(), c});
     }
-#endif
 
 #ifdef WITH_IDS
     is_SetErrorReport(0, IS_DISABLE_ERR_REP);

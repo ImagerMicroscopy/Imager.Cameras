@@ -1,6 +1,5 @@
 #include "SCConfigure.h"
 
-#ifdef WITH_HAMAMATSU
 
 #include "HamamatsuCamera.h"
 
@@ -635,4 +634,4 @@ std::pair<double, double> HamamatsuCamera::_getPropertyLimits(HDCAM camHandle, i
     return std::pair<double, double>(attr.valuemin, attr.valuemax);
 }
 
-#endif
+
