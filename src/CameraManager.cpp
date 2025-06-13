@@ -22,9 +22,7 @@
 #include "IDSCamera.h"
 #endif
 
-#ifdef WITH_PCO
 #include "PCOCamera.h"
-#endif
 
 #ifdef WITH_OCEANOPTICS
 #include "OceanOpticsCamera.h"
@@ -116,7 +114,6 @@ void CameraManager::discoverCameras() {
     }
 #endif
 
-#ifdef WITH_PCO
     PCOAPIWrapper pcoAPIWrapper = GetPCOAPIWrapper();
     if (pcoAPIWrapper.areAllFunctionsLoaded()) {
         Print("Found PCO runtime libraries");
@@ -134,7 +131,6 @@ void CameraManager::discoverCameras() {
             _availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), pcoCamera));
         }
     }
-#endif
 
 #ifdef WITH_OCEANOPTICS
     SeaBreezeAPI* seabreezeAPI = SeaBreezeAPI::getInstance();

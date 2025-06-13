@@ -1,7 +1,5 @@
 #include "SCConfigure.h"
 
-#ifdef WITH_PCO
-
 #include "PCOCamera.h"
 
 PCOCamera::PCOCamera(HANDLE camHandle) :
@@ -343,5 +341,3 @@ double PCOCamera::_pcoTimeToSeconds(DWORD time, DWORD timeBase) const {
     }
     return timeSeconds;
 }
-
-#endif

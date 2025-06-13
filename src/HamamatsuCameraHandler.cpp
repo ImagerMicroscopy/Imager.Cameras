@@ -15,7 +15,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
         return std::vector<std::shared_ptr<BaseCameraClass>>();
     }
 
-    Print("Found Hamamatsu runtime library\n");
+    Print("Found Hamamatsu runtime library");
     std::vector<std::shared_ptr<BaseCameraClass>> cameras;
 
     DCAMAPI_INIT paraminit;
