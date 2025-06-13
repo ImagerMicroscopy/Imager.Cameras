@@ -63,7 +63,9 @@ void ImageRecycler::freeAllImages() {
     std::lock_guard<std::mutex> lock(_mutex);
     for (const auto& v : _imagesInUse) {
         if (!v.empty()) {
-            throw std::logic_error("recycler freeing all images but still in use");
+            //throw std::logic_error("recycler freeing all images but still in use");
+            // this can happen if the program is closed and Igor didn't get back about freeing all images.
+            // don't treat this as an error.
         }
     }
     _availableDimensions.clear();
