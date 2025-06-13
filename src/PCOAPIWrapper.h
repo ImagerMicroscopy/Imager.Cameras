@@ -48,9 +48,6 @@ DEFINE_FUNC_PTR(PCO_GetShutterMode, int, HANDLE, WORD*);
 DEFINE_FUNC_PTR(PCO_SetShutterMode, int, HANDLE, WORD);
 DEFINE_FUNC_PTR(PCO_GetPowerSaveMode, int, HANDLE, WORD*, WORD*);
 DEFINE_FUNC_PTR(PCO_SetPowerSaveMode, int, HANDLE, WORD, WORD);
-DEFINE_FUNC_PTR(PCO_GetBatteryStatus, int, HANDLE, WORD*, WORD*, WORD*, WORD);
-DEFINE_FUNC_PTR(PCO_GetFanControlParameters, int, HANDLE, WORD*, WORD*);
-DEFINE_FUNC_PTR(PCO_SetFanControlParameters, int, HANDLE, WORD, WORD);
 DEFINE_FUNC_PTR(PCO_GetSensorStruct, int, HANDLE, void*);
 DEFINE_FUNC_PTR(PCO_SetSensorStruct, int, HANDLE, void*);
 DEFINE_FUNC_PTR(PCO_GetCameraDescription, int, HANDLE, void*);
@@ -207,9 +204,6 @@ public:
             {"PCO_SetShutterMode", &_PCO_SetShutterMode},
             {"PCO_GetPowerSaveMode", &_PCO_GetPowerSaveMode},
             {"PCO_SetPowerSaveMode", &_PCO_SetPowerSaveMode},
-            {"PCO_GetBatteryStatus", &_PCO_GetBatteryStatus},
-            {"PCO_GetFanControlParameters", &_PCO_GetFanControlParameters},
-            {"PCO_SetFanControlParameters", &_PCO_SetFanControlParameters},
             {"PCO_GetSensorStruct", &_PCO_GetSensorStruct},
             {"PCO_SetSensorStruct", &_PCO_SetSensorStruct},
             {"PCO_GetCameraDescription", &_PCO_GetCameraDescription},
@@ -462,27 +456,6 @@ public:
             throw std::logic_error("Function PCO_SetPowerSaveMode is not loaded.");
         }
         return reinterpret_cast<PCO_SetPowerSaveMode_func>(_PCO_SetPowerSaveMode)(ph, wMode, wDelayMinutes);
-    }
-
-    int PCO_GetBatteryStatus(HANDLE ph, WORD* wBatteryType, WORD* wBatteryLevel, WORD* wPowerStatus, WORD wNumReserved) {
-        if (!_PCO_GetBatteryStatus) {
-            throw std::logic_error("Function PCO_GetBatteryStatus is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetBatteryStatus_func>(_PCO_GetBatteryStatus)(ph, wBatteryType, wBatteryLevel, wPowerStatus, wNumReserved);
-    }
-
-    int PCO_GetFanControlParameters(HANDLE hCam, WORD* wMode, WORD* wValue) {
-        if (!_PCO_GetFanControlParameters) {
-            throw std::logic_error("Function PCO_GetFanControlParameters is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetFanControlParameters_func>(_PCO_GetFanControlParameters)(hCam, wMode, wValue);
-    }
-
-    int PCO_SetFanControlParameters(HANDLE hCam, WORD wMode, WORD wValue) {
-        if (!_PCO_SetFanControlParameters) {
-            throw std::logic_error("Function PCO_SetFanControlParameters is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetFanControlParameters_func>(_PCO_SetFanControlParameters)(hCam, wMode, wValue);
     }
 
     int PCO_GetSensorStruct(HANDLE ph, void* strSensor) {
@@ -1402,9 +1375,6 @@ private:
     void* _PCO_SetShutterMode = nullptr;
     void* _PCO_GetPowerSaveMode = nullptr;
     void* _PCO_SetPowerSaveMode = nullptr;
-    void* _PCO_GetBatteryStatus = nullptr;
-    void* _PCO_GetFanControlParameters = nullptr;
-    void* _PCO_SetFanControlParameters = nullptr;
     void* _PCO_GetSensorStruct = nullptr;
     void* _PCO_SetSensorStruct = nullptr;
     void* _PCO_GetCameraDescription = nullptr;

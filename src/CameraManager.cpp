@@ -2,6 +2,7 @@
 #include "SCConfigure.h"
 #include "CameraManager.h"
 #include "BaseCameraClass.h"
+#include "SCPrinter.h"
 
 #ifdef WITH_PHOTOMETRICS
 #include "PhotometricsCameraHandler.h"
@@ -117,7 +118,8 @@ void CameraManager::discoverCameras() {
 
 #ifdef WITH_PCO
     PCOAPIWrapper pcoAPIWrapper = GetPCOAPIWrapper();
-    if (pcoAPIWrapper.allFunctionsLoaded) {
+    if (pcoAPIWrapper.areAllFunctionsLoaded()) {
+        Print("Found PCO runtime libraries");
         for (; ; ) {
             HANDLE pcoCamHandle = nullptr;
             int pcoErr = pcoAPIWrapper.PCO_OpenCamera(&pcoCamHandle, 0);
