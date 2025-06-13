@@ -25,7 +25,11 @@ public:
         }
 
         // Load each function
-        _isLoaded = loadFunction(_pl_cam_open, "pl_cam_open") &&
+        _isLoaded = loadFunction(_pl_pvcam_init, "pl_pvcam_init") &&
+                   loadFunction(_pl_pvcam_uninit, "pl_pvcam_uninit") &&
+                   loadFunction(_pl_cam_get_total, "pl_cam_get_total") &&
+                   loadFunction(_pl_cam_get_name, "pl_cam_get_name") &&
+                   loadFunction(_pl_cam_open, "pl_cam_open") &&
                    loadFunction(_pl_cam_close, "pl_cam_close") &&
                    loadFunction(_pl_get_param, "pl_get_param") &&
                    loadFunction(_pl_set_param, "pl_set_param") &&
@@ -61,6 +65,26 @@ public:
     }
 
     // Wrapper functions
+    rs_bool pl_pvcam_init() {
+        if (!_pl_pvcam_init) throw std::logic_error("Function pl_pvcam_init not loaded.");
+        return _pl_pvcam_init();
+    }
+
+    rs_bool pl_pvcam_uninit() {
+        if (!_pl_pvcam_uninit) throw std::logic_error("Function pl_pvcam_uninit not loaded.");
+        return _pl_pvcam_uninit();
+    }
+
+    rs_bool pl_cam_get_total(int16* totl_cams) {
+        if (!_pl_cam_get_total) throw std::logic_error("Function pl_cam_get_total not loaded.");
+        return _pl_cam_get_total(totl_cams);
+    }
+
+    rs_bool pl_cam_get_name(int16 cam_num, char* camera_name) {
+        if (!_pl_cam_get_name) throw std::logic_error("Function pl_cam_get_name not loaded.");
+        return _pl_cam_get_name(cam_num, camera_name);
+    }
+
     rs_bool pl_cam_open(char* camera_name, int16* hcam, int16 o_mode) {
         if (!_pl_cam_open) throw std::logic_error("Function pl_cam_open not loaded.");
         return _pl_cam_open(camera_name, hcam, o_mode);
@@ -146,6 +170,10 @@ private:
     bool _isLoaded;
 
     // Define function pointer types
+    typedef rs_bool (*pl_pvcam_init_t)();
+    typedef rs_bool (*pl_pvcam_uninit_t)();
+    typedef rs_bool (*pl_cam_get_total_t)(int16*);
+    typedef rs_bool (*pl_cam_get_name_t)(int16, char*);
     typedef rs_bool (*pl_cam_open_t)(char*, int16*, int16);
     typedef rs_bool (*pl_cam_close_t)(int16);
     typedef rs_bool (*pl_get_param_t)(int16, uns32, int16, void*);
@@ -164,6 +192,10 @@ private:
     typedef rs_bool (*pl_cam_deregister_callback_t)(int16, int32);
 
     // Function pointers as member variables
+    pl_pvcam_init_t _pl_pvcam_init;
+    pl_pvcam_uninit_t _pl_pvcam_uninit;
+    pl_cam_get_total_t _pl_cam_get_total;
+    pl_cam_get_name_t _pl_cam_get_name;
     pl_cam_open_t _pl_cam_open;
     pl_cam_close_t _pl_cam_close;
     pl_get_param_t _pl_get_param;

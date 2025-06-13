@@ -4,9 +4,7 @@
 #include "BaseCameraClass.h"
 #include "SCPrinter.h"
 
-#ifdef WITH_PHOTOMETRICS
 #include "PhotometricsCameraHandler.h"
-#endif
 
 #ifdef WITH_ANDOR
 #include "AndorCamera.h"
@@ -44,9 +42,7 @@ CameraManager::~CameraManager() {
     CloseAndorSDK3Library();
 #endif
 
-#ifdef WITH_PHOTOMETRICS
     ClosePhotometricsLibrary();
-#endif
 
     CloseHamamatsuLibrary();
 
@@ -58,12 +54,10 @@ CameraManager::~CameraManager() {
 void CameraManager::discoverCameras() {
     _availableCameras.clear();
 
-#ifdef WITH_PHOTOMETRICS
     std::vector<std::shared_ptr<BaseCameraClass>> photometricsCameras = OpenPhotometricsCameras();
     for (auto c : photometricsCameras) {
         _availableCameras.insert({c->getIdentifierStr(), c});
     }
-#endif
 
 #ifdef WITH_ANDOR
     try {

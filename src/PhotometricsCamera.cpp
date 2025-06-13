@@ -1,8 +1,3 @@
-
-#include "SCConfigure.h"
-
-#ifdef WITH_PHOTOMETRICS
-
 #include "PhotometricsCamera.h"
 
 #include <chrono>
@@ -345,13 +340,13 @@ std::pair<int, int> PhotometricsCamera::_getSizeOfRawImages() {
     return cropped;
 }
 
-std::pair<int, int> PhotometricsCamera::_getSensorSize() const {
+std::pair<int, int> PhotometricsCamera::_getSensorSize() {
     int nRows = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_SER_SIZE);
     int nCols = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_PAR_SIZE);
     return std::pair<int, int>(nRows, nCols);
 }
 
-double PhotometricsCamera::_getExposureTime() const {
+double PhotometricsCamera::_getExposureTime() {
     std::uint64_t expTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
     return (expTime / 1.0e6);
 }
@@ -395,7 +390,7 @@ int PhotometricsCamera::_getBinningFactor() const {
     return _binningFactor;
 }
 
-rgn_type PhotometricsCamera::_getRegionForCurrentBinningAndCropping() const {
+rgn_type PhotometricsCamera::_getRegionForCurrentBinningAndCropping() {
     std::pair<int, int> sensorSize = this->_getSensorSize();
     rgn_type region = { 0 };
     region.s1 = (sensorSize.first - _crop.first) / 2;
@@ -541,7 +536,7 @@ std::vector<PhotometricsCamera::ReadoutPort> PhotometricsCamera::_listReadoutPor
     return readoutPorts;
 }
 
-std::tuple<PhotometricsCamera::ReadoutPort, PhotometricsCamera::SpeedEntry, PhotometricsCamera::Gain> PhotometricsCamera::_getCurrentReadoutSettings() const {
+std::tuple<PhotometricsCamera::ReadoutPort, PhotometricsCamera::SpeedEntry, PhotometricsCamera::Gain> PhotometricsCamera::_getCurrentReadoutSettings() {
     std::int32_t currentReadoutPortIndex = _getCameraParameterCurrentValue<std::int32_t>(PARAM_READOUT_PORT);
     std::int16_t currentSpeedTableIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_SPDTAB_INDEX);
     std::int16_t currentGainIndex = _getCameraParameterCurrentValue<std::int16_t>(PARAM_GAIN_INDEX);
@@ -606,7 +601,7 @@ std::vector<PhotometricsCamera::PostProcessingFeature> PhotometricsCamera::_list
     return features;
 }
 
-const PhotometricsCamera::PostProcessingFeature& PhotometricsCamera::_getCurrentPostProcessingFeature() const {
+const PhotometricsCamera::PostProcessingFeature& PhotometricsCamera::_getCurrentPostProcessingFeature() {
     std::int16_t currentFeatureIdx = _getCameraParameterCurrentValue<std::int16_t>(PARAM_PP_INDEX);
     auto it = std::find_if(_postProcessingFeatures.cbegin(), _postProcessingFeatures.cend(), [&](const auto& f) {
         return (f.index() == currentFeatureIdx);
@@ -632,5 +627,3 @@ std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCamera
     }
     return params;
 }
-
-#endif

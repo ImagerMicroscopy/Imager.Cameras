@@ -1,6 +1,9 @@
 #ifndef PHOTOMETRICSCAMERA_H
 #define PHOTOMETRICSCAMERA_H
 
+#include <tuple>
+#include <tuple>
+
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
 
@@ -140,16 +143,16 @@ private:
     bool _derivedIsConfiguredForHardwareTriggering() override;
 
     std::pair<int, int> _getSizeOfRawImages() override;
-    std::pair<int, int> _getSensorSize() const;
+    std::pair<int, int> _getSensorSize();
 
-    double _getExposureTime() const;
+    double _getExposureTime();
     void _setExposureTime(const double exposureTime);
     void _updateCameraTimings();
     void _setImageCrop(const std::pair<int, int>& crop);
     std::pair<int, int> _getImageCrop() const;
     void _setBinningFactor(const int binningFactor);
     int _getBinningFactor() const;
-    rgn_type _getRegionForCurrentBinningAndCropping() const;
+    rgn_type _getRegionForCurrentBinningAndCropping();
     void _setTrigggerMode(const int triggerMode) { _triggerMode = triggerMode; }
     int _getTriggerMode() const { return _triggerMode; }
     std::vector<std::pair<std::string, int>> _getTriggerModes() const;
@@ -162,48 +165,48 @@ private:
     static void _pvcamCameraRemovedCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
 
     std::vector<ReadoutPort> _listReadoutPorts();
-    std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings() const;
+    std::tuple<ReadoutPort, SpeedEntry, Gain> _getCurrentReadoutSettings();
     std::vector<PostProcessingFeature> _listPostProcessingFeatures();
-    const PostProcessingFeature& _getCurrentPostProcessingFeature() const;
+    const PostProcessingFeature& _getCurrentPostProcessingFeature();
 
-    template <typename T> T _getCameraParameter(int paramID, int attribute) const {
+    template <typename T> T _getCameraParameter(int paramID, int attribute) {
         T value;
-        rs_bool result = pl_get_param(_pvcamHandle, paramID, attribute, &value);
+        rs_bool result = _apiWrapper.pl_get_param(_pvcamHandle, paramID, attribute, &value);
         if (result != PV_OK) {
             throw std::runtime_error(getPVCAMErrorMessage());
         }
         return value;
     }
 
-    void _fillCameraTextParameter(int paramID, char* buf) const {
-        rs_bool result = pl_get_param(_pvcamHandle, paramID, ATTR_CURRENT, buf);
+    void _fillCameraTextParameter(int paramID, char* buf) {
+        rs_bool result = _apiWrapper.pl_get_param(_pvcamHandle, paramID, ATTR_CURRENT, buf);
         if (result != PV_OK) {
             throw std::runtime_error(getPVCAMErrorMessage());
         }
     }
 
-    template <typename T> T _getCameraParameterCurrentValue(int paramID) const {
+    template <typename T> T _getCameraParameterCurrentValue(int paramID) {
         return _getCameraParameter<T>(paramID, ATTR_CURRENT);
     }
 
-    bool _cameraSupportsParameter(int paramID) const {
+    bool _cameraSupportsParameter(int paramID) {
         rs_bool isAvailable = _getCameraParameter<rs_bool>(paramID, ATTR_AVAIL);
         return (isAvailable != PV_FAIL);
     }
 
-    template <typename T> std::pair<T,T> _getCameraParameterLimits(int paramID) const {
+    template <typename T> std::pair<T,T> _getCameraParameterLimits(int paramID) {
         T min = _getCameraParameter<T>(paramID, ATTR_MIN);
         T max = _getCameraParameter<T>(paramID, ATTR_MAX);
         return std::pair<T,T>(min, max);
     }
 
-    std::uint32_t _getCameraParameterCount(int paramID) const {
+    std::uint32_t _getCameraParameterCount(int paramID) {
         return _getCameraParameter<std::uint32_t>(paramID, ATTR_COUNT);
     }
     std::vector<std::pair<std::int32_t, std::string>> _getCameraEnumParameters(int paramID);
 
     template <typename T> void _setCameraParameter(int paramID, T paramValue) {
-        rs_bool result = pl_set_param(_pvcamHandle, paramID, &paramValue);
+        rs_bool result = _apiWrapper.pl_set_param(_pvcamHandle, paramID, &paramValue);
         if (result != PV_OK) {
             throw std::runtime_error(getPVCAMErrorMessage());
         }

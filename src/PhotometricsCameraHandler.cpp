@@ -1,26 +1,30 @@
-#include "SCConfigure.h"
-
-#ifdef WITH_PHOTOMETRICS
-
 #include "PhotometricsCameraHandler.h"
 
 #include "PhotometricsCamera.h"
+#include "PhotometricsAPIWrapper.h"
+#include "SCPrinter.h"
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
     std::vector<std::shared_ptr<BaseCameraClass>> cameras;
 
-    int err = pl_pvcam_init();
+    PhotometricsAPIWrapper apiWrapper = GetPhotometricsAPIWrapper();
+    if (!apiWrapper.areAllFunctionsLoaded()) {
+        return cameras;
+    }
+    Print("Found Photometrics runtime");
+
+    int err = apiWrapper.pl_pvcam_init();
     if (!err)
         throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
     std::vector<std::string> cameraNames;
     std::int16_t nCameras;
-    int pvcamErr = pl_cam_get_total(&nCameras);
+    int pvcamErr = apiWrapper.pl_cam_get_total(&nCameras);
     if (!pvcamErr)
         throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
 
     for (std::int16_t i = 0; i < nCameras; i++) {
         char camName[CAM_NAME_LEN + 1];
-        pvcamErr = pl_cam_get_name(i, camName);
+        pvcamErr = apiWrapper.pl_cam_get_name(i, camName);
         if (!pvcamErr)
             throw std::runtime_error(PhotometricsCamera::getPVCAMErrorMessage());
         cameraNames.push_back(std::string(camName));
@@ -34,7 +38,9 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
 }
 
 void ClosePhotometricsLibrary() {
-    pl_pvcam_uninit();
+    PhotometricsAPIWrapper apiWrapper = GetPhotometricsAPIWrapper();
+    if (apiWrapper.areAllFunctionsLoaded()) {
+        apiWrapper.pl_pvcam_uninit();
+    }
 }
 
-#endif
