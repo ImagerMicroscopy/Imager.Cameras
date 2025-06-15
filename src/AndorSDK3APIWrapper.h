@@ -24,7 +24,7 @@
 #include "Andor/atcore.h"
 #include "Andor/atutility.h"
 
-class AndorSDK3Wrapper {
+class AndorSDK3APIWrapper {
 public:
     // Define function pointer types for the functions in the DLLs
     typedef int (*AT_ConvertBufferFunc)(AT_U8*, AT_U8*, AT_64, AT_64, AT_64, const AT_WC*, const AT_WC*);
@@ -348,5 +348,9 @@ private:
         }
     }
 };
+
+inline AndorSDK3APIWrapper GetAndorSDK3APIWrapper() {
+    return AndorSDK3APIWrapper();
+}
 
 #endif

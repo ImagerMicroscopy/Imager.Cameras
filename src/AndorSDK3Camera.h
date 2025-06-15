@@ -6,6 +6,7 @@
 #include "Andor/atcore.h"
 
 #include "BaseCameraClass.h"
+#include "AndorSDK3APIWrapper.h"
 
 class AndorSDK3Camera : public BaseCameraClass {
 public:
@@ -88,6 +89,7 @@ private:
     void _sendCommand(const std::string& command);
 
     AT_H _camHandle;
+    AndorSDK3APIWrapper _apiWrapper;
     std::vector<std::uint64_t> _bufferMemory;	// uint64_t to force 8 bit alignment required by the SDK
     std::vector<std::uint16_t*> _imageBufferPtrs;
     size_t _singleImageSizeInBytes;

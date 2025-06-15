@@ -1,7 +1,3 @@
-#include "SCConfigure.h"
-
-#ifdef WITH_ANDORSDK3
-
 #include <functional>
 
 #include "AndorSDK3Camera.h"
@@ -12,6 +8,7 @@
 
 AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),
+    _apiWrapper(GetAndorSDK3APIWrapper());
     _singleImageSizeInBytes(0),
     _softwareTriggeredAcquisitionRunning(false),
     _nextExpectedImageInSequenceIdx(0)
@@ -23,20 +20,20 @@ AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
 
 AndorSDK3Camera::~AndorSDK3Camera() {
     _stopSoftwareTriggeredAcquisitionIfRunning();
-    AT_Close(_camHandle);
+    _apiWrapper.AT_Close(_camHandle);
 }
 
 std::string AndorSDK3Camera::getIdentifierStr() const {
     AT_WC szValue[64];
     int err = 0;
 
-    err = AT_GetString(_camHandle, L"CameraModel", szValue, 64);
+    err = _apiWrapper.AT_GetString(_camHandle, L"CameraModel", szValue, 64);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor 3 camera model");
     }
     std::string name = wcharStringToUtf8(szValue);
 
-    err = AT_GetString(_camHandle, L"Serial Number", szValue, 64);
+    err = _apiWrapper.AT_GetString(_camHandle, L"Serial Number", szValue, 64);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor 3 serial number");
     }
@@ -146,13 +143,13 @@ void AndorSDK3Camera::_derivedStartUnboundedAsyncAcquisition() {
 
 void AndorSDK3Camera::_derivedAbortAsyncAcquisition() {
     _sendCommand("AcquisitionStop");
-    AT_Flush(_camHandle);
+    _apiWrapper.AT_Flush(_camHandle);
 }
 
 AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
     std::uint8_t* bufPtr = nullptr;
     int bufSize = 0;
-    int err = AT_WaitBuffer(_camHandle, &bufPtr, &bufSize, timeoutMillis);
+    int err = _apiWrapper.AT_WaitBuffer(_camHandle, &bufPtr, &bufSize, timeoutMillis);
     if (err == AT_ERR_TIMEDOUT) {
         return NoImageBeforeTimeout;
     }
@@ -172,13 +169,13 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
     }
     // the docs mention that the image rows may be padded so we'll use a conversion function
     AT_64 aoiStrideInBytes = 0;
-    AT_GetInt(_camHandle, L"AOI Stride", &aoiStrideInBytes);
-    err = AT_ConvertBuffer(bufPtr, (std::uint8_t*)bufferForThisImage, aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
+    _apiWrapper.AT_GetInt(_camHandle, L"AOI Stride", &aoiStrideInBytes);
+    err = _apiWrapper.AT_ConvertBuffer(bufPtr, (std::uint8_t*)bufferForThisImage, aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
     if (err) {
         throw std::runtime_error("can't convert Andor3 buffer");
     }
 
-    err = AT_QueueBuffer(_camHandle, bufPtr, _singleImageSizeInBytes);
+    err = _apiWrapper.AT_QueueBuffer(_camHandle, bufPtr, _singleImageSizeInBytes);
     if (err) {
         throw std::runtime_error("can't requeue Andor3 buffer");
     }
@@ -187,7 +184,7 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
 }
 
 void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode) {
-    AT_Flush(_camHandle); // remove pending buffers
+    _apiWrapper.AT_Flush(_camHandle); // remove pending buffers
 
     _getSetTriggerMode_SDK(triggerMode);
 
@@ -206,7 +203,7 @@ void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode
     }
     for (size_t i = 0; i < _imageBufferPtrs.size(); ++i) {
         _imageBufferPtrs.at(i) = reinterpret_cast<std::uint16_t*>(&(_bufferMemory.at(i * nUInt64PerImage)));
-        int err = AT_QueueBuffer(_camHandle, reinterpret_cast<std::uint8_t*>(_imageBufferPtrs.at(i)), _singleImageSizeInBytes);
+        int err = _apiWrapper.AT_QueueBuffer(_camHandle, reinterpret_cast<std::uint8_t*>(_imageBufferPtrs.at(i)), _singleImageSizeInBytes);
         if (err) {
             throw std::runtime_error("can't queue Andor3 buffer");
         }
@@ -219,7 +216,7 @@ void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, co
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     std::wstring wValueStr = utf8StringToWChar(valueStr);
 
-    int err = AT_SetEnumeratedString(_camHandle, wFeatureStr.c_str(), wValueStr.c_str());
+    int err = _apiWrapper.AT_SetEnumeratedString(_camHandle, wFeatureStr.c_str(), wValueStr.c_str());
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't set Andor3 enum string");
     }
@@ -232,7 +229,7 @@ std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string&
 
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     int selectedIdx = 0;
-    err = AT_GetEnumIndex(_camHandle, wFeatureStr.c_str(), &selectedIdx);
+    err = _apiWrapper.AT_GetEnumIndex(_camHandle, wFeatureStr.c_str(), &selectedIdx);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 enum index");
     }
@@ -243,7 +240,7 @@ std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string&
 std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const std::string& featureStr) const {
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     int count = 0;
-    int err = AT_GetEnumCount(_camHandle, wFeatureStr.c_str(), &count);
+    int err = _apiWrapper.AT_GetEnumCount(_camHandle, wFeatureStr.c_str(), &count);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 enum count");
     }
@@ -251,7 +248,7 @@ std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const 
     std::vector<std::string> values;
     for (int i = 0; i < count; ++i) {
         wchar_t buf[256];
-        err = AT_GetEnumStringByIndex(_camHandle, wFeatureStr.c_str(), i, buf, sizeof(buf));
+        err = _apiWrapper.AT_GetEnumStringByIndex(_camHandle, wFeatureStr.c_str(), i, buf, sizeof(buf));
         if (err != AT_SUCCESS) {
             throw std::runtime_error("can't get Andor3 enum string");
         }
@@ -263,7 +260,7 @@ std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const 
 void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, double value) const {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
-    err = AT_SetFloat(_camHandle, wFeatureStr.c_str(), value);
+    err = _apiWrapper.AT_SetFloat(_camHandle, wFeatureStr.c_str(), value);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't set Andor3 float value");
     }
@@ -274,15 +271,15 @@ AndorSDK3Camera::FloatValue AndorSDK3Camera::_getParameterFloatValue(const std::
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
 
     double current, min, max;
-    err = AT_GetFloat(_camHandle, wFeatureStr.c_str(), &current);
+    err = _apiWrapper.AT_GetFloat(_camHandle, wFeatureStr.c_str(), &current);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 float value");
     }
-    err = AT_GetFloatMin(_camHandle, wFeatureStr.c_str(), &min);
+    err = _apiWrapper.AT_GetFloatMin(_camHandle, wFeatureStr.c_str(), &min);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 float min value");
     }
-    err = AT_GetFloatMax(_camHandle, wFeatureStr.c_str(), &max);
+    err = _apiWrapper.AT_GetFloatMax(_camHandle, wFeatureStr.c_str(), &max);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 float max value");
     }
@@ -293,7 +290,7 @@ AndorSDK3Camera::FloatValue AndorSDK3Camera::_getParameterFloatValue(const std::
 void AndorSDK3Camera::_setParameterIntValue(const std::string& featureStr, int value) const {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
-    err = AT_SetInt(_camHandle, wFeatureStr.c_str(), value);
+    err = _apiWrapper.AT_SetInt(_camHandle, wFeatureStr.c_str(), value);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't set Andor3 int value");
     }
@@ -304,15 +301,15 @@ AndorSDK3Camera::IntValue AndorSDK3Camera::_getParameterIntValue(const std::stri
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
 
     std::int64_t current, min, max;
-    err = AT_GetInt(_camHandle, wFeatureStr.c_str(), &current);
+    err = _apiWrapper.AT_GetInt(_camHandle, wFeatureStr.c_str(), &current);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 int value");
     }
-    err = AT_GetIntMin(_camHandle, wFeatureStr.c_str(), &min);
+    err = _apiWrapper.AT_GetIntMin(_camHandle, wFeatureStr.c_str(), &min);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 int min value");
     }
-    err = AT_GetIntMax(_camHandle, wFeatureStr.c_str(), &max);
+    err = _apiWrapper.AT_GetIntMax(_camHandle, wFeatureStr.c_str(), &max);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 int max value");
     }
@@ -324,7 +321,7 @@ void AndorSDK3Camera::_setParameterBoolValue(const std::string& featureStr, bool
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     AT_BOOL asATBool = (value) ? AT_TRUE : AT_FALSE;
-    err = AT_SetBool(_camHandle, wFeatureStr.c_str(), asATBool);
+    err = _apiWrapper.AT_SetBool(_camHandle, wFeatureStr.c_str(), asATBool);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't set Andor3 bool value");
     }
@@ -334,7 +331,7 @@ bool AndorSDK3Camera::_getParameterBoolValue(const std::string& featureStr) cons
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     AT_BOOL asATBool;
-    err = AT_GetBool(_camHandle, wFeatureStr.c_str(), &asATBool);
+    err = _apiWrapper.AT_GetBool(_camHandle, wFeatureStr.c_str(), &asATBool);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 bool value");
     }
@@ -343,7 +340,7 @@ bool AndorSDK3Camera::_getParameterBoolValue(const std::string& featureStr) cons
 
 void AndorSDK3Camera::_sendCommand(const std::string& command) {
     std::wstring wCommand = utf8StringToWChar(command);
-    int err = AT_Command(_camHandle, wCommand.c_str());
+    int err = _apiWrapper.AT_Command(_camHandle, wCommand.c_str());
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't send Andor3 software trigger");
     }
@@ -418,5 +415,3 @@ double AndorSDK3Camera::_getExposureTime() const {
     FloatValue val = _getParameterFloatValue("ExposureTime");
     return val.currentValue;
 }
-
-#endif

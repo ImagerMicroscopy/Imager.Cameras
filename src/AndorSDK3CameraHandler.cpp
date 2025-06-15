@@ -1,7 +1,3 @@
-#include "SCConfigure.h"
-
-#ifdef WITH_ANDORSDK3
-
 #include "AndorSDK3CameraHandler.h"
 
 #include <memory>
@@ -12,20 +8,22 @@
 #include "Andor/atutility.h"
 
 #include "AndorSDK3Camera.h"
+#include "AndorSDK3APIWrapper.h"
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
+    AndorSDK3APIWrapper apiWrapper = GetAndorSDK3APIWrapper();
     int err = 0;
-    err = AT_InitialiseLibrary();
+    err = apiWrapper.AT_InitialiseLibrary();
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't initialize Andor 3 library");
     }
-    err = AT_InitialiseUtilityLibrary();
+    err = apiWrapper.AT_InitialiseUtilityLibrary();
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't initialize Andor 3 utility library");
     }
 
     AT_64 iNumberDevices = 0;
-    AT_GetInt(AT_HANDLE_SYSTEM, L"Device Count", &iNumberDevices);
+    apiWrapper.AT_GetInt(AT_HANDLE_SYSTEM, L"Device Count", &iNumberDevices);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor 3 device count");
     }
@@ -33,7 +31,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
     std::vector<std::shared_ptr<BaseCameraClass>> cameras;
     for (AT_64 i = 0; i < iNumberDevices; ++i) {
         AT_H camHandle = 0;
-        err = AT_Open(i, &camHandle);
+        err = apiWrapper.AT_Open(i, &camHandle);
         if (err != AT_SUCCESS) {
             throw std::runtime_error("can't open Andor3 camera");
         }
@@ -44,8 +42,6 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
 }
 
 void CloseAndorSDK3Library() {
-    AT_FinaliseLibrary();
-    AT_FinaliseUtilityLibrary();
+    apiWrapper.AT_FinaliseLibrary();
+    apiWrapper.AT_FinaliseUtilityLibrary();
 }
-
-#endif

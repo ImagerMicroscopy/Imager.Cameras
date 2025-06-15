@@ -20,7 +20,7 @@ if (isWindows)
 
         libNames = ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt',
                     'ids_peak_comfort_c', 'uEye_api_64','SeaBreeze',
-                    'atmcd64m', 'atutilitym', 'atcorem']
+                    'atmcd64m']
 else
         incdirs = include_directories([
                         '../include',
