@@ -300,7 +300,7 @@ AndorSDK3Camera::IntValue AndorSDK3Camera::_getParameterIntValue(const std::stri
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
 
-    std::int64_t current, min, max;
+    AT_64 current, min, max;
     err = _apiWrapper.AT_GetInt(_camHandle, wFeatureStr.c_str(), &current);
     if (err != AT_SUCCESS) {
         throw std::runtime_error("can't get Andor3 int value");

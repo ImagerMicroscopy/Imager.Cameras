@@ -2,7 +2,6 @@
 
 #include "HamamatsuCameraHandler.h"
 
-#include "windows.h"
 #include "Hamamatsu/dcamapi4.h"
 
 #include "HamamatsuAPIWrapper.h"
