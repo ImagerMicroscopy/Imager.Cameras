@@ -15,7 +15,7 @@ public:
     DummyCamera();
     virtual ~DummyCamera() { ; }
 
-    std::string getIdentifierStr() const override { return std::string("ZZ__DummyCam"); };
+    std::string getIdentifierStr() override { return std::string("ZZ__DummyCam"); };
 
     double getFrameRate() override;
 

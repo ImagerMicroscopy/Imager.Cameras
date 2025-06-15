@@ -43,9 +43,9 @@ public:
     AndorSDK3Camera(const AT_H camHandle);
     virtual ~AndorSDK3Camera();
 
-    std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() override;
 
-    double getFrameRate() const override;
+    double getFrameRate() override;
 
 private:
     void _setDefaults();
@@ -55,13 +55,13 @@ private:
 
     CameraProperty _getSetPixelClock(const std::optional<CameraProperty> &maybeValueToSet = std::optional<CameraProperty>());
 
-    std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() override;
 
     void _setExposureTime(const double exposureTime);
-    double _getExposureTime() const;
+    double _getExposureTime();
 
     std::string _getSetPixelClock_SDK(const std::optional<std::string> &maybeClock = std::optional<std::string>());
-    std::vector<std::string> _getPossiblePixelClocks() const;
+    std::vector<std::string> _getPossiblePixelClocks();
     TriggerMode _getSetTriggerMode_SDK(std::optional<TriggerMode> maybeMode = std::optional<TriggerMode>());
     void _sendSoftwareTrigger();
 
@@ -77,15 +77,15 @@ private:
 
     void _startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode);
 
-    void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr) const;
-    std::string _getSelectedParameterStringValue(const std::string& featureStr) const;
-    std::vector<std::string> _enumerateParameterStringValues(const std::string& featureStr) const;
-    void _setParameterFloatValue(const std::string& featureStr, double value) const;
-    FloatValue _getParameterFloatValue(const std::string& featureStr) const;
-    void _setParameterIntValue(const std::string& featureStr, int value) const;
-    IntValue _getParameterIntValue(const std::string& featureStr) const;
-    void _setParameterBoolValue(const std::string& featureStr, bool value) const;
-    bool _getParameterBoolValue(const std::string& featureStr) const;
+    void _setParameterStringValue(const std::string& featureStr, const std::string& valueStr);
+    std::string _getSelectedParameterStringValue(const std::string& featureStr);
+    std::vector<std::string> _enumerateParameterStringValues(const std::string& featureStr);
+    void _setParameterFloatValue(const std::string& featureStr, double value);
+    FloatValue _getParameterFloatValue(const std::string& featureStr);
+    void _setParameterIntValue(const std::string& featureStr, int value);
+    IntValue _getParameterIntValue(const std::string& featureStr);
+    void _setParameterBoolValue(const std::string& featureStr, bool value);
+    bool _getParameterBoolValue(const std::string& featureStr);
     void _sendCommand(const std::string& command);
 
     AT_H _camHandle;

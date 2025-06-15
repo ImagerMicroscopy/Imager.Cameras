@@ -54,7 +54,7 @@ public:
     typedef int (*AT_QueueBufferFunc)(AT_H, AT_U8*, int);
     typedef int (*AT_FlushFunc)(AT_H);
 
-    AndorSDK3Wrapper() : _allFunctionsLoaded(true) {
+    AndorSDK3APIWrapper() : _allFunctionsLoaded(true) {
         // Load the DLLs
         _hAtCoreDll = LOAD_LIBRARY("atcore.dll");
         _hAtUtilityDll = LOAD_LIBRARY("atutility.dll");
@@ -66,7 +66,7 @@ public:
         loadAtUtilityFunctions();
     }
 
-    ~AndorSDK3Wrapper() {
+    ~AndorSDK3APIWrapper() {
         if (_hAtCoreDll) {
             FREE_LIBRARY(_hAtCoreDll);
         }
@@ -74,6 +74,9 @@ public:
             FREE_LIBRARY(_hAtUtilityDll);
         }
     }
+
+    AndorSDK3APIWrapper(const AndorSDK3APIWrapper&) = delete;
+    AndorSDK3APIWrapper& operator=(const AndorSDK3APIWrapper&) = delete;
 
     bool areAllFunctionsLoaded() const {
         return _allFunctionsLoaded;

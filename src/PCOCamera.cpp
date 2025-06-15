@@ -28,7 +28,7 @@ PCOCamera::~PCOCamera() {
     }
 }
 
-std::string PCOCamera::getIdentifierStr() const {
+std::string PCOCamera::getIdentifierStr() {
     return _camName;
 }
 

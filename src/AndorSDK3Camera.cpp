@@ -8,7 +8,7 @@
 
 AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),
-    _apiWrapper(GetAndorSDK3APIWrapper());
+    _apiWrapper(GetAndorSDK3APIWrapper()),
     _singleImageSizeInBytes(0),
     _softwareTriggeredAcquisitionRunning(false),
     _nextExpectedImageInSequenceIdx(0)
@@ -23,7 +23,7 @@ AndorSDK3Camera::~AndorSDK3Camera() {
     _apiWrapper.AT_Close(_camHandle);
 }
 
-std::string AndorSDK3Camera::getIdentifierStr() const {
+std::string AndorSDK3Camera::getIdentifierStr() {
     AT_WC szValue[64];
     int err = 0;
 
@@ -43,7 +43,7 @@ std::string AndorSDK3Camera::getIdentifierStr() const {
     return name;
 }
 
-double AndorSDK3Camera::getFrameRate() const {
+double AndorSDK3Camera::getFrameRate() {
     FloatValue val = _getParameterFloatValue("FrameRate");
     return val.currentValue;
 }
@@ -212,7 +212,7 @@ void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode
     _sendCommand("AcquisitionStart");
 }
 
-void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, const std::string& valueStr) const {
+void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, const std::string& valueStr) {
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     std::wstring wValueStr = utf8StringToWChar(valueStr);
 
@@ -222,7 +222,7 @@ void AndorSDK3Camera::_setParameterStringValue(const std::string& featureStr, co
     }
 }
 
-std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string& featureStr) const {
+std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string& featureStr) {
     int err = AT_SUCCESS;
 
     std::vector<std::string> featureOptions = _enumerateParameterStringValues(featureStr);
@@ -237,7 +237,7 @@ std::string AndorSDK3Camera::_getSelectedParameterStringValue(const std::string&
     return featureOptions.at(selectedIdx);
 }
 
-std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const std::string& featureStr) const {
+std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const std::string& featureStr) {
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     int count = 0;
     int err = _apiWrapper.AT_GetEnumCount(_camHandle, wFeatureStr.c_str(), &count);
@@ -257,7 +257,7 @@ std::vector<std::string> AndorSDK3Camera::_enumerateParameterStringValues(const 
     return values;
 }
 
-void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, double value) const {
+void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, double value) {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     err = _apiWrapper.AT_SetFloat(_camHandle, wFeatureStr.c_str(), value);
@@ -266,7 +266,7 @@ void AndorSDK3Camera::_setParameterFloatValue(const std::string& featureStr, dou
     }
 }
 
-AndorSDK3Camera::FloatValue AndorSDK3Camera::_getParameterFloatValue(const std::string& featureStr) const {
+AndorSDK3Camera::FloatValue AndorSDK3Camera::_getParameterFloatValue(const std::string& featureStr) {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
 
@@ -287,7 +287,7 @@ AndorSDK3Camera::FloatValue AndorSDK3Camera::_getParameterFloatValue(const std::
     return FloatValue(current, min, max);
 }
 
-void AndorSDK3Camera::_setParameterIntValue(const std::string& featureStr, int value) const {
+void AndorSDK3Camera::_setParameterIntValue(const std::string& featureStr, int value) {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     err = _apiWrapper.AT_SetInt(_camHandle, wFeatureStr.c_str(), value);
@@ -296,7 +296,7 @@ void AndorSDK3Camera::_setParameterIntValue(const std::string& featureStr, int v
     }
 }
 
-AndorSDK3Camera::IntValue AndorSDK3Camera::_getParameterIntValue(const std::string& featureStr) const {
+AndorSDK3Camera::IntValue AndorSDK3Camera::_getParameterIntValue(const std::string& featureStr) {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
 
@@ -317,7 +317,7 @@ AndorSDK3Camera::IntValue AndorSDK3Camera::_getParameterIntValue(const std::stri
     return IntValue(current, min, max);
 }
 
-void AndorSDK3Camera::_setParameterBoolValue(const std::string& featureStr, bool value) const {
+void AndorSDK3Camera::_setParameterBoolValue(const std::string& featureStr, bool value) {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     AT_BOOL asATBool = (value) ? AT_TRUE : AT_FALSE;
@@ -327,7 +327,7 @@ void AndorSDK3Camera::_setParameterBoolValue(const std::string& featureStr, bool
     }
 }
 
-bool AndorSDK3Camera::_getParameterBoolValue(const std::string& featureStr) const {
+bool AndorSDK3Camera::_getParameterBoolValue(const std::string& featureStr) {
     int err = AT_SUCCESS;
     std::wstring wFeatureStr = utf8StringToWChar(featureStr);
     AT_BOOL asATBool;
@@ -355,7 +355,7 @@ std::string AndorSDK3Camera::_getSetPixelClock_SDK(const std::optional<std::stri
     return _getSelectedParameterStringValue("PixelReadoutRate");
 }
 
-std::vector<std::string> AndorSDK3Camera::_getPossiblePixelClocks() const {
+std::vector<std::string> AndorSDK3Camera::_getPossiblePixelClocks() {
     return _enumerateParameterStringValues("PixelReadoutRate");
 }
 
@@ -398,7 +398,7 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> AndorSDK3Camera::_derive
     return descriptors;
 }
 
-std::pair<int, int> AndorSDK3Camera::_getSizeOfRawImages() const {
+std::pair<int, int> AndorSDK3Camera::_getSizeOfRawImages() {
     IntValue width = _getParameterIntValue("AOIWidth");
     IntValue height = _getParameterIntValue("AOIHeight");
 
@@ -411,7 +411,7 @@ void AndorSDK3Camera::_setExposureTime(const double exposureTime) {
     _setParameterFloatValue("FrameRate", rateVals.maxValue);
 }
 
-double AndorSDK3Camera::_getExposureTime() const {
+double AndorSDK3Camera::_getExposureTime() {
     FloatValue val = _getParameterFloatValue("ExposureTime");
     return val.currentValue;
 }

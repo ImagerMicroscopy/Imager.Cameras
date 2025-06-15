@@ -29,7 +29,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
     }
     
     std::vector<std::shared_ptr<BaseCameraClass>> cameras;
-    for (AT_64 i = 0; i < iNumberDevices; ++i) {
+    for (int i = 0; i < iNumberDevices; ++i) {
         AT_H camHandle = 0;
         err = apiWrapper.AT_Open(i, &camHandle);
         if (err != AT_SUCCESS) {
@@ -42,6 +42,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
 }
 
 void CloseAndorSDK3Library() {
+    AndorSDK3APIWrapper apiWrapper = GetAndorSDK3APIWrapper();
     apiWrapper.AT_FinaliseLibrary();
     apiWrapper.AT_FinaliseUtilityLibrary();
 }

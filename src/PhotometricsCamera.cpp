@@ -59,7 +59,7 @@ PhotometricsCamera::~PhotometricsCamera() {
     _apiWrapper.pl_cam_close(_pvcamHandle);
 }
 
-std::string PhotometricsCamera::getIdentifierStr() const {
+std::string PhotometricsCamera::getIdentifierStr() {
     return _identifier;
 }
 

@@ -35,7 +35,7 @@ public:
     BaseCameraClass() {;}
     virtual ~BaseCameraClass();
 
-    virtual std::string getIdentifierStr() const = 0;
+    virtual std::string getIdentifierStr() = 0;
 
     std::vector<CameraProperty> getCameraProperties();
     void setCameraProperties(const std::vector<CameraProperty>& properties);

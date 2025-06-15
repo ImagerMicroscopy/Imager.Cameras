@@ -121,7 +121,7 @@ public:
     PhotometricsCamera(const std::string& cameraName);
     ~PhotometricsCamera();
 
-    std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() override;
 
     double getFrameRate() override;
 

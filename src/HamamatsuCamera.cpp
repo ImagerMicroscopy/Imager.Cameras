@@ -33,7 +33,7 @@ HamamatsuCamera::~HamamatsuCamera() {
     }
 }
 
-std::string HamamatsuCamera::getIdentifierStr() const {
+std::string HamamatsuCamera::getIdentifierStr() {
     return _camName;
 }
 

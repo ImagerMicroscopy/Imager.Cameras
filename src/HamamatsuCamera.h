@@ -34,7 +34,7 @@ public:
     HamamatsuCamera(HDCAM camHandle);
     virtual ~HamamatsuCamera();
 
-    std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() override;
     double getFrameRate() override;
 
 private:

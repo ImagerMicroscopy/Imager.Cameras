@@ -34,7 +34,7 @@ public:
     PCOCamera(HANDLE camHandle);
     virtual ~PCOCamera();
 
-    std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() override;
 
     double getFrameRate() override;
 
