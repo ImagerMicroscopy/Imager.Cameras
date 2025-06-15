@@ -9,9 +9,16 @@
 
 #include "AndorSDK3Camera.h"
 #include "AndorSDK3APIWrapper.h"
+#include "SCPrinter.h"
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
     AndorSDK3APIWrapper apiWrapper = GetAndorSDK3APIWrapper();
+    if (!apiWrapper.areAllFunctionsLoaded()) {
+        return std::vector<std::shared_ptr<BaseCameraClass>>();
+    }
+
+    Print("Found Andor3 runtime");
+
     int err = 0;
     err = apiWrapper.AT_InitialiseLibrary();
     if (err != AT_SUCCESS) {
@@ -43,6 +50,8 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
 
 void CloseAndorSDK3Library() {
     AndorSDK3APIWrapper apiWrapper = GetAndorSDK3APIWrapper();
-    apiWrapper.AT_FinaliseLibrary();
-    apiWrapper.AT_FinaliseUtilityLibrary();
+    if (apiWrapper.areAllFunctionsLoaded()) {
+        apiWrapper.AT_FinaliseLibrary();
+        apiWrapper.AT_FinaliseUtilityLibrary();
+    }
 }
