@@ -6,13 +6,12 @@
 #include <map>
 #include <stdexcept>
 
-using HANDLE = void*;
-using WORD = std::uint16_t;
-using DWORD = std::uint32_t;
-using SHORT = std::int16_t;
-using BYTE = std::uint8_t;
-
-#include "PCO/sc2_sdkstructures.h"
+#include "windows.h"
+#include "PCO/pco_err.h"
+#include "PCO/sc2_SDKStructures.h"
+#include "PCO/sc2_SDKAddendum.h"
+#include "PCO/sc2_CamExport.h"
+#include "PCO/sc2_Defs.h"
 
 // Platform-specific includes and definitions
 #ifdef _WIN32
@@ -325,6 +324,8 @@ private:
     void* _PCO_SetImageParameters = nullptr;
 };
 
-PCOAPIWrapper GetPCOAPIWrapper();
+inline PCOAPIWrapper GetPCOAPIWrapper() {
+    return PCOAPIWrapper("sc2_cam");
+}
 
 #endif // PCOAPIWRAPPER_H
