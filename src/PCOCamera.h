@@ -7,12 +7,15 @@
 #include <string>
 #include <vector>
 
-#include "windows.h"
+#ifdef __linux__
+    #define PCO_LINUX
+#endif
+#include "PCO/pco_linux_defs.h"
 #include "PCO/pco_err.h"
-#include "PCO/sc2_SDKStructures.h"
-#include "PCO/sc2_SDKAddendum.h"
-#include "PCO/sc2_CamExport.h"
-#include "PCO/sc2_Defs.h"
+#include "PCO/sc2_sdkstructures.h"
+#include "PCO/sc2_sdkaddendum.h"
+#include "PCO/sc2_camexport.h"
+#include "PCO/sc2_defs.h"
 
 
 #include "PCOAPIWrapper.h"

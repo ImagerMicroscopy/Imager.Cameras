@@ -6,12 +6,15 @@
 #include <map>
 #include <stdexcept>
 
-#include "windows.h"
+#ifdef __linux__
+    #define PCO_LINUX
+#endif
+#include "PCO/pco_linux_defs.h"
 #include "PCO/pco_err.h"
-#include "PCO/sc2_SDKStructures.h"
-#include "PCO/sc2_SDKAddendum.h"
-#include "PCO/sc2_CamExport.h"
-#include "PCO/sc2_Defs.h"
+#include "PCO/sc2_sdkstructures.h"
+#include "PCO/sc2_sdkaddendum.h"
+#include "PCO/sc2_camexport.h"
+#include "PCO/sc2_defs.h"
 
 // Platform-specific includes and definitions
 #ifdef _WIN32
@@ -30,7 +33,7 @@
 
 // Macro to define function pointer types
 #define DEFINE_FUNC_PTR(name, return_type, ...) \
-    typedef return_type(__stdcall* name##_func)(__VA_ARGS__);
+    typedef return_type(WINAPI * name##_func)(__VA_ARGS__);
 
 // Define function pointer types for each function in the library
 DEFINE_FUNC_PTR(PCO_GetGeneral, int, HANDLE, PCO_General*);

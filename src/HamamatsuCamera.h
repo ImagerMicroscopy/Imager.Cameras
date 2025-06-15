@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "windows.h"
 #include "Hamamatsu/dcamapi4.h"
 
 const int kHamamatsuImagesInBuffer = 10;
