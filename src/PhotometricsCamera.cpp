@@ -1,7 +1,8 @@
 #include "PhotometricsCamera.h"
 
-#include <chrono>
 #include <algorithm>
+#include <chrono>
+#include <format>
 #include <thread>
 
 #include "Utils.h"
@@ -14,11 +15,7 @@ PhotometricsCamera::Gain::Gain(int index, int bitDepth, const std::string & desc
     _index(index),
     _bitDepth(bitDepth)
 {
-    char bitDepthStr[32];
-    sprintf_s(bitDepthStr, sizeof(bitDepthStr), "(%d bit)", bitDepth);
-    _description = description;
-    _description += " ";
-    _description += bitDepthStr;
+    _description = std::format("{} ({} bit)", description, bitDepth);
 }
 
 
@@ -434,11 +431,11 @@ void PhotometricsCamera::_derivedStartUnboundedAsyncAcquisition() {
     }
 
     if (!_installedCallbackFunction) {
-        err = _apiWrapper.pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_EOF, &_pvcamCallbackFunction, (void*)(&_pvcamCallbackQueue));
+        err = _apiWrapper.pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_EOF, (void*)&_pvcamCallbackFunction, (void*)(&_pvcamCallbackQueue));
         if (err != PV_OK) {
             throw std::runtime_error("error installing pvcam callback");
         }
-        err = _apiWrapper.pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_CAM_REMOVED, &_pvcamCameraRemovedCallbackFunction, (void*)(&_haveCameraDisconnectionError));
+        err = _apiWrapper.pl_cam_register_callback_ex3(_pvcamHandle, PL_CALLBACK_CAM_REMOVED, (void*)&_pvcamCameraRemovedCallbackFunction, (void*)(&_haveCameraDisconnectionError));
         if (err != PV_OK) {
             throw std::runtime_error("error installing pvcam callback");
         }
