@@ -54,6 +54,7 @@ DEFINE_FUNC_PTR(PCO_SetStorageMode, int, HANDLE, WORD);
 DEFINE_FUNC_PTR(PCO_SetTimestampMode, int, HANDLE, WORD);
 DEFINE_FUNC_PTR(PCO_SetAcquireControl, int, HANDLE, DWORD, DWORD*, WORD);
 DEFINE_FUNC_PTR(PCO_AddBufferExtern, int, HANDLE, HANDLE, WORD, DWORD, DWORD, DWORD, void*, DWORD, DWORD*);
+DEFINE_FUNC_PTR(PCO_WaitforNextBufferAdr, int, HANDLE, void**, int);
 DEFINE_FUNC_PTR(PCO_GetErrorTextSDK, void, DWORD, char*, DWORD);
 DEFINE_FUNC_PTR(PCO_GetCOCRuntime, int, HANDLE, DWORD*, DWORD*);
 DEFINE_FUNC_PTR(PCO_CloseCamera, int, HANDLE);
@@ -91,6 +92,9 @@ public:
             {"PCO_SetTimestampMode", &_PCO_SetTimestampMode},
             {"PCO_SetAcquireControl", &_PCO_SetAcquireControl},
             {"PCO_AddBufferExtern", &_PCO_AddBufferExtern},
+#ifdef __linux__
+            {"PCO_WaitforNextBufferAdr", &_PCO_WaitforNextBufferAdr},
+#endif
             {"PCO_GetErrorTextSDK", &_PCO_GetErrorTextSDK},
             {"PCO_GetCOCRuntime", &_PCO_GetCOCRuntime},
             {"PCO_CloseCamera", &_PCO_CloseCamera},
@@ -245,6 +249,15 @@ public:
         return reinterpret_cast<PCO_AddBufferExtern_func>(_PCO_AddBufferExtern)(ph, hEvent, wActSeg, dw1stImage, dwLastImage, dwSynch, pBuf, dwLen, dwStatus);
     }
 
+#ifdef __linux__
+    int PCO_WaitforNextBufferAdr(HANDLE ph, void** BufferAddress, int timeout) {
+        if (!_PCO_WaitforNextBufferAdr) {
+            throw std::logic_error("Function PCO_WaitforNextBufferAdr is not loaded.");
+        }
+        return reinterpret_cast<PCO_WaitforNextBufferAdr_func>(_PCO_WaitforNextBufferAdr)(ph, BufferAddress, timeout);
+    }
+#endif
+
     void PCO_GetErrorTextSDK(DWORD dwError, char* pszErrorString, DWORD dwErrorStringLength) {
         if (!_PCO_GetErrorTextSDK) {
             throw std::logic_error("Function PCO_GetErrorTextSDK is not loaded.");
@@ -318,6 +331,7 @@ private:
     void* _PCO_SetTimestampMode = nullptr;
     void* _PCO_SetAcquireControl = nullptr;
     void* _PCO_AddBufferExtern = nullptr;
+    void* _PCO_WaitforNextBufferAdr = nullptr;
     void* _PCO_GetErrorTextSDK = nullptr;
     void* _PCO_GetCOCRuntime = nullptr;
     void* _PCO_CloseCamera = nullptr;

@@ -16,11 +16,13 @@ PCOCamera::PCOCamera(HANDLE camHandle) :
 }
 
 PCOCamera::~PCOCamera() {
+#ifdef _WIN32
     for (auto waitH : _waitObjects) {
         if (waitH != nullptr) {
             CloseHandle(waitH);
         }
     }
+#endif
 
     if (_camHandle != nullptr) {
         _pcoAPIWrapper.PCO_CloseCamera(_camHandle);
@@ -173,6 +175,7 @@ void PCOCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcqu
         auto sensorSize = _getSensorSize();
         _frameBuffer.resize(sensorSize.first * sensorSize.second * kPCOImagesInBuffer);
     }
+#ifdef _WIN32
     if (_waitObjects.empty()) {
         _waitObjects.resize(kPCOImagesInBuffer);
         for (auto &waitH : _waitObjects) {
@@ -186,6 +189,7 @@ void PCOCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcqu
     for (auto &waitH : _waitObjects) {
         ResetEvent(waitH);
     }
+#endif
     _throwIfPCOError(_pcoAPIWrapper.PCO_SetImageParameters(_camHandle, imageSize.first, imageSize.second, IMAGEPARAMETERS_READ_WHILE_RECORDING, nullptr, 0));
     _throwIfPCOError(_pcoAPIWrapper.PCO_SetAcquireModeEx(_camHandle, ACQUIRE_MODE_IMAGE_SEQUENCE, nImagesToAcquire, nullptr));
     _pcoAPIWrapper.PCO_SetStorageMode(_camHandle, STORAGE_MODE_FIFO_BUFFER);
@@ -202,7 +206,11 @@ void PCOCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcqu
 
     for (int i = 0; i < kPCOImagesInBuffer; i += 1) {
         std::uint16_t *thisImagePtr = _frameBuffer.data() + i * nPixelsInImage;
-        _throwIfPCOError(_pcoAPIWrapper.PCO_AddBufferExtern(_camHandle, _waitObjects.at(i), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(i))));
+        #ifdef _WIN32
+            _throwIfPCOError(_pcoAPIWrapper.PCO_AddBufferExtern(_camHandle, _waitObjects.at(i), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(i))));
+        #else
+            _throwIfPCOError(_pcoAPIWrapper.PCO_AddBufferExtern(_camHandle, nullptr, 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(i))));
+        #endif
     }
     _nextBufferToReadIndex = 0;
 
@@ -215,14 +223,24 @@ void PCOCamera::_derivedAbortAsyncAcquisition() {
 }
 
 BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+#ifdef _WIN32
     int result = WaitForSingleObject(_waitObjects.at(_nextBufferToReadIndex), timeoutMillis);
     if ((result != WAIT_OBJECT_0) && (result != WAIT_TIMEOUT)) {
         throw std::runtime_error("Unexpected return in WaitForSingleObject()");
     }
-
     if (result == WAIT_TIMEOUT) {
         return NoImageBeforeTimeout;
     }
+#else
+    void* bufPtr = nullptr;
+    int result = _pcoAPIWrapper.PCO_WaitforNextBufferAdr(_camHandle, &bufPtr, timeoutMillis);
+    if ((result & PCO_ERROR_TIMEOUT) == PCO_ERROR_TIMEOUT) {
+        return NoImageBeforeTimeout;
+    }
+    if (result != PCO_NOERROR) {
+        throw std::runtime_error("Unexpected return in WaitForNextBufferAdr()" + pcoErrorAsString(result));
+    }
+#endif
 
     auto imageSize = _getSensorSize();
     int nPixelsInImage = imageSize.first * imageSize.second;
@@ -234,8 +252,12 @@ BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeo
 
     memcpy(bufferForThisImage, thisImagePtr, nBytesPerImage);
 
+#ifdef _WIN32
     ResetEvent(_waitObjects.at(_nextBufferToReadIndex));
     int pcoErr = _pcoAPIWrapper.PCO_AddBufferExtern(_camHandle, _waitObjects.at(_nextBufferToReadIndex), 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(_nextBufferToReadIndex)));
+#else
+    int pcoErr = _pcoAPIWrapper.PCO_AddBufferExtern(_camHandle, nullptr, 1, 0, 0, 0, thisImagePtr, nPixelsInImage * sizeof(std::uint16_t), &(_bufferStatuses.at(_nextBufferToReadIndex)));
+#endif
     if (pcoErr) {
         std::string errMsg = pcoErrorAsString(pcoErr);
         throw std::runtime_error("Error calling PCO_AddBufferExtern(): " + errMsg);

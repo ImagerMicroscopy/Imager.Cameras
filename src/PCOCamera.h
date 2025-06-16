@@ -82,7 +82,9 @@ private:
     int _desiredBinningFactor;
     std::map<std::string, int> _readoutSpeeds;
     std::vector<std::uint16_t> _frameBuffer;
+#ifdef _WIN32
     std::vector<HANDLE> _waitObjects;
+#endif
     std::vector<DWORD> _bufferStatuses;
     size_t _nextBufferToReadIndex;
     int _numberOfImagesDelivered;
