@@ -5,7 +5,7 @@
  * \date    2019-05-01
  * \since   1.0
  *
- * Copyright (C) 2022 - 2024, IDS Imaging Development Systems GmbH.
+ * Copyright (C) 2022 - 2025, IDS Imaging Development Systems GmbH.
  */
 #pragma once
 
@@ -110,6 +110,7 @@ typedef PEAK_API_STATUS (*dyn_peak_Frame_BytesExpected_Get)(peak_frame_handle hF
 typedef PEAK_API_STATUS (*dyn_peak_Frame_BytesWritten_Get)(peak_frame_handle hFrame, size_t * bytesWritten);
 typedef PEAK_API_STATUS (*dyn_peak_Frame_ProcessingTime_Get)(peak_frame_handle hFrame, uint32_t * processingTime_ms);
 typedef PEAK_API_STATUS (*dyn_peak_Frame_Save)(peak_frame_handle hFrame, const char * fileName);
+typedef PEAK_API_BOOL (*dyn_peak_Frame_HasChunks)(peak_frame_handle hFrame);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_CameraSettings_ParameterSet_GetAccessStatus)(peak_camera_handle hCam, peak_parameter_set parameterSet);
 typedef PEAK_API_STATUS (*dyn_peak_CameraSettings_ParameterSet_GetList)(peak_camera_handle hCam, peak_parameter_set * parameterSetList, size_t * parameterSetCount);
 typedef PEAK_API_STATUS (*dyn_peak_CameraSettings_ParameterSet_Store)(peak_camera_handle hCam, peak_parameter_set parameterSet);
@@ -128,6 +129,10 @@ typedef PEAK_API_ACCESS_STATUS (*dyn_peak_ExposureTime_GetAccessStatus)(peak_cam
 typedef PEAK_API_STATUS (*dyn_peak_ExposureTime_GetRange)(peak_camera_handle hCam, double * minExposureTime_us, double * maxExposureTime_us, double * incExposureTime_us);
 typedef PEAK_API_STATUS (*dyn_peak_ExposureTime_Set)(peak_camera_handle hCam, double exposureTime_us);
 typedef PEAK_API_STATUS (*dyn_peak_ExposureTime_Get)(peak_camera_handle hCam, double * exposureTime_us);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_ShutterMode_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_ShutterMode_GetList)(peak_camera_handle hCam, peak_shutter_mode * shutterModeList, size_t * shutterModeCount);
+typedef PEAK_API_STATUS (*dyn_peak_ShutterMode_Set)(peak_camera_handle hCam, peak_shutter_mode shutterMode);
+typedef PEAK_API_STATUS (*dyn_peak_ShutterMode_Get)(peak_camera_handle hCam, peak_shutter_mode * shutterMode);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_PixelClock_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_BOOL (*dyn_peak_PixelClock_HasRange)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_PixelClock_GetRange)(peak_camera_handle hCam, double * minPixelClock_MHz, double * maxPixelClock_MHz, double * incPixelClock_MHz);
@@ -135,9 +140,15 @@ typedef PEAK_API_STATUS (*dyn_peak_PixelClock_GetList)(peak_camera_handle hCam, 
 typedef PEAK_API_STATUS (*dyn_peak_PixelClock_Set)(peak_camera_handle hCam, double pixelClock_MHz);
 typedef PEAK_API_STATUS (*dyn_peak_PixelClock_Get)(peak_camera_handle hCam, double * pixelClock_MHz);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_IOChannel_GetAccessStatus)(peak_camera_handle hCam, peak_io_channel ioChannel);
-typedef PEAK_API_STATUS (*dyn_peak_IOChannel_GetList)(peak_camera_handle hCam, peak_io_channel * ioChannelList, size_t * ioChannelCount);
+typedef  (*dyn_PEAK_API_STATUS_DEPRECATED)("Use peak_IOChannel_GetListForDirection instead") peak_IOChannel_GetList(peak_camera_handlehCam,peak_io_channel*ioChannelList,size_t*ioChannelCount);
+typedef PEAK_API_STATUS (*dyn_peak_IOChannel_GetListForDirection)(peak_camera_handle hCam, peak_io_direction direction, peak_io_channel * ioChannelList, size_t * ioChannelCount);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_IOChannel_Direction_GetAccessStatus)(peak_camera_handle hCam, peak_io_channel ioChannel);
+typedef PEAK_API_STATUS (*dyn_peak_IOChannel_Direction_Get)(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_direction * direction);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_IOChannel_Type_GetAccessStatus)(peak_camera_handle hCam, peak_io_channel ioChannel);
+typedef PEAK_API_STATUS (*dyn_peak_IOChannel_Type_Get)(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_type * type);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_IOChannel_Level_GetAccessStatus)(peak_camera_handle hCam, peak_io_channel ioChannel);
 typedef PEAK_API_BOOL (*dyn_peak_IOChannel_Level_IsHigh)(peak_camera_handle hCam, peak_io_channel ioChannel);
+typedef PEAK_API_STATUS (*dyn_peak_IOChannel_Level_SetHigh)(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool high);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_IOChannel_Inverter_GetAccessStatus)(peak_camera_handle hCam, peak_io_channel ioChannel);
 typedef PEAK_API_STATUS (*dyn_peak_IOChannel_Inverter_Enable)(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool enabled);
 typedef PEAK_API_BOOL (*dyn_peak_IOChannel_Inverter_IsEnabled)(peak_camera_handle hCam, peak_io_channel ioChannel);
@@ -154,7 +165,8 @@ typedef PEAK_API_BOOL (*dyn_peak_Trigger_IsExecutable)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_Trigger_Execute)(peak_camera_handle hCam);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Trigger_Mode_GetAccessStatus)(peak_camera_handle hCam, peak_trigger_mode triggerMode);
 typedef PEAK_API_STATUS (*dyn_peak_Trigger_Mode_Set)(peak_camera_handle hCam, peak_trigger_mode triggerMode);
-typedef PEAK_API_STATUS (*dyn_peak_Trigger_Mode_Get)(peak_camera_handle hCam, peak_trigger_mode * triggerMode);
+typedef  (*dyn_PEAK_API_STATUS_DEPRECATED)("Use peak_Trigger_Mode_Config_Get instead") peak_Trigger_Mode_Get(peak_camera_handlehCam,peak_trigger_mode*triggerMode);
+typedef PEAK_API_STATUS (*dyn_peak_Trigger_Mode_Config_Get)(peak_camera_handle hCam, peak_trigger_mode * triggerMode);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Trigger_Edge_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_Trigger_Edge_GetList)(peak_camera_handle hCam, peak_trigger_edge * triggerEdgeList, size_t * triggerEdgeCount);
 typedef PEAK_API_STATUS (*dyn_peak_Trigger_Edge_Set)(peak_camera_handle hCam, peak_trigger_edge triggerEdge);
@@ -176,7 +188,8 @@ typedef PEAK_API_STATUS (*dyn_peak_Flash_Enable)(peak_camera_handle hCam, peak_b
 typedef PEAK_API_BOOL (*dyn_peak_Flash_IsEnabled)(peak_camera_handle hCam);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Flash_Mode_GetAccessStatus)(peak_camera_handle hCam, peak_flash_mode flashMode);
 typedef PEAK_API_STATUS (*dyn_peak_Flash_Mode_Set)(peak_camera_handle hCam, peak_flash_mode flashMode);
-typedef PEAK_API_STATUS (*dyn_peak_Flash_Mode_Get)(peak_camera_handle hCam, peak_flash_mode * flashMode);
+typedef  (*dyn_PEAK_API_STATUS_DEPRECATED)("Use peak_Flash_Mode_Config_Get instead") peak_Flash_Mode_Get(peak_camera_handlehCam,peak_flash_mode*flashMode);
+typedef PEAK_API_STATUS (*dyn_peak_Flash_Mode_Config_Get)(peak_camera_handle hCam, peak_flash_mode * flashMode);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Flash_StartDelay_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_Flash_StartDelay_GetRange)(peak_camera_handle hCam, double * minFlashStartDelay_us, double * maxFlashStartDelay_us, double * incFlashStartDelay_us);
 typedef PEAK_API_STATUS (*dyn_peak_Flash_StartDelay_Set)(peak_camera_handle hCam, double flashStartDelay_us);
@@ -217,15 +230,19 @@ typedef PEAK_API_STATUS (*dyn_peak_ColorCorrection_Matrix_Get)(peak_camera_handl
 typedef PEAK_API_STATUS (*dyn_peak_ColorCorrection_Enable)(peak_camera_handle hCam, peak_bool enabled);
 typedef PEAK_API_BOOL (*dyn_peak_ColorCorrection_IsEnabled)(peak_camera_handle hCam);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_Target_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Target_GetRange)(peak_camera_handle hCam, uint32_t * minAutoBrightnessTarget, uint32_t * maxAutoBrightnessTarget, uint32_t * incAutoBrightnessTarget);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Target_Set)(peak_camera_handle hCam, uint32_t autoBrightnessTarget);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Target_Get)(peak_camera_handle hCam, uint32_t * autoBrightnessTarget);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_TargetTolerance_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_TargetTolerance_GetRange)(peak_camera_handle hCam, uint32_t * minAutoBrightnessTargetTolerance, uint32_t * maxAutoBrightnessTargetTolerance, uint32_t * incAutoBrightnessTargetTolerance);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_TargetTolerance_Set)(peak_camera_handle hCam, uint32_t autoBrightnessTargetTolerance);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_TargetTolerance_Get)(peak_camera_handle hCam, uint32_t * autoBrightnessTargetTolerance);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_TargetPercentile_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_TargetPercentile_GetRange)(peak_camera_handle hCam, double * minAutoBrightnessTargetPercentile, double * maxAutoBrightnessTargetPercentile, double * incAutoBrightnessTargetPercentile);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_TargetPercentile_Set)(peak_camera_handle hCam, double autoBrightnessTargetPercentile);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_TargetPercentile_Get)(peak_camera_handle hCam, double * autoBrightnessTargetPercentile);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_ROI_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_ROI_Mode_Set)(peak_camera_handle hCam, peak_auto_feature_roi_mode autoBrightnessROIMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_ROI_Mode_Get)(peak_camera_handle hCam, peak_auto_feature_roi_mode * autoBrightnessROIMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_ROI_Offset_GetRange)(peak_camera_handle hCam, peak_position * minAutoBrightnessROIOffset, peak_position * maxAutoBrightnessROIOffset, peak_position * incAutoBrightnessROIOffset);
@@ -233,12 +250,15 @@ typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_ROI_Size_GetRange)(peak_camera
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_ROI_Set)(peak_camera_handle hCam, peak_roi autoBrightnessROI);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_ROI_Get)(peak_camera_handle hCam, peak_roi * autoBrightnessROI);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_Exposure_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Exposure_Mode_GetList)(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Exposure_Mode_Set)(peak_camera_handle hCam, peak_auto_feature_mode autoExposureMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Exposure_Mode_Get)(peak_camera_handle hCam, peak_auto_feature_mode * autoExposureMode);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoBrightness_Gain_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Gain_Mode_GetList)(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Gain_Mode_Set)(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoBrightness_Gain_Mode_Get)(peak_camera_handle hCam, peak_auto_feature_mode * autoGainMode);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoWhiteBalance_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_AutoWhiteBalance_ROI_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_ROI_Mode_Set)(peak_camera_handle hCam, peak_auto_feature_roi_mode autoWhiteBalanceROIMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_ROI_Mode_Get)(peak_camera_handle hCam, peak_auto_feature_roi_mode * autoWhiteBalanceROIMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_ROI_Offset_GetRange)(peak_camera_handle hCam, peak_position * minAutoWhiteBalanceROIOffset, peak_position * maxAutoWhiteBalanceROIOffset, peak_position * incAutoWhiteBalanceROIOffset);
@@ -247,6 +267,7 @@ typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_ROI_Set)(peak_camera_handle 
 typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_ROI_Get)(peak_camera_handle hCam, peak_roi * autoWhiteBalanceROI);
 typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_Mode_Set)(peak_camera_handle hCam, peak_auto_feature_mode autoWhiteBalanceMode);
 typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_Mode_Get)(peak_camera_handle hCam, peak_auto_feature_mode * autoWhiteBalanceMode);
+typedef PEAK_API_STATUS (*dyn_peak_AutoWhiteBalance_Mode_GetList)(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_ROI_GetAccessStatus)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_ROI_Offset_GetRange)(peak_camera_handle hCam, peak_position * minROIOffset, peak_position * maxROIOffset, peak_position * incROIOffset);
 typedef PEAK_API_ACCESS_STATUS (*dyn_peak_ROI_Offset_GetAccessStatus)(peak_camera_handle hCam);
@@ -340,6 +361,15 @@ typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_Matrix_Get)(peak_camera_h
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_Saturation_Get)(peak_camera_handle hCam, double * saturation);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_Saturation_Set)(peak_camera_handle hCam, double saturation);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_Saturation_GetRange)(peak_camera_handle hCam, double * minSaturation, double * maxSaturation, double * incSaturation);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get)(peak_camera_handle hCam, peak_chromatic_adaption_color_space * colorSpace);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set)(peak_camera_handle hCam, peak_chromatic_adaption_color_space colorSpace);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get)(peak_camera_handle hCam, peak_chromatic_adaption_algorithm * algorithm);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set)(peak_camera_handle hCam, peak_chromatic_adaption_algorithm algorithm);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get)(peak_camera_handle hCam, uint32_t * colorTemperature);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set)(peak_camera_handle hCam, uint32_t colorTemperature);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange)(peak_camera_handle hCam, uint32_t * minColorTemperature, uint32_t * maxColorTemperature, uint32_t * incColorTemperature);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Enable)(peak_camera_handle hCam, peak_bool enable);
+typedef PEAK_API_BOOL (*dyn_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ColorCorrection_Enable)(peak_camera_handle hCam, peak_bool enabled);
 typedef PEAK_API_BOOL (*dyn_peak_IPL_ColorCorrection_IsEnabled)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_AutoBrightness_Target_GetRange)(peak_camera_handle hCam, uint32_t * minAutoBrightnessTarget, uint32_t * maxAutoBrightnessTarget, uint32_t * incAutoBrightnessTarget);
@@ -430,6 +460,7 @@ typedef PEAK_API_STATUS (*dyn_peak_IPL_Mirror_LeftRight_Enable)(peak_camera_hand
 typedef PEAK_API_BOOL (*dyn_peak_IPL_Mirror_LeftRight_IsEnabled)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ProcessFrame)(peak_camera_handle hCam, peak_frame_handle hFrame, peak_frame_handle * hResultFrame);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ProcessFrameInplace)(peak_camera_handle hCam, peak_frame_handle hFrame);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ReadImage)(peak_camera_handle hCam, const char * path, peak_frame_handle * hFrame);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_EdgeEnhancement_Enable)(peak_camera_handle hCam, peak_bool enable);
 typedef PEAK_API_BOOL (*dyn_peak_IPL_EdgeEnhancement_IsEnabled)(peak_camera_handle hCam);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_EdgeEnhancement_Factor_Set)(peak_camera_handle hCam, uint32_t factor);
@@ -438,6 +469,13 @@ typedef PEAK_API_STATUS (*dyn_peak_IPL_EdgeEnhancement_Factor_GetDefault)(peak_c
 typedef PEAK_API_STATUS (*dyn_peak_IPL_EdgeEnhancement_Factor_GetRange)(peak_camera_handle hCam, uint32_t * minFactor, uint32_t * maxFactor, uint32_t * incFactor);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_Sharpness_Measure)(peak_frame_handle hFrame, peak_roi roi, peak_sharpness_algorithm sharpnessAlgorithm, double * calculatedValue);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_Sharpness_GetList)(peak_sharpness_algorithm sharpnessAlgorithm, peak_pixel_format * pixelFormatList, size_t * pixelFormatSize);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Rotation_Angle_Set)(peak_camera_handle hCam, int32_t rotationAngle);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Rotation_Angle_Get)(peak_camera_handle hCam, int32_t * rotationAngle);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Histogram_ProcessFrame)(peak_frame_handle hFrame, peak_histogram_handle * hHistogram);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Histogram_Release)(peak_histogram_handle hHistogram);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Histogram_Channel_GetCount)(peak_histogram_handle hHistogram, size_t * numChannels);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Histogram_Channel_GetInfo)(peak_histogram_handle hHistogram, size_t channel, peak_histogram_channel_info * channelInfo);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_Histogram_Channel_GetBinArray)(peak_histogram_handle hHistogram, size_t channel, uint64_t * binArray, size_t * binArraySize);
 typedef PEAK_API_STATUS (*dyn_peak_VideoWriter_Open)(peak_video_handle * hVideo, const char * fileName, peak_video_container container, peak_video_encoder encoder);
 typedef PEAK_API_STATUS (*dyn_peak_VideoWriter_Close)(peak_video_handle hVideo);
 typedef PEAK_API_STATUS (*dyn_peak_VideoWriter_AddFrame)(peak_video_handle hVideo, peak_frame_handle hFrame);
@@ -529,8 +567,8 @@ typedef PEAK_API_STATUS (*dyn_peak_I2C_OperationStatus_Get)(peak_i2c_handle hI2C
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Create)(peak_imagewriter_handle * hImageWriter);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Destroy)(peak_imagewriter_handle hImageWriter);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Save)(peak_imagewriter_handle hImageWriter, peak_frame_handle hFrame, const char * fileName);
-typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Format_Set)(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format imageFormat);
-typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Format_Get)(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format * imageFormat);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Format_Set)(peak_imagewriter_handle hImageWriter, peak_imagefile_format imageFormat);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Format_Get)(peak_imagewriter_handle hImageWriter, peak_imagefile_format * imageFormat);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Compression_Set)(peak_imagewriter_handle hImageWriter, uint32_t compression);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_ImageWriter_Compression_Get)(peak_imagewriter_handle hImageWriter, uint32_t * compression);
 typedef PEAK_API_STATUS (*dyn_peak_IPL_Binning_FactorX_GetList)(peak_camera_handle hCam, uint32_t * binningFactorXList, size_t * binningFactorXCount);
@@ -552,7 +590,61 @@ typedef PEAK_API_STATUS (*dyn_peak_LED_Target_GetList)(peak_camera_handle hCam, 
 typedef PEAK_API_STATUS (*dyn_peak_LED_Mode_GetList)(peak_camera_handle hCam, peak_led_target target, peak_led_mode * modeList, size_t * ledModeCount);
 typedef PEAK_API_STATUS (*dyn_peak_LED_Set)(peak_camera_handle hCam, peak_led_target target, peak_led_mode mode);
 typedef PEAK_API_STATUS (*dyn_peak_LED_Get)(peak_camera_handle hCam, peak_led_target target, peak_led_mode * mode);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_BlackLevel_Auto_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_BlackLevel_Auto_Enable)(peak_camera_handle hCam, peak_bool enable);
+typedef PEAK_API_BOOL (*dyn_peak_BlackLevel_Auto_IsEnabled)(peak_camera_handle hCam);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_BlackLevel_Offset_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_BlackLevel_Offset_Set)(peak_camera_handle hCam, double offset);
+typedef PEAK_API_STATUS (*dyn_peak_BlackLevel_Offset_Get)(peak_camera_handle hCam, double * offset);
+typedef PEAK_API_STATUS (*dyn_peak_BlackLevel_Offset_GetRange)(peak_camera_handle hCam, double * min, double * max, double * inc);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Bandwidth_LinkSpeed_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Bandwidth_LinkSpeed_Get)(peak_camera_handle hCam, int64_t * linkSpeed_Bps);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Bandwidth_ThroughputLimit_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Bandwidth_ThroughputLimit_GetRange)(peak_camera_handle hCam, int64_t * minThroughputLimit_Bps, int64_t * maxThroughputLimit_Bps, int64_t * incThroughputLimit_Bps);
+typedef PEAK_API_STATUS (*dyn_peak_Bandwidth_ThroughputLimit_Set)(peak_camera_handle hCam, int64_t throughputLimit_Bps);
+typedef PEAK_API_STATUS (*dyn_peak_Bandwidth_ThroughputLimit_Get)(peak_camera_handle hCam, int64_t * throughputLimit_Bps);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Bandwidth_ThroughputFrameRateLimit_Get)(peak_camera_handle hCam, double * throughputFrameRateLimit_fps);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Bandwidth_ThroughputCalculated_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Bandwidth_ThroughputCalculated_Get)(peak_camera_handle hCam, int64_t * throughputCalculated_Bps);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_IPO_GetAccessStatus)(peak_interface_technology interfaceTech);
+typedef PEAK_API_BOOL (*dyn_peak_IPO_IsEnabled)(peak_interface_technology interfaceTech);
+typedef PEAK_API_STATUS (*dyn_peak_IPO_Enable)(peak_interface_technology interfaceTech, peak_bool enabled);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_DigitalBlack_GetRange)(peak_camera_handle hCam, double * minDigitalBlack, double * maxDigitalBlack);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_DigitalBlack_Set)(peak_camera_handle hCam, double digitalBlack);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_DigitalBlack_Get)(peak_camera_handle hCam, double * digitalBlack);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_LUT_Enable)(peak_camera_handle hCam, peak_bool enabled);
+typedef PEAK_API_BOOL (*dyn_peak_IPL_LUT_IsEnabled)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_LUT_Preset_Set)(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_preset preset);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_LUT_Value_Set)(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t value);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_LUT_Value_Get)(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t * value);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_LUT_ValueList_Set)(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t * values, size_t size);
+typedef PEAK_API_STATUS (*dyn_peak_IPL_LUT_ValueList_Get)(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t * values, size_t * size);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Chunks_GetAccessStatus)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Enable)(peak_camera_handle hCam, peak_bool enabled);
+typedef PEAK_API_BOOL (*dyn_peak_Chunks_IsEnabled)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_AutoUpdate_Enable)(peak_camera_handle hCam, peak_bool enabled);
+typedef PEAK_API_BOOL (*dyn_peak_Chunks_AutoUpdate_IsEnabled)(peak_camera_handle hCam);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Update)(peak_camera_handle hCam, peak_frame_handle hFrame);
+typedef PEAK_API_ACCESS_STATUS (*dyn_peak_Chunks_Type_GetAccessStatus)(peak_camera_handle hCam, peak_chunks_type type);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Type_Enable)(peak_camera_handle hCam, peak_chunks_type type, peak_bool enabled);
+typedef PEAK_API_BOOL (*dyn_peak_Chunks_Type_IsEnabled)(peak_camera_handle hCam, peak_chunks_type type);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Type_Supported_GetList)(peak_camera_handle hCam, peak_chunks_type * chunksTypesSupported, size_t * chunksTypesSize);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_FrameInfo_Get)(peak_camera_handle hCam, peak_chunks_frame_info * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Exposure_Get)(peak_camera_handle hCam, peak_chunks_exposure * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Gain_Get)(peak_camera_handle hCam, peak_chunks_gain * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Sequencer_Get)(peak_camera_handle hCam, peak_chunks_sequencer * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_Timestamp_Get)(peak_camera_handle hCam, peak_chunks_timestamp * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_ExposureTrigger_Get)(peak_camera_handle hCam, peak_chunks_exposure_trigger * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_UsableROI_Get)(peak_camera_handle hCam, peak_chunks_usable_roi * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_LineStatus_Get)(peak_camera_handle hCam, peak_chunks_line_status * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_AutoFeature_Get)(peak_camera_handle hCam, peak_chunks_autofeature * data);
+typedef PEAK_API_STATUS (*dyn_peak_Chunks_PTPStatus_Get)(peak_camera_handle hCam, peak_chunks_ptp_status * data);
 
+
+class LoadLibraryException : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
                         
 class DynamicLoader
 {
@@ -649,6 +741,7 @@ public:
     static PEAK_API_STATUS peak_Frame_BytesWritten_Get(peak_frame_handle hFrame, size_t * bytesWritten);
     static PEAK_API_STATUS peak_Frame_ProcessingTime_Get(peak_frame_handle hFrame, uint32_t * processingTime_ms);
     static PEAK_API_STATUS peak_Frame_Save(peak_frame_handle hFrame, const char * fileName);
+    static PEAK_API_BOOL peak_Frame_HasChunks(peak_frame_handle hFrame);
     static PEAK_API_ACCESS_STATUS peak_CameraSettings_ParameterSet_GetAccessStatus(peak_camera_handle hCam, peak_parameter_set parameterSet);
     static PEAK_API_STATUS peak_CameraSettings_ParameterSet_GetList(peak_camera_handle hCam, peak_parameter_set * parameterSetList, size_t * parameterSetCount);
     static PEAK_API_STATUS peak_CameraSettings_ParameterSet_Store(peak_camera_handle hCam, peak_parameter_set parameterSet);
@@ -667,6 +760,10 @@ public:
     static PEAK_API_STATUS peak_ExposureTime_GetRange(peak_camera_handle hCam, double * minExposureTime_us, double * maxExposureTime_us, double * incExposureTime_us);
     static PEAK_API_STATUS peak_ExposureTime_Set(peak_camera_handle hCam, double exposureTime_us);
     static PEAK_API_STATUS peak_ExposureTime_Get(peak_camera_handle hCam, double * exposureTime_us);
+    static PEAK_API_ACCESS_STATUS peak_ShutterMode_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_ShutterMode_GetList(peak_camera_handle hCam, peak_shutter_mode * shutterModeList, size_t * shutterModeCount);
+    static PEAK_API_STATUS peak_ShutterMode_Set(peak_camera_handle hCam, peak_shutter_mode shutterMode);
+    static PEAK_API_STATUS peak_ShutterMode_Get(peak_camera_handle hCam, peak_shutter_mode * shutterMode);
     static PEAK_API_ACCESS_STATUS peak_PixelClock_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_BOOL peak_PixelClock_HasRange(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_PixelClock_GetRange(peak_camera_handle hCam, double * minPixelClock_MHz, double * maxPixelClock_MHz, double * incPixelClock_MHz);
@@ -674,9 +771,15 @@ public:
     static PEAK_API_STATUS peak_PixelClock_Set(peak_camera_handle hCam, double pixelClock_MHz);
     static PEAK_API_STATUS peak_PixelClock_Get(peak_camera_handle hCam, double * pixelClock_MHz);
     static PEAK_API_ACCESS_STATUS peak_IOChannel_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
-    static PEAK_API_STATUS peak_IOChannel_GetList(peak_camera_handle hCam, peak_io_channel * ioChannelList, size_t * ioChannelCount);
+    static  PEAK_API_STATUS_DEPRECATED("Use peak_IOChannel_GetListForDirection instead") peak_IOChannel_GetList(peak_camera_handlehCam,peak_io_channel*ioChannelList,size_t*ioChannelCount);
+    static PEAK_API_STATUS peak_IOChannel_GetListForDirection(peak_camera_handle hCam, peak_io_direction direction, peak_io_channel * ioChannelList, size_t * ioChannelCount);
+    static PEAK_API_ACCESS_STATUS peak_IOChannel_Direction_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
+    static PEAK_API_STATUS peak_IOChannel_Direction_Get(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_direction * direction);
+    static PEAK_API_ACCESS_STATUS peak_IOChannel_Type_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
+    static PEAK_API_STATUS peak_IOChannel_Type_Get(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_type * type);
     static PEAK_API_ACCESS_STATUS peak_IOChannel_Level_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
     static PEAK_API_BOOL peak_IOChannel_Level_IsHigh(peak_camera_handle hCam, peak_io_channel ioChannel);
+    static PEAK_API_STATUS peak_IOChannel_Level_SetHigh(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool high);
     static PEAK_API_ACCESS_STATUS peak_IOChannel_Inverter_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
     static PEAK_API_STATUS peak_IOChannel_Inverter_Enable(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool enabled);
     static PEAK_API_BOOL peak_IOChannel_Inverter_IsEnabled(peak_camera_handle hCam, peak_io_channel ioChannel);
@@ -693,7 +796,8 @@ public:
     static PEAK_API_STATUS peak_Trigger_Execute(peak_camera_handle hCam);
     static PEAK_API_ACCESS_STATUS peak_Trigger_Mode_GetAccessStatus(peak_camera_handle hCam, peak_trigger_mode triggerMode);
     static PEAK_API_STATUS peak_Trigger_Mode_Set(peak_camera_handle hCam, peak_trigger_mode triggerMode);
-    static PEAK_API_STATUS peak_Trigger_Mode_Get(peak_camera_handle hCam, peak_trigger_mode * triggerMode);
+    static  PEAK_API_STATUS_DEPRECATED("Use peak_Trigger_Mode_Config_Get instead") peak_Trigger_Mode_Get(peak_camera_handlehCam,peak_trigger_mode*triggerMode);
+    static PEAK_API_STATUS peak_Trigger_Mode_Config_Get(peak_camera_handle hCam, peak_trigger_mode * triggerMode);
     static PEAK_API_ACCESS_STATUS peak_Trigger_Edge_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_Trigger_Edge_GetList(peak_camera_handle hCam, peak_trigger_edge * triggerEdgeList, size_t * triggerEdgeCount);
     static PEAK_API_STATUS peak_Trigger_Edge_Set(peak_camera_handle hCam, peak_trigger_edge triggerEdge);
@@ -715,7 +819,8 @@ public:
     static PEAK_API_BOOL peak_Flash_IsEnabled(peak_camera_handle hCam);
     static PEAK_API_ACCESS_STATUS peak_Flash_Mode_GetAccessStatus(peak_camera_handle hCam, peak_flash_mode flashMode);
     static PEAK_API_STATUS peak_Flash_Mode_Set(peak_camera_handle hCam, peak_flash_mode flashMode);
-    static PEAK_API_STATUS peak_Flash_Mode_Get(peak_camera_handle hCam, peak_flash_mode * flashMode);
+    static  PEAK_API_STATUS_DEPRECATED("Use peak_Flash_Mode_Config_Get instead") peak_Flash_Mode_Get(peak_camera_handlehCam,peak_flash_mode*flashMode);
+    static PEAK_API_STATUS peak_Flash_Mode_Config_Get(peak_camera_handle hCam, peak_flash_mode * flashMode);
     static PEAK_API_ACCESS_STATUS peak_Flash_StartDelay_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_Flash_StartDelay_GetRange(peak_camera_handle hCam, double * minFlashStartDelay_us, double * maxFlashStartDelay_us, double * incFlashStartDelay_us);
     static PEAK_API_STATUS peak_Flash_StartDelay_Set(peak_camera_handle hCam, double flashStartDelay_us);
@@ -756,15 +861,19 @@ public:
     static PEAK_API_STATUS peak_ColorCorrection_Enable(peak_camera_handle hCam, peak_bool enabled);
     static PEAK_API_BOOL peak_ColorCorrection_IsEnabled(peak_camera_handle hCam);
     static PEAK_API_ACCESS_STATUS peak_AutoBrightness_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_ACCESS_STATUS peak_AutoBrightness_Target_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_AutoBrightness_Target_GetRange(peak_camera_handle hCam, uint32_t * minAutoBrightnessTarget, uint32_t * maxAutoBrightnessTarget, uint32_t * incAutoBrightnessTarget);
     static PEAK_API_STATUS peak_AutoBrightness_Target_Set(peak_camera_handle hCam, uint32_t autoBrightnessTarget);
     static PEAK_API_STATUS peak_AutoBrightness_Target_Get(peak_camera_handle hCam, uint32_t * autoBrightnessTarget);
+    static PEAK_API_ACCESS_STATUS peak_AutoBrightness_TargetTolerance_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_GetRange(peak_camera_handle hCam, uint32_t * minAutoBrightnessTargetTolerance, uint32_t * maxAutoBrightnessTargetTolerance, uint32_t * incAutoBrightnessTargetTolerance);
     static PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_Set(peak_camera_handle hCam, uint32_t autoBrightnessTargetTolerance);
     static PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_Get(peak_camera_handle hCam, uint32_t * autoBrightnessTargetTolerance);
+    static PEAK_API_ACCESS_STATUS peak_AutoBrightness_TargetPercentile_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_GetRange(peak_camera_handle hCam, double * minAutoBrightnessTargetPercentile, double * maxAutoBrightnessTargetPercentile, double * incAutoBrightnessTargetPercentile);
     static PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_Set(peak_camera_handle hCam, double autoBrightnessTargetPercentile);
     static PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_Get(peak_camera_handle hCam, double * autoBrightnessTargetPercentile);
+    static PEAK_API_ACCESS_STATUS peak_AutoBrightness_ROI_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_AutoBrightness_ROI_Mode_Set(peak_camera_handle hCam, peak_auto_feature_roi_mode autoBrightnessROIMode);
     static PEAK_API_STATUS peak_AutoBrightness_ROI_Mode_Get(peak_camera_handle hCam, peak_auto_feature_roi_mode * autoBrightnessROIMode);
     static PEAK_API_STATUS peak_AutoBrightness_ROI_Offset_GetRange(peak_camera_handle hCam, peak_position * minAutoBrightnessROIOffset, peak_position * maxAutoBrightnessROIOffset, peak_position * incAutoBrightnessROIOffset);
@@ -772,12 +881,15 @@ public:
     static PEAK_API_STATUS peak_AutoBrightness_ROI_Set(peak_camera_handle hCam, peak_roi autoBrightnessROI);
     static PEAK_API_STATUS peak_AutoBrightness_ROI_Get(peak_camera_handle hCam, peak_roi * autoBrightnessROI);
     static PEAK_API_ACCESS_STATUS peak_AutoBrightness_Exposure_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_GetList(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize);
     static PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoExposureMode);
     static PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode * autoExposureMode);
     static PEAK_API_ACCESS_STATUS peak_AutoBrightness_Gain_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_GetList(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize);
     static PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
     static PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode * autoGainMode);
     static PEAK_API_ACCESS_STATUS peak_AutoWhiteBalance_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_ACCESS_STATUS peak_AutoWhiteBalance_ROI_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Mode_Set(peak_camera_handle hCam, peak_auto_feature_roi_mode autoWhiteBalanceROIMode);
     static PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Mode_Get(peak_camera_handle hCam, peak_auto_feature_roi_mode * autoWhiteBalanceROIMode);
     static PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Offset_GetRange(peak_camera_handle hCam, peak_position * minAutoWhiteBalanceROIOffset, peak_position * maxAutoWhiteBalanceROIOffset, peak_position * incAutoWhiteBalanceROIOffset);
@@ -786,6 +898,7 @@ public:
     static PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Get(peak_camera_handle hCam, peak_roi * autoWhiteBalanceROI);
     static PEAK_API_STATUS peak_AutoWhiteBalance_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoWhiteBalanceMode);
     static PEAK_API_STATUS peak_AutoWhiteBalance_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode * autoWhiteBalanceMode);
+    static PEAK_API_STATUS peak_AutoWhiteBalance_Mode_GetList(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize);
     static PEAK_API_ACCESS_STATUS peak_ROI_GetAccessStatus(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_ROI_Offset_GetRange(peak_camera_handle hCam, peak_position * minROIOffset, peak_position * maxROIOffset, peak_position * incROIOffset);
     static PEAK_API_ACCESS_STATUS peak_ROI_Offset_GetAccessStatus(peak_camera_handle hCam);
@@ -879,6 +992,15 @@ public:
     static PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_Get(peak_camera_handle hCam, double * saturation);
     static PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_Set(peak_camera_handle hCam, double saturation);
     static PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_GetRange(peak_camera_handle hCam, double * minSaturation, double * maxSaturation, double * incSaturation);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get(peak_camera_handle hCam, peak_chromatic_adaption_color_space * colorSpace);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set(peak_camera_handle hCam, peak_chromatic_adaption_color_space colorSpace);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get(peak_camera_handle hCam, peak_chromatic_adaption_algorithm * algorithm);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set(peak_camera_handle hCam, peak_chromatic_adaption_algorithm algorithm);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get(peak_camera_handle hCam, uint32_t * colorTemperature);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set(peak_camera_handle hCam, uint32_t colorTemperature);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange(peak_camera_handle hCam, uint32_t * minColorTemperature, uint32_t * maxColorTemperature, uint32_t * incColorTemperature);
+    static PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_Enable(peak_camera_handle hCam, peak_bool enable);
+    static PEAK_API_BOOL peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_IPL_ColorCorrection_Enable(peak_camera_handle hCam, peak_bool enabled);
     static PEAK_API_BOOL peak_IPL_ColorCorrection_IsEnabled(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_IPL_AutoBrightness_Target_GetRange(peak_camera_handle hCam, uint32_t * minAutoBrightnessTarget, uint32_t * maxAutoBrightnessTarget, uint32_t * incAutoBrightnessTarget);
@@ -969,6 +1091,7 @@ public:
     static PEAK_API_BOOL peak_IPL_Mirror_LeftRight_IsEnabled(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_IPL_ProcessFrame(peak_camera_handle hCam, peak_frame_handle hFrame, peak_frame_handle * hResultFrame);
     static PEAK_API_STATUS peak_IPL_ProcessFrameInplace(peak_camera_handle hCam, peak_frame_handle hFrame);
+    static PEAK_API_STATUS peak_IPL_ReadImage(peak_camera_handle hCam, const char * path, peak_frame_handle * hFrame);
     static PEAK_API_STATUS peak_IPL_EdgeEnhancement_Enable(peak_camera_handle hCam, peak_bool enable);
     static PEAK_API_BOOL peak_IPL_EdgeEnhancement_IsEnabled(peak_camera_handle hCam);
     static PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_Set(peak_camera_handle hCam, uint32_t factor);
@@ -977,6 +1100,13 @@ public:
     static PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_GetRange(peak_camera_handle hCam, uint32_t * minFactor, uint32_t * maxFactor, uint32_t * incFactor);
     static PEAK_API_STATUS peak_IPL_Sharpness_Measure(peak_frame_handle hFrame, peak_roi roi, peak_sharpness_algorithm sharpnessAlgorithm, double * calculatedValue);
     static PEAK_API_STATUS peak_IPL_Sharpness_GetList(peak_sharpness_algorithm sharpnessAlgorithm, peak_pixel_format * pixelFormatList, size_t * pixelFormatSize);
+    static PEAK_API_STATUS peak_IPL_Rotation_Angle_Set(peak_camera_handle hCam, int32_t rotationAngle);
+    static PEAK_API_STATUS peak_IPL_Rotation_Angle_Get(peak_camera_handle hCam, int32_t * rotationAngle);
+    static PEAK_API_STATUS peak_IPL_Histogram_ProcessFrame(peak_frame_handle hFrame, peak_histogram_handle * hHistogram);
+    static PEAK_API_STATUS peak_IPL_Histogram_Release(peak_histogram_handle hHistogram);
+    static PEAK_API_STATUS peak_IPL_Histogram_Channel_GetCount(peak_histogram_handle hHistogram, size_t * numChannels);
+    static PEAK_API_STATUS peak_IPL_Histogram_Channel_GetInfo(peak_histogram_handle hHistogram, size_t channel, peak_histogram_channel_info * channelInfo);
+    static PEAK_API_STATUS peak_IPL_Histogram_Channel_GetBinArray(peak_histogram_handle hHistogram, size_t channel, uint64_t * binArray, size_t * binArraySize);
     static PEAK_API_STATUS peak_VideoWriter_Open(peak_video_handle * hVideo, const char * fileName, peak_video_container container, peak_video_encoder encoder);
     static PEAK_API_STATUS peak_VideoWriter_Close(peak_video_handle hVideo);
     static PEAK_API_STATUS peak_VideoWriter_AddFrame(peak_video_handle hVideo, peak_frame_handle hFrame);
@@ -1068,8 +1198,8 @@ public:
     static PEAK_API_STATUS peak_IPL_ImageWriter_Create(peak_imagewriter_handle * hImageWriter);
     static PEAK_API_STATUS peak_IPL_ImageWriter_Destroy(peak_imagewriter_handle hImageWriter);
     static PEAK_API_STATUS peak_IPL_ImageWriter_Save(peak_imagewriter_handle hImageWriter, peak_frame_handle hFrame, const char * fileName);
-    static PEAK_API_STATUS peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format imageFormat);
-    static PEAK_API_STATUS peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format * imageFormat);
+    static PEAK_API_STATUS peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWriter, peak_imagefile_format imageFormat);
+    static PEAK_API_STATUS peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWriter, peak_imagefile_format * imageFormat);
     static PEAK_API_STATUS peak_IPL_ImageWriter_Compression_Set(peak_imagewriter_handle hImageWriter, uint32_t compression);
     static PEAK_API_STATUS peak_IPL_ImageWriter_Compression_Get(peak_imagewriter_handle hImageWriter, uint32_t * compression);
     static PEAK_API_STATUS peak_IPL_Binning_FactorX_GetList(peak_camera_handle hCam, uint32_t * binningFactorXList, size_t * binningFactorXCount);
@@ -1091,6 +1221,56 @@ public:
     static PEAK_API_STATUS peak_LED_Mode_GetList(peak_camera_handle hCam, peak_led_target target, peak_led_mode * modeList, size_t * ledModeCount);
     static PEAK_API_STATUS peak_LED_Set(peak_camera_handle hCam, peak_led_target target, peak_led_mode mode);
     static PEAK_API_STATUS peak_LED_Get(peak_camera_handle hCam, peak_led_target target, peak_led_mode * mode);
+    static PEAK_API_ACCESS_STATUS peak_BlackLevel_Auto_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_BlackLevel_Auto_Enable(peak_camera_handle hCam, peak_bool enable);
+    static PEAK_API_BOOL peak_BlackLevel_Auto_IsEnabled(peak_camera_handle hCam);
+    static PEAK_API_ACCESS_STATUS peak_BlackLevel_Offset_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_BlackLevel_Offset_Set(peak_camera_handle hCam, double offset);
+    static PEAK_API_STATUS peak_BlackLevel_Offset_Get(peak_camera_handle hCam, double * offset);
+    static PEAK_API_STATUS peak_BlackLevel_Offset_GetRange(peak_camera_handle hCam, double * min, double * max, double * inc);
+    static PEAK_API_ACCESS_STATUS peak_Bandwidth_LinkSpeed_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Bandwidth_LinkSpeed_Get(peak_camera_handle hCam, int64_t * linkSpeed_Bps);
+    static PEAK_API_ACCESS_STATUS peak_Bandwidth_ThroughputLimit_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Bandwidth_ThroughputLimit_GetRange(peak_camera_handle hCam, int64_t * minThroughputLimit_Bps, int64_t * maxThroughputLimit_Bps, int64_t * incThroughputLimit_Bps);
+    static PEAK_API_STATUS peak_Bandwidth_ThroughputLimit_Set(peak_camera_handle hCam, int64_t throughputLimit_Bps);
+    static PEAK_API_STATUS peak_Bandwidth_ThroughputLimit_Get(peak_camera_handle hCam, int64_t * throughputLimit_Bps);
+    static PEAK_API_ACCESS_STATUS peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Bandwidth_ThroughputFrameRateLimit_Get(peak_camera_handle hCam, double * throughputFrameRateLimit_fps);
+    static PEAK_API_ACCESS_STATUS peak_Bandwidth_ThroughputCalculated_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Bandwidth_ThroughputCalculated_Get(peak_camera_handle hCam, int64_t * throughputCalculated_Bps);
+    static PEAK_API_ACCESS_STATUS peak_IPO_GetAccessStatus(peak_interface_technology interfaceTech);
+    static PEAK_API_BOOL peak_IPO_IsEnabled(peak_interface_technology interfaceTech);
+    static PEAK_API_STATUS peak_IPO_Enable(peak_interface_technology interfaceTech, peak_bool enabled);
+    static PEAK_API_STATUS peak_IPL_DigitalBlack_GetRange(peak_camera_handle hCam, double * minDigitalBlack, double * maxDigitalBlack);
+    static PEAK_API_STATUS peak_IPL_DigitalBlack_Set(peak_camera_handle hCam, double digitalBlack);
+    static PEAK_API_STATUS peak_IPL_DigitalBlack_Get(peak_camera_handle hCam, double * digitalBlack);
+    static PEAK_API_STATUS peak_IPL_LUT_Enable(peak_camera_handle hCam, peak_bool enabled);
+    static PEAK_API_BOOL peak_IPL_LUT_IsEnabled(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_IPL_LUT_Preset_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_preset preset);
+    static PEAK_API_STATUS peak_IPL_LUT_Value_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t value);
+    static PEAK_API_STATUS peak_IPL_LUT_Value_Get(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t * value);
+    static PEAK_API_STATUS peak_IPL_LUT_ValueList_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t * values, size_t size);
+    static PEAK_API_STATUS peak_IPL_LUT_ValueList_Get(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t * values, size_t * size);
+    static PEAK_API_ACCESS_STATUS peak_Chunks_GetAccessStatus(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Chunks_Enable(peak_camera_handle hCam, peak_bool enabled);
+    static PEAK_API_BOOL peak_Chunks_IsEnabled(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Chunks_AutoUpdate_Enable(peak_camera_handle hCam, peak_bool enabled);
+    static PEAK_API_BOOL peak_Chunks_AutoUpdate_IsEnabled(peak_camera_handle hCam);
+    static PEAK_API_STATUS peak_Chunks_Update(peak_camera_handle hCam, peak_frame_handle hFrame);
+    static PEAK_API_ACCESS_STATUS peak_Chunks_Type_GetAccessStatus(peak_camera_handle hCam, peak_chunks_type type);
+    static PEAK_API_STATUS peak_Chunks_Type_Enable(peak_camera_handle hCam, peak_chunks_type type, peak_bool enabled);
+    static PEAK_API_BOOL peak_Chunks_Type_IsEnabled(peak_camera_handle hCam, peak_chunks_type type);
+    static PEAK_API_STATUS peak_Chunks_Type_Supported_GetList(peak_camera_handle hCam, peak_chunks_type * chunksTypesSupported, size_t * chunksTypesSize);
+    static PEAK_API_STATUS peak_Chunks_FrameInfo_Get(peak_camera_handle hCam, peak_chunks_frame_info * data);
+    static PEAK_API_STATUS peak_Chunks_Exposure_Get(peak_camera_handle hCam, peak_chunks_exposure * data);
+    static PEAK_API_STATUS peak_Chunks_Gain_Get(peak_camera_handle hCam, peak_chunks_gain * data);
+    static PEAK_API_STATUS peak_Chunks_Sequencer_Get(peak_camera_handle hCam, peak_chunks_sequencer * data);
+    static PEAK_API_STATUS peak_Chunks_Timestamp_Get(peak_camera_handle hCam, peak_chunks_timestamp * data);
+    static PEAK_API_STATUS peak_Chunks_ExposureTrigger_Get(peak_camera_handle hCam, peak_chunks_exposure_trigger * data);
+    static PEAK_API_STATUS peak_Chunks_UsableROI_Get(peak_camera_handle hCam, peak_chunks_usable_roi * data);
+    static PEAK_API_STATUS peak_Chunks_LineStatus_Get(peak_camera_handle hCam, peak_chunks_line_status * data);
+    static PEAK_API_STATUS peak_Chunks_AutoFeature_Get(peak_camera_handle hCam, peak_chunks_autofeature * data);
+    static PEAK_API_STATUS peak_Chunks_PTPStatus_Get(peak_camera_handle hCam, peak_chunks_ptp_status * data);
        
 private:
     void* m_handle = nullptr;
@@ -1170,6 +1350,7 @@ private:
     dyn_peak_Frame_BytesWritten_Get m_peak_Frame_BytesWritten_Get{};
     dyn_peak_Frame_ProcessingTime_Get m_peak_Frame_ProcessingTime_Get{};
     dyn_peak_Frame_Save m_peak_Frame_Save{};
+    dyn_peak_Frame_HasChunks m_peak_Frame_HasChunks{};
     dyn_peak_CameraSettings_ParameterSet_GetAccessStatus m_peak_CameraSettings_ParameterSet_GetAccessStatus{};
     dyn_peak_CameraSettings_ParameterSet_GetList m_peak_CameraSettings_ParameterSet_GetList{};
     dyn_peak_CameraSettings_ParameterSet_Store m_peak_CameraSettings_ParameterSet_Store{};
@@ -1188,6 +1369,10 @@ private:
     dyn_peak_ExposureTime_GetRange m_peak_ExposureTime_GetRange{};
     dyn_peak_ExposureTime_Set m_peak_ExposureTime_Set{};
     dyn_peak_ExposureTime_Get m_peak_ExposureTime_Get{};
+    dyn_peak_ShutterMode_GetAccessStatus m_peak_ShutterMode_GetAccessStatus{};
+    dyn_peak_ShutterMode_GetList m_peak_ShutterMode_GetList{};
+    dyn_peak_ShutterMode_Set m_peak_ShutterMode_Set{};
+    dyn_peak_ShutterMode_Get m_peak_ShutterMode_Get{};
     dyn_peak_PixelClock_GetAccessStatus m_peak_PixelClock_GetAccessStatus{};
     dyn_peak_PixelClock_HasRange m_peak_PixelClock_HasRange{};
     dyn_peak_PixelClock_GetRange m_peak_PixelClock_GetRange{};
@@ -1195,9 +1380,15 @@ private:
     dyn_peak_PixelClock_Set m_peak_PixelClock_Set{};
     dyn_peak_PixelClock_Get m_peak_PixelClock_Get{};
     dyn_peak_IOChannel_GetAccessStatus m_peak_IOChannel_GetAccessStatus{};
-    dyn_peak_IOChannel_GetList m_peak_IOChannel_GetList{};
+    dyn_PEAK_API_STATUS_DEPRECATED m_PEAK_API_STATUS_DEPRECATED{};
+    dyn_peak_IOChannel_GetListForDirection m_peak_IOChannel_GetListForDirection{};
+    dyn_peak_IOChannel_Direction_GetAccessStatus m_peak_IOChannel_Direction_GetAccessStatus{};
+    dyn_peak_IOChannel_Direction_Get m_peak_IOChannel_Direction_Get{};
+    dyn_peak_IOChannel_Type_GetAccessStatus m_peak_IOChannel_Type_GetAccessStatus{};
+    dyn_peak_IOChannel_Type_Get m_peak_IOChannel_Type_Get{};
     dyn_peak_IOChannel_Level_GetAccessStatus m_peak_IOChannel_Level_GetAccessStatus{};
     dyn_peak_IOChannel_Level_IsHigh m_peak_IOChannel_Level_IsHigh{};
+    dyn_peak_IOChannel_Level_SetHigh m_peak_IOChannel_Level_SetHigh{};
     dyn_peak_IOChannel_Inverter_GetAccessStatus m_peak_IOChannel_Inverter_GetAccessStatus{};
     dyn_peak_IOChannel_Inverter_Enable m_peak_IOChannel_Inverter_Enable{};
     dyn_peak_IOChannel_Inverter_IsEnabled m_peak_IOChannel_Inverter_IsEnabled{};
@@ -1214,7 +1405,8 @@ private:
     dyn_peak_Trigger_Execute m_peak_Trigger_Execute{};
     dyn_peak_Trigger_Mode_GetAccessStatus m_peak_Trigger_Mode_GetAccessStatus{};
     dyn_peak_Trigger_Mode_Set m_peak_Trigger_Mode_Set{};
-    dyn_peak_Trigger_Mode_Get m_peak_Trigger_Mode_Get{};
+    dyn_PEAK_API_STATUS_DEPRECATED m_PEAK_API_STATUS_DEPRECATED{};
+    dyn_peak_Trigger_Mode_Config_Get m_peak_Trigger_Mode_Config_Get{};
     dyn_peak_Trigger_Edge_GetAccessStatus m_peak_Trigger_Edge_GetAccessStatus{};
     dyn_peak_Trigger_Edge_GetList m_peak_Trigger_Edge_GetList{};
     dyn_peak_Trigger_Edge_Set m_peak_Trigger_Edge_Set{};
@@ -1236,7 +1428,8 @@ private:
     dyn_peak_Flash_IsEnabled m_peak_Flash_IsEnabled{};
     dyn_peak_Flash_Mode_GetAccessStatus m_peak_Flash_Mode_GetAccessStatus{};
     dyn_peak_Flash_Mode_Set m_peak_Flash_Mode_Set{};
-    dyn_peak_Flash_Mode_Get m_peak_Flash_Mode_Get{};
+    dyn_PEAK_API_STATUS_DEPRECATED m_PEAK_API_STATUS_DEPRECATED{};
+    dyn_peak_Flash_Mode_Config_Get m_peak_Flash_Mode_Config_Get{};
     dyn_peak_Flash_StartDelay_GetAccessStatus m_peak_Flash_StartDelay_GetAccessStatus{};
     dyn_peak_Flash_StartDelay_GetRange m_peak_Flash_StartDelay_GetRange{};
     dyn_peak_Flash_StartDelay_Set m_peak_Flash_StartDelay_Set{};
@@ -1277,15 +1470,19 @@ private:
     dyn_peak_ColorCorrection_Enable m_peak_ColorCorrection_Enable{};
     dyn_peak_ColorCorrection_IsEnabled m_peak_ColorCorrection_IsEnabled{};
     dyn_peak_AutoBrightness_GetAccessStatus m_peak_AutoBrightness_GetAccessStatus{};
+    dyn_peak_AutoBrightness_Target_GetAccessStatus m_peak_AutoBrightness_Target_GetAccessStatus{};
     dyn_peak_AutoBrightness_Target_GetRange m_peak_AutoBrightness_Target_GetRange{};
     dyn_peak_AutoBrightness_Target_Set m_peak_AutoBrightness_Target_Set{};
     dyn_peak_AutoBrightness_Target_Get m_peak_AutoBrightness_Target_Get{};
+    dyn_peak_AutoBrightness_TargetTolerance_GetAccessStatus m_peak_AutoBrightness_TargetTolerance_GetAccessStatus{};
     dyn_peak_AutoBrightness_TargetTolerance_GetRange m_peak_AutoBrightness_TargetTolerance_GetRange{};
     dyn_peak_AutoBrightness_TargetTolerance_Set m_peak_AutoBrightness_TargetTolerance_Set{};
     dyn_peak_AutoBrightness_TargetTolerance_Get m_peak_AutoBrightness_TargetTolerance_Get{};
+    dyn_peak_AutoBrightness_TargetPercentile_GetAccessStatus m_peak_AutoBrightness_TargetPercentile_GetAccessStatus{};
     dyn_peak_AutoBrightness_TargetPercentile_GetRange m_peak_AutoBrightness_TargetPercentile_GetRange{};
     dyn_peak_AutoBrightness_TargetPercentile_Set m_peak_AutoBrightness_TargetPercentile_Set{};
     dyn_peak_AutoBrightness_TargetPercentile_Get m_peak_AutoBrightness_TargetPercentile_Get{};
+    dyn_peak_AutoBrightness_ROI_GetAccessStatus m_peak_AutoBrightness_ROI_GetAccessStatus{};
     dyn_peak_AutoBrightness_ROI_Mode_Set m_peak_AutoBrightness_ROI_Mode_Set{};
     dyn_peak_AutoBrightness_ROI_Mode_Get m_peak_AutoBrightness_ROI_Mode_Get{};
     dyn_peak_AutoBrightness_ROI_Offset_GetRange m_peak_AutoBrightness_ROI_Offset_GetRange{};
@@ -1293,12 +1490,15 @@ private:
     dyn_peak_AutoBrightness_ROI_Set m_peak_AutoBrightness_ROI_Set{};
     dyn_peak_AutoBrightness_ROI_Get m_peak_AutoBrightness_ROI_Get{};
     dyn_peak_AutoBrightness_Exposure_GetAccessStatus m_peak_AutoBrightness_Exposure_GetAccessStatus{};
+    dyn_peak_AutoBrightness_Exposure_Mode_GetList m_peak_AutoBrightness_Exposure_Mode_GetList{};
     dyn_peak_AutoBrightness_Exposure_Mode_Set m_peak_AutoBrightness_Exposure_Mode_Set{};
     dyn_peak_AutoBrightness_Exposure_Mode_Get m_peak_AutoBrightness_Exposure_Mode_Get{};
     dyn_peak_AutoBrightness_Gain_GetAccessStatus m_peak_AutoBrightness_Gain_GetAccessStatus{};
+    dyn_peak_AutoBrightness_Gain_Mode_GetList m_peak_AutoBrightness_Gain_Mode_GetList{};
     dyn_peak_AutoBrightness_Gain_Mode_Set m_peak_AutoBrightness_Gain_Mode_Set{};
     dyn_peak_AutoBrightness_Gain_Mode_Get m_peak_AutoBrightness_Gain_Mode_Get{};
     dyn_peak_AutoWhiteBalance_GetAccessStatus m_peak_AutoWhiteBalance_GetAccessStatus{};
+    dyn_peak_AutoWhiteBalance_ROI_GetAccessStatus m_peak_AutoWhiteBalance_ROI_GetAccessStatus{};
     dyn_peak_AutoWhiteBalance_ROI_Mode_Set m_peak_AutoWhiteBalance_ROI_Mode_Set{};
     dyn_peak_AutoWhiteBalance_ROI_Mode_Get m_peak_AutoWhiteBalance_ROI_Mode_Get{};
     dyn_peak_AutoWhiteBalance_ROI_Offset_GetRange m_peak_AutoWhiteBalance_ROI_Offset_GetRange{};
@@ -1307,6 +1507,7 @@ private:
     dyn_peak_AutoWhiteBalance_ROI_Get m_peak_AutoWhiteBalance_ROI_Get{};
     dyn_peak_AutoWhiteBalance_Mode_Set m_peak_AutoWhiteBalance_Mode_Set{};
     dyn_peak_AutoWhiteBalance_Mode_Get m_peak_AutoWhiteBalance_Mode_Get{};
+    dyn_peak_AutoWhiteBalance_Mode_GetList m_peak_AutoWhiteBalance_Mode_GetList{};
     dyn_peak_ROI_GetAccessStatus m_peak_ROI_GetAccessStatus{};
     dyn_peak_ROI_Offset_GetRange m_peak_ROI_Offset_GetRange{};
     dyn_peak_ROI_Offset_GetAccessStatus m_peak_ROI_Offset_GetAccessStatus{};
@@ -1400,6 +1601,15 @@ private:
     dyn_peak_IPL_ColorCorrection_Saturation_Get m_peak_IPL_ColorCorrection_Saturation_Get{};
     dyn_peak_IPL_ColorCorrection_Saturation_Set m_peak_IPL_ColorCorrection_Saturation_Set{};
     dyn_peak_IPL_ColorCorrection_Saturation_GetRange m_peak_IPL_ColorCorrection_Saturation_GetRange{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Enable m_peak_IPL_ColorCorrection_ChromaticAdaption_Enable{};
+    dyn_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled m_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled{};
     dyn_peak_IPL_ColorCorrection_Enable m_peak_IPL_ColorCorrection_Enable{};
     dyn_peak_IPL_ColorCorrection_IsEnabled m_peak_IPL_ColorCorrection_IsEnabled{};
     dyn_peak_IPL_AutoBrightness_Target_GetRange m_peak_IPL_AutoBrightness_Target_GetRange{};
@@ -1490,6 +1700,7 @@ private:
     dyn_peak_IPL_Mirror_LeftRight_IsEnabled m_peak_IPL_Mirror_LeftRight_IsEnabled{};
     dyn_peak_IPL_ProcessFrame m_peak_IPL_ProcessFrame{};
     dyn_peak_IPL_ProcessFrameInplace m_peak_IPL_ProcessFrameInplace{};
+    dyn_peak_IPL_ReadImage m_peak_IPL_ReadImage{};
     dyn_peak_IPL_EdgeEnhancement_Enable m_peak_IPL_EdgeEnhancement_Enable{};
     dyn_peak_IPL_EdgeEnhancement_IsEnabled m_peak_IPL_EdgeEnhancement_IsEnabled{};
     dyn_peak_IPL_EdgeEnhancement_Factor_Set m_peak_IPL_EdgeEnhancement_Factor_Set{};
@@ -1498,6 +1709,13 @@ private:
     dyn_peak_IPL_EdgeEnhancement_Factor_GetRange m_peak_IPL_EdgeEnhancement_Factor_GetRange{};
     dyn_peak_IPL_Sharpness_Measure m_peak_IPL_Sharpness_Measure{};
     dyn_peak_IPL_Sharpness_GetList m_peak_IPL_Sharpness_GetList{};
+    dyn_peak_IPL_Rotation_Angle_Set m_peak_IPL_Rotation_Angle_Set{};
+    dyn_peak_IPL_Rotation_Angle_Get m_peak_IPL_Rotation_Angle_Get{};
+    dyn_peak_IPL_Histogram_ProcessFrame m_peak_IPL_Histogram_ProcessFrame{};
+    dyn_peak_IPL_Histogram_Release m_peak_IPL_Histogram_Release{};
+    dyn_peak_IPL_Histogram_Channel_GetCount m_peak_IPL_Histogram_Channel_GetCount{};
+    dyn_peak_IPL_Histogram_Channel_GetInfo m_peak_IPL_Histogram_Channel_GetInfo{};
+    dyn_peak_IPL_Histogram_Channel_GetBinArray m_peak_IPL_Histogram_Channel_GetBinArray{};
     dyn_peak_VideoWriter_Open m_peak_VideoWriter_Open{};
     dyn_peak_VideoWriter_Close m_peak_VideoWriter_Close{};
     dyn_peak_VideoWriter_AddFrame m_peak_VideoWriter_AddFrame{};
@@ -1612,6 +1830,56 @@ private:
     dyn_peak_LED_Mode_GetList m_peak_LED_Mode_GetList{};
     dyn_peak_LED_Set m_peak_LED_Set{};
     dyn_peak_LED_Get m_peak_LED_Get{};
+    dyn_peak_BlackLevel_Auto_GetAccessStatus m_peak_BlackLevel_Auto_GetAccessStatus{};
+    dyn_peak_BlackLevel_Auto_Enable m_peak_BlackLevel_Auto_Enable{};
+    dyn_peak_BlackLevel_Auto_IsEnabled m_peak_BlackLevel_Auto_IsEnabled{};
+    dyn_peak_BlackLevel_Offset_GetAccessStatus m_peak_BlackLevel_Offset_GetAccessStatus{};
+    dyn_peak_BlackLevel_Offset_Set m_peak_BlackLevel_Offset_Set{};
+    dyn_peak_BlackLevel_Offset_Get m_peak_BlackLevel_Offset_Get{};
+    dyn_peak_BlackLevel_Offset_GetRange m_peak_BlackLevel_Offset_GetRange{};
+    dyn_peak_Bandwidth_LinkSpeed_GetAccessStatus m_peak_Bandwidth_LinkSpeed_GetAccessStatus{};
+    dyn_peak_Bandwidth_LinkSpeed_Get m_peak_Bandwidth_LinkSpeed_Get{};
+    dyn_peak_Bandwidth_ThroughputLimit_GetAccessStatus m_peak_Bandwidth_ThroughputLimit_GetAccessStatus{};
+    dyn_peak_Bandwidth_ThroughputLimit_GetRange m_peak_Bandwidth_ThroughputLimit_GetRange{};
+    dyn_peak_Bandwidth_ThroughputLimit_Set m_peak_Bandwidth_ThroughputLimit_Set{};
+    dyn_peak_Bandwidth_ThroughputLimit_Get m_peak_Bandwidth_ThroughputLimit_Get{};
+    dyn_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus m_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus{};
+    dyn_peak_Bandwidth_ThroughputFrameRateLimit_Get m_peak_Bandwidth_ThroughputFrameRateLimit_Get{};
+    dyn_peak_Bandwidth_ThroughputCalculated_GetAccessStatus m_peak_Bandwidth_ThroughputCalculated_GetAccessStatus{};
+    dyn_peak_Bandwidth_ThroughputCalculated_Get m_peak_Bandwidth_ThroughputCalculated_Get{};
+    dyn_peak_IPO_GetAccessStatus m_peak_IPO_GetAccessStatus{};
+    dyn_peak_IPO_IsEnabled m_peak_IPO_IsEnabled{};
+    dyn_peak_IPO_Enable m_peak_IPO_Enable{};
+    dyn_peak_IPL_DigitalBlack_GetRange m_peak_IPL_DigitalBlack_GetRange{};
+    dyn_peak_IPL_DigitalBlack_Set m_peak_IPL_DigitalBlack_Set{};
+    dyn_peak_IPL_DigitalBlack_Get m_peak_IPL_DigitalBlack_Get{};
+    dyn_peak_IPL_LUT_Enable m_peak_IPL_LUT_Enable{};
+    dyn_peak_IPL_LUT_IsEnabled m_peak_IPL_LUT_IsEnabled{};
+    dyn_peak_IPL_LUT_Preset_Set m_peak_IPL_LUT_Preset_Set{};
+    dyn_peak_IPL_LUT_Value_Set m_peak_IPL_LUT_Value_Set{};
+    dyn_peak_IPL_LUT_Value_Get m_peak_IPL_LUT_Value_Get{};
+    dyn_peak_IPL_LUT_ValueList_Set m_peak_IPL_LUT_ValueList_Set{};
+    dyn_peak_IPL_LUT_ValueList_Get m_peak_IPL_LUT_ValueList_Get{};
+    dyn_peak_Chunks_GetAccessStatus m_peak_Chunks_GetAccessStatus{};
+    dyn_peak_Chunks_Enable m_peak_Chunks_Enable{};
+    dyn_peak_Chunks_IsEnabled m_peak_Chunks_IsEnabled{};
+    dyn_peak_Chunks_AutoUpdate_Enable m_peak_Chunks_AutoUpdate_Enable{};
+    dyn_peak_Chunks_AutoUpdate_IsEnabled m_peak_Chunks_AutoUpdate_IsEnabled{};
+    dyn_peak_Chunks_Update m_peak_Chunks_Update{};
+    dyn_peak_Chunks_Type_GetAccessStatus m_peak_Chunks_Type_GetAccessStatus{};
+    dyn_peak_Chunks_Type_Enable m_peak_Chunks_Type_Enable{};
+    dyn_peak_Chunks_Type_IsEnabled m_peak_Chunks_Type_IsEnabled{};
+    dyn_peak_Chunks_Type_Supported_GetList m_peak_Chunks_Type_Supported_GetList{};
+    dyn_peak_Chunks_FrameInfo_Get m_peak_Chunks_FrameInfo_Get{};
+    dyn_peak_Chunks_Exposure_Get m_peak_Chunks_Exposure_Get{};
+    dyn_peak_Chunks_Gain_Get m_peak_Chunks_Gain_Get{};
+    dyn_peak_Chunks_Sequencer_Get m_peak_Chunks_Sequencer_Get{};
+    dyn_peak_Chunks_Timestamp_Get m_peak_Chunks_Timestamp_Get{};
+    dyn_peak_Chunks_ExposureTrigger_Get m_peak_Chunks_ExposureTrigger_Get{};
+    dyn_peak_Chunks_UsableROI_Get m_peak_Chunks_UsableROI_Get{};
+    dyn_peak_Chunks_LineStatus_Get m_peak_Chunks_LineStatus_Get{};
+    dyn_peak_Chunks_AutoFeature_Get m_peak_Chunks_AutoFeature_Get{};
+    dyn_peak_Chunks_PTPStatus_Get m_peak_Chunks_PTPStatus_Get{};
 
 };
 
@@ -1711,12 +1979,12 @@ inline bool DynamicLoader::loadLib(const char* file)
         }
         else
         {
-            throw std::runtime_error(std::string("Lib load failed: ") + file);
+            throw LoadLibraryException(std::string("Lib load failed: ") + file);
         }
     }
     else
     {
-        throw std::runtime_error("Filename empty");
+        throw LoadLibraryException("Filename empty");
     }
 
     return ret;
@@ -1729,3111 +1997,3639 @@ inline bool DynamicLoader::setPointers(bool load)
     if(m_peak_Library_Init == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Library_Init");
-    }        
+    }
 
     m_peak_Library_Exit = (dyn_peak_Library_Exit) (load ?  import_function(m_handle, "peak_Library_Exit") : nullptr);
     if(m_peak_Library_Exit == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Library_Exit");
-    }        
+    }
 
     m_peak_Library_GetVersion = (dyn_peak_Library_GetVersion) (load ?  import_function(m_handle, "peak_Library_GetVersion") : nullptr);
     if(m_peak_Library_GetVersion == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Library_GetVersion");
-    }        
+    }
 
     m_peak_Library_GetLastError = (dyn_peak_Library_GetLastError) (load ?  import_function(m_handle, "peak_Library_GetLastError") : nullptr);
     if(m_peak_Library_GetLastError == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Library_GetLastError");
-    }        
+    }
 
     m_peak_Library_InterfaceTechnology_IsSupported = (dyn_peak_Library_InterfaceTechnology_IsSupported) (load ?  import_function(m_handle, "peak_Library_InterfaceTechnology_IsSupported") : nullptr);
     if(m_peak_Library_InterfaceTechnology_IsSupported == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Library_InterfaceTechnology_IsSupported");
-    }        
+    }
 
     m_peak_Reconnect_Enable = (dyn_peak_Reconnect_Enable) (load ?  import_function(m_handle, "peak_Reconnect_Enable") : nullptr);
     if(m_peak_Reconnect_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Reconnect_Enable");
-    }        
+    }
 
     m_peak_Reconnect_IsEnabled = (dyn_peak_Reconnect_IsEnabled) (load ?  import_function(m_handle, "peak_Reconnect_IsEnabled") : nullptr);
     if(m_peak_Reconnect_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Reconnect_IsEnabled");
-    }        
+    }
 
     m_peak_Reconnect_GetAccessStatus = (dyn_peak_Reconnect_GetAccessStatus) (load ?  import_function(m_handle, "peak_Reconnect_GetAccessStatus") : nullptr);
     if(m_peak_Reconnect_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Reconnect_GetAccessStatus");
-    }        
+    }
 
     m_peak_CameraList_Update = (dyn_peak_CameraList_Update) (load ?  import_function(m_handle, "peak_CameraList_Update") : nullptr);
     if(m_peak_CameraList_Update == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraList_Update");
-    }        
+    }
 
     m_peak_CameraList_Get = (dyn_peak_CameraList_Get) (load ?  import_function(m_handle, "peak_CameraList_Get") : nullptr);
     if(m_peak_CameraList_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraList_Get");
-    }        
+    }
 
     m_peak_Camera_ID_FromHandle = (dyn_peak_Camera_ID_FromHandle) (load ?  import_function(m_handle, "peak_Camera_ID_FromHandle") : nullptr);
     if(m_peak_Camera_ID_FromHandle == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_ID_FromHandle");
-    }        
+    }
 
     m_peak_Camera_ID_FromSerialNumber = (dyn_peak_Camera_ID_FromSerialNumber) (load ?  import_function(m_handle, "peak_Camera_ID_FromSerialNumber") : nullptr);
     if(m_peak_Camera_ID_FromSerialNumber == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_ID_FromSerialNumber");
-    }        
+    }
 
     m_peak_Camera_ID_FromUserDefinedName = (dyn_peak_Camera_ID_FromUserDefinedName) (load ?  import_function(m_handle, "peak_Camera_ID_FromUserDefinedName") : nullptr);
     if(m_peak_Camera_ID_FromUserDefinedName == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_ID_FromUserDefinedName");
-    }        
+    }
 
     m_peak_Camera_ID_FromMAC = (dyn_peak_Camera_ID_FromMAC) (load ?  import_function(m_handle, "peak_Camera_ID_FromMAC") : nullptr);
     if(m_peak_Camera_ID_FromMAC == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_ID_FromMAC");
-    }        
+    }
 
     m_peak_Camera_GetAccessStatus = (dyn_peak_Camera_GetAccessStatus) (load ?  import_function(m_handle, "peak_Camera_GetAccessStatus") : nullptr);
     if(m_peak_Camera_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_GetAccessStatus");
-    }        
+    }
 
     m_peak_Camera_GetDescriptor = (dyn_peak_Camera_GetDescriptor) (load ?  import_function(m_handle, "peak_Camera_GetDescriptor") : nullptr);
     if(m_peak_Camera_GetDescriptor == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_GetDescriptor");
-    }        
+    }
 
     m_peak_Camera_Open = (dyn_peak_Camera_Open) (load ?  import_function(m_handle, "peak_Camera_Open") : nullptr);
     if(m_peak_Camera_Open == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_Open");
-    }        
+    }
 
     m_peak_Camera_OpenFirstAvailable = (dyn_peak_Camera_OpenFirstAvailable) (load ?  import_function(m_handle, "peak_Camera_OpenFirstAvailable") : nullptr);
     if(m_peak_Camera_OpenFirstAvailable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_OpenFirstAvailable");
-    }        
+    }
 
     m_peak_Camera_Close = (dyn_peak_Camera_Close) (load ?  import_function(m_handle, "peak_Camera_Close") : nullptr);
     if(m_peak_Camera_Close == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_Close");
-    }        
+    }
 
     m_peak_Camera_ResetToDefaultSettings = (dyn_peak_Camera_ResetToDefaultSettings) (load ?  import_function(m_handle, "peak_Camera_ResetToDefaultSettings") : nullptr);
     if(m_peak_Camera_ResetToDefaultSettings == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_ResetToDefaultSettings");
-    }        
+    }
 
     m_peak_Camera_UserDefinedName_Set = (dyn_peak_Camera_UserDefinedName_Set) (load ?  import_function(m_handle, "peak_Camera_UserDefinedName_Set") : nullptr);
     if(m_peak_Camera_UserDefinedName_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_UserDefinedName_Set");
-    }        
+    }
 
     m_peak_Camera_UserDefinedName_Get = (dyn_peak_Camera_UserDefinedName_Get) (load ?  import_function(m_handle, "peak_Camera_UserDefinedName_Get") : nullptr);
     if(m_peak_Camera_UserDefinedName_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_UserDefinedName_Get");
-    }        
+    }
 
     m_peak_Camera_IsConnected = (dyn_peak_Camera_IsConnected) (load ?  import_function(m_handle, "peak_Camera_IsConnected") : nullptr);
     if(m_peak_Camera_IsConnected == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_IsConnected");
-    }        
+    }
 
     m_peak_Camera_Reboot = (dyn_peak_Camera_Reboot) (load ?  import_function(m_handle, "peak_Camera_Reboot") : nullptr);
     if(m_peak_Camera_Reboot == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Camera_Reboot");
-    }        
+    }
 
     m_peak_EthernetConfig_GetAccessStatus = (dyn_peak_EthernetConfig_GetAccessStatus) (load ?  import_function(m_handle, "peak_EthernetConfig_GetAccessStatus") : nullptr);
     if(m_peak_EthernetConfig_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_GetAccessStatus");
-    }        
+    }
 
     m_peak_EthernetConfig_GetInfo = (dyn_peak_EthernetConfig_GetInfo) (load ?  import_function(m_handle, "peak_EthernetConfig_GetInfo") : nullptr);
     if(m_peak_EthernetConfig_GetInfo == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_GetInfo");
-    }        
+    }
 
     m_peak_EthernetConfig_DHCP_GetAccessStatus = (dyn_peak_EthernetConfig_DHCP_GetAccessStatus) (load ?  import_function(m_handle, "peak_EthernetConfig_DHCP_GetAccessStatus") : nullptr);
     if(m_peak_EthernetConfig_DHCP_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_DHCP_GetAccessStatus");
-    }        
+    }
 
     m_peak_EthernetConfig_DHCP_Enable = (dyn_peak_EthernetConfig_DHCP_Enable) (load ?  import_function(m_handle, "peak_EthernetConfig_DHCP_Enable") : nullptr);
     if(m_peak_EthernetConfig_DHCP_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_DHCP_Enable");
-    }        
+    }
 
     m_peak_EthernetConfig_DHCP_IsEnabled = (dyn_peak_EthernetConfig_DHCP_IsEnabled) (load ?  import_function(m_handle, "peak_EthernetConfig_DHCP_IsEnabled") : nullptr);
     if(m_peak_EthernetConfig_DHCP_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_DHCP_IsEnabled");
-    }        
+    }
 
     m_peak_EthernetConfig_PersistentIP_GetAccessStatus = (dyn_peak_EthernetConfig_PersistentIP_GetAccessStatus) (load ?  import_function(m_handle, "peak_EthernetConfig_PersistentIP_GetAccessStatus") : nullptr);
     if(m_peak_EthernetConfig_PersistentIP_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_PersistentIP_GetAccessStatus");
-    }        
+    }
 
     m_peak_EthernetConfig_PersistentIP_Set = (dyn_peak_EthernetConfig_PersistentIP_Set) (load ?  import_function(m_handle, "peak_EthernetConfig_PersistentIP_Set") : nullptr);
     if(m_peak_EthernetConfig_PersistentIP_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_PersistentIP_Set");
-    }        
+    }
 
     m_peak_EthernetConfig_PersistentIP_Get = (dyn_peak_EthernetConfig_PersistentIP_Get) (load ?  import_function(m_handle, "peak_EthernetConfig_PersistentIP_Get") : nullptr);
     if(m_peak_EthernetConfig_PersistentIP_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_EthernetConfig_PersistentIP_Get");
-    }        
+    }
 
     m_peak_Acquisition_Start = (dyn_peak_Acquisition_Start) (load ?  import_function(m_handle, "peak_Acquisition_Start") : nullptr);
     if(m_peak_Acquisition_Start == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Start");
-    }        
+    }
 
     m_peak_Acquisition_Stop = (dyn_peak_Acquisition_Stop) (load ?  import_function(m_handle, "peak_Acquisition_Stop") : nullptr);
     if(m_peak_Acquisition_Stop == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Stop");
-    }        
+    }
 
     m_peak_Acquisition_IsStarted = (dyn_peak_Acquisition_IsStarted) (load ?  import_function(m_handle, "peak_Acquisition_IsStarted") : nullptr);
     if(m_peak_Acquisition_IsStarted == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_IsStarted");
-    }        
+    }
 
     m_peak_Acquisition_WaitForFrame = (dyn_peak_Acquisition_WaitForFrame) (load ?  import_function(m_handle, "peak_Acquisition_WaitForFrame") : nullptr);
     if(m_peak_Acquisition_WaitForFrame == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_WaitForFrame");
-    }        
+    }
 
     m_peak_Acquisition_GetInfo = (dyn_peak_Acquisition_GetInfo) (load ?  import_function(m_handle, "peak_Acquisition_GetInfo") : nullptr);
     if(m_peak_Acquisition_GetInfo == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_GetInfo");
-    }        
+    }
 
     m_peak_Acquisition_Buffer_GetRequiredSize = (dyn_peak_Acquisition_Buffer_GetRequiredSize) (load ?  import_function(m_handle, "peak_Acquisition_Buffer_GetRequiredSize") : nullptr);
     if(m_peak_Acquisition_Buffer_GetRequiredSize == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Buffer_GetRequiredSize");
-    }        
+    }
 
     m_peak_Acquisition_Buffer_GetRequiredCount = (dyn_peak_Acquisition_Buffer_GetRequiredCount) (load ?  import_function(m_handle, "peak_Acquisition_Buffer_GetRequiredCount") : nullptr);
     if(m_peak_Acquisition_Buffer_GetRequiredCount == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Buffer_GetRequiredCount");
-    }        
+    }
 
     m_peak_Acquisition_Buffer_Announce = (dyn_peak_Acquisition_Buffer_Announce) (load ?  import_function(m_handle, "peak_Acquisition_Buffer_Announce") : nullptr);
     if(m_peak_Acquisition_Buffer_Announce == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Buffer_Announce");
-    }        
+    }
 
     m_peak_Acquisition_Buffer_Revoke = (dyn_peak_Acquisition_Buffer_Revoke) (load ?  import_function(m_handle, "peak_Acquisition_Buffer_Revoke") : nullptr);
     if(m_peak_Acquisition_Buffer_Revoke == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Buffer_Revoke");
-    }        
+    }
 
     m_peak_Acquisition_Buffer_RevokeAll = (dyn_peak_Acquisition_Buffer_RevokeAll) (load ?  import_function(m_handle, "peak_Acquisition_Buffer_RevokeAll") : nullptr);
     if(m_peak_Acquisition_Buffer_RevokeAll == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_Buffer_RevokeAll");
-    }        
+    }
 
     m_peak_Acquisition_BufferHandling_Mode_GetAccessStatus = (dyn_peak_Acquisition_BufferHandling_Mode_GetAccessStatus) (load ?  import_function(m_handle, "peak_Acquisition_BufferHandling_Mode_GetAccessStatus") : nullptr);
     if(m_peak_Acquisition_BufferHandling_Mode_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_BufferHandling_Mode_GetAccessStatus");
-    }        
+    }
 
     m_peak_Acquisition_BufferHandling_Mode_GetList = (dyn_peak_Acquisition_BufferHandling_Mode_GetList) (load ?  import_function(m_handle, "peak_Acquisition_BufferHandling_Mode_GetList") : nullptr);
     if(m_peak_Acquisition_BufferHandling_Mode_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_BufferHandling_Mode_GetList");
-    }        
+    }
 
     m_peak_Acquisition_BufferHandling_Mode_Set = (dyn_peak_Acquisition_BufferHandling_Mode_Set) (load ?  import_function(m_handle, "peak_Acquisition_BufferHandling_Mode_Set") : nullptr);
     if(m_peak_Acquisition_BufferHandling_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_BufferHandling_Mode_Set");
-    }        
+    }
 
     m_peak_Acquisition_BufferHandling_Mode_Get = (dyn_peak_Acquisition_BufferHandling_Mode_Get) (load ?  import_function(m_handle, "peak_Acquisition_BufferHandling_Mode_Get") : nullptr);
     if(m_peak_Acquisition_BufferHandling_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_BufferHandling_Mode_Get");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Mode_GetAccessStatus = (dyn_peak_Acquisition_LossHandling_Mode_GetAccessStatus) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Mode_GetAccessStatus") : nullptr);
     if(m_peak_Acquisition_LossHandling_Mode_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Mode_GetAccessStatus");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Mode_GetList = (dyn_peak_Acquisition_LossHandling_Mode_GetList) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Mode_GetList") : nullptr);
     if(m_peak_Acquisition_LossHandling_Mode_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Mode_GetList");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Mode_Set = (dyn_peak_Acquisition_LossHandling_Mode_Set) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Mode_Set") : nullptr);
     if(m_peak_Acquisition_LossHandling_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Mode_Set");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Mode_Get = (dyn_peak_Acquisition_LossHandling_Mode_Get) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Mode_Get") : nullptr);
     if(m_peak_Acquisition_LossHandling_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Mode_Get");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Extent_GetAccessStatus = (dyn_peak_Acquisition_LossHandling_Extent_GetAccessStatus) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Extent_GetAccessStatus") : nullptr);
     if(m_peak_Acquisition_LossHandling_Extent_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Extent_GetAccessStatus");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Extent_GetRange = (dyn_peak_Acquisition_LossHandling_Extent_GetRange) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Extent_GetRange") : nullptr);
     if(m_peak_Acquisition_LossHandling_Extent_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Extent_GetRange");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Extent_Set = (dyn_peak_Acquisition_LossHandling_Extent_Set) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Extent_Set") : nullptr);
     if(m_peak_Acquisition_LossHandling_Extent_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Extent_Set");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_Extent_Get = (dyn_peak_Acquisition_LossHandling_Extent_Get) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_Extent_Get") : nullptr);
     if(m_peak_Acquisition_LossHandling_Extent_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_Extent_Get");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccessStatus = (dyn_peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccessStatus) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccessStatus") : nullptr);
     if(m_peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccessStatus");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange = (dyn_peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange") : nullptr);
     if(m_peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_FrameAbortTimeout_Set = (dyn_peak_Acquisition_LossHandling_FrameAbortTimeout_Set) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_FrameAbortTimeout_Set") : nullptr);
     if(m_peak_Acquisition_LossHandling_FrameAbortTimeout_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_FrameAbortTimeout_Set");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_FrameAbortTimeout_Get = (dyn_peak_Acquisition_LossHandling_FrameAbortTimeout_Get) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_FrameAbortTimeout_Get") : nullptr);
     if(m_peak_Acquisition_LossHandling_FrameAbortTimeout_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_FrameAbortTimeout_Get");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_ResendRequestTimeout_GetAccessStatus = (dyn_peak_Acquisition_LossHandling_ResendRequestTimeout_GetAccessStatus) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_ResendRequestTimeout_GetAccessStatus") : nullptr);
     if(m_peak_Acquisition_LossHandling_ResendRequestTimeout_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_ResendRequestTimeout_GetAccessStatus");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange = (dyn_peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange") : nullptr);
     if(m_peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_ResendRequestTimeout_Set = (dyn_peak_Acquisition_LossHandling_ResendRequestTimeout_Set) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_ResendRequestTimeout_Set") : nullptr);
     if(m_peak_Acquisition_LossHandling_ResendRequestTimeout_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_ResendRequestTimeout_Set");
-    }        
+    }
 
     m_peak_Acquisition_LossHandling_ResendRequestTimeout_Get = (dyn_peak_Acquisition_LossHandling_ResendRequestTimeout_Get) (load ?  import_function(m_handle, "peak_Acquisition_LossHandling_ResendRequestTimeout_Get") : nullptr);
     if(m_peak_Acquisition_LossHandling_ResendRequestTimeout_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Acquisition_LossHandling_ResendRequestTimeout_Get");
-    }        
+    }
 
     m_peak_PixelFormat_GetInfo = (dyn_peak_PixelFormat_GetInfo) (load ?  import_function(m_handle, "peak_PixelFormat_GetInfo") : nullptr);
     if(m_peak_PixelFormat_GetInfo == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelFormat_GetInfo");
-    }        
+    }
 
     m_peak_Frame_Release = (dyn_peak_Frame_Release) (load ?  import_function(m_handle, "peak_Frame_Release") : nullptr);
     if(m_peak_Frame_Release == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_Release");
-    }        
+    }
 
     m_peak_Frame_GetInfo = (dyn_peak_Frame_GetInfo) (load ?  import_function(m_handle, "peak_Frame_GetInfo") : nullptr);
     if(m_peak_Frame_GetInfo == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_GetInfo");
-    }        
+    }
 
     m_peak_Frame_Type_Get = (dyn_peak_Frame_Type_Get) (load ?  import_function(m_handle, "peak_Frame_Type_Get") : nullptr);
     if(m_peak_Frame_Type_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_Type_Get");
-    }        
+    }
 
     m_peak_Frame_Buffer_Get = (dyn_peak_Frame_Buffer_Get) (load ?  import_function(m_handle, "peak_Frame_Buffer_Get") : nullptr);
     if(m_peak_Frame_Buffer_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_Buffer_Get");
-    }        
+    }
 
     m_peak_Frame_ID_Get = (dyn_peak_Frame_ID_Get) (load ?  import_function(m_handle, "peak_Frame_ID_Get") : nullptr);
     if(m_peak_Frame_ID_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_ID_Get");
-    }        
+    }
 
     m_peak_Frame_Timestamp_Get = (dyn_peak_Frame_Timestamp_Get) (load ?  import_function(m_handle, "peak_Frame_Timestamp_Get") : nullptr);
     if(m_peak_Frame_Timestamp_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_Timestamp_Get");
-    }        
+    }
 
     m_peak_Frame_ROI_Get = (dyn_peak_Frame_ROI_Get) (load ?  import_function(m_handle, "peak_Frame_ROI_Get") : nullptr);
     if(m_peak_Frame_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_ROI_Get");
-    }        
+    }
 
     m_peak_Frame_PixelFormat_Get = (dyn_peak_Frame_PixelFormat_Get) (load ?  import_function(m_handle, "peak_Frame_PixelFormat_Get") : nullptr);
     if(m_peak_Frame_PixelFormat_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_PixelFormat_Get");
-    }        
+    }
 
     m_peak_Frame_IsComplete = (dyn_peak_Frame_IsComplete) (load ?  import_function(m_handle, "peak_Frame_IsComplete") : nullptr);
     if(m_peak_Frame_IsComplete == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_IsComplete");
-    }        
+    }
 
     m_peak_Frame_BytesExpected_Get = (dyn_peak_Frame_BytesExpected_Get) (load ?  import_function(m_handle, "peak_Frame_BytesExpected_Get") : nullptr);
     if(m_peak_Frame_BytesExpected_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_BytesExpected_Get");
-    }        
+    }
 
     m_peak_Frame_BytesWritten_Get = (dyn_peak_Frame_BytesWritten_Get) (load ?  import_function(m_handle, "peak_Frame_BytesWritten_Get") : nullptr);
     if(m_peak_Frame_BytesWritten_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_BytesWritten_Get");
-    }        
+    }
 
     m_peak_Frame_ProcessingTime_Get = (dyn_peak_Frame_ProcessingTime_Get) (load ?  import_function(m_handle, "peak_Frame_ProcessingTime_Get") : nullptr);
     if(m_peak_Frame_ProcessingTime_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_ProcessingTime_Get");
-    }        
+    }
 
     m_peak_Frame_Save = (dyn_peak_Frame_Save) (load ?  import_function(m_handle, "peak_Frame_Save") : nullptr);
     if(m_peak_Frame_Save == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Frame_Save");
-    }        
+    }
+
+    m_peak_Frame_HasChunks = (dyn_peak_Frame_HasChunks) (load ?  import_function(m_handle, "peak_Frame_HasChunks") : nullptr);
+    if(m_peak_Frame_HasChunks == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Frame_HasChunks");
+    }
 
     m_peak_CameraSettings_ParameterSet_GetAccessStatus = (dyn_peak_CameraSettings_ParameterSet_GetAccessStatus) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_GetAccessStatus") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_GetAccessStatus");
-    }        
+    }
 
     m_peak_CameraSettings_ParameterSet_GetList = (dyn_peak_CameraSettings_ParameterSet_GetList) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_GetList") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_GetList");
-    }        
+    }
 
     m_peak_CameraSettings_ParameterSet_Store = (dyn_peak_CameraSettings_ParameterSet_Store) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_Store") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_Store == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_Store");
-    }        
+    }
 
     m_peak_CameraSettings_ParameterSet_Apply = (dyn_peak_CameraSettings_ParameterSet_Apply) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_Apply") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_Apply == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_Apply");
-    }        
+    }
 
     m_peak_CameraSettings_ParameterSet_Startup_GetAccessStatus = (dyn_peak_CameraSettings_ParameterSet_Startup_GetAccessStatus) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_Startup_GetAccessStatus") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_Startup_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_Startup_GetAccessStatus");
-    }        
+    }
 
     m_peak_CameraSettings_ParameterSet_Startup_Set = (dyn_peak_CameraSettings_ParameterSet_Startup_Set) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_Startup_Set") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_Startup_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_Startup_Set");
-    }        
+    }
 
     m_peak_CameraSettings_ParameterSet_Startup_Get = (dyn_peak_CameraSettings_ParameterSet_Startup_Get) (load ?  import_function(m_handle, "peak_CameraSettings_ParameterSet_Startup_Get") : nullptr);
     if(m_peak_CameraSettings_ParameterSet_Startup_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_ParameterSet_Startup_Get");
-    }        
+    }
 
     m_peak_CameraSettings_DiskFile_GetAccessStatus = (dyn_peak_CameraSettings_DiskFile_GetAccessStatus) (load ?  import_function(m_handle, "peak_CameraSettings_DiskFile_GetAccessStatus") : nullptr);
     if(m_peak_CameraSettings_DiskFile_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_DiskFile_GetAccessStatus");
-    }        
+    }
 
     m_peak_CameraSettings_DiskFile_Store = (dyn_peak_CameraSettings_DiskFile_Store) (load ?  import_function(m_handle, "peak_CameraSettings_DiskFile_Store") : nullptr);
     if(m_peak_CameraSettings_DiskFile_Store == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_DiskFile_Store");
-    }        
+    }
 
     m_peak_CameraSettings_DiskFile_Apply = (dyn_peak_CameraSettings_DiskFile_Apply) (load ?  import_function(m_handle, "peak_CameraSettings_DiskFile_Apply") : nullptr);
     if(m_peak_CameraSettings_DiskFile_Apply == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraSettings_DiskFile_Apply");
-    }        
+    }
 
     m_peak_FrameRate_GetAccessStatus = (dyn_peak_FrameRate_GetAccessStatus) (load ?  import_function(m_handle, "peak_FrameRate_GetAccessStatus") : nullptr);
     if(m_peak_FrameRate_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_FrameRate_GetAccessStatus");
-    }        
+    }
 
     m_peak_FrameRate_GetRange = (dyn_peak_FrameRate_GetRange) (load ?  import_function(m_handle, "peak_FrameRate_GetRange") : nullptr);
     if(m_peak_FrameRate_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_FrameRate_GetRange");
-    }        
+    }
 
     m_peak_FrameRate_Set = (dyn_peak_FrameRate_Set) (load ?  import_function(m_handle, "peak_FrameRate_Set") : nullptr);
     if(m_peak_FrameRate_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_FrameRate_Set");
-    }        
+    }
 
     m_peak_FrameRate_Get = (dyn_peak_FrameRate_Get) (load ?  import_function(m_handle, "peak_FrameRate_Get") : nullptr);
     if(m_peak_FrameRate_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_FrameRate_Get");
-    }        
+    }
 
     m_peak_ExposureTime_GetAccessStatus = (dyn_peak_ExposureTime_GetAccessStatus) (load ?  import_function(m_handle, "peak_ExposureTime_GetAccessStatus") : nullptr);
     if(m_peak_ExposureTime_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ExposureTime_GetAccessStatus");
-    }        
+    }
 
     m_peak_ExposureTime_GetRange = (dyn_peak_ExposureTime_GetRange) (load ?  import_function(m_handle, "peak_ExposureTime_GetRange") : nullptr);
     if(m_peak_ExposureTime_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ExposureTime_GetRange");
-    }        
+    }
 
     m_peak_ExposureTime_Set = (dyn_peak_ExposureTime_Set) (load ?  import_function(m_handle, "peak_ExposureTime_Set") : nullptr);
     if(m_peak_ExposureTime_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ExposureTime_Set");
-    }        
+    }
 
     m_peak_ExposureTime_Get = (dyn_peak_ExposureTime_Get) (load ?  import_function(m_handle, "peak_ExposureTime_Get") : nullptr);
     if(m_peak_ExposureTime_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ExposureTime_Get");
-    }        
+    }
+
+    m_peak_ShutterMode_GetAccessStatus = (dyn_peak_ShutterMode_GetAccessStatus) (load ?  import_function(m_handle, "peak_ShutterMode_GetAccessStatus") : nullptr);
+    if(m_peak_ShutterMode_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_ShutterMode_GetAccessStatus");
+    }
+
+    m_peak_ShutterMode_GetList = (dyn_peak_ShutterMode_GetList) (load ?  import_function(m_handle, "peak_ShutterMode_GetList") : nullptr);
+    if(m_peak_ShutterMode_GetList == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_ShutterMode_GetList");
+    }
+
+    m_peak_ShutterMode_Set = (dyn_peak_ShutterMode_Set) (load ?  import_function(m_handle, "peak_ShutterMode_Set") : nullptr);
+    if(m_peak_ShutterMode_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_ShutterMode_Set");
+    }
+
+    m_peak_ShutterMode_Get = (dyn_peak_ShutterMode_Get) (load ?  import_function(m_handle, "peak_ShutterMode_Get") : nullptr);
+    if(m_peak_ShutterMode_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_ShutterMode_Get");
+    }
 
     m_peak_PixelClock_GetAccessStatus = (dyn_peak_PixelClock_GetAccessStatus) (load ?  import_function(m_handle, "peak_PixelClock_GetAccessStatus") : nullptr);
     if(m_peak_PixelClock_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelClock_GetAccessStatus");
-    }        
+    }
 
     m_peak_PixelClock_HasRange = (dyn_peak_PixelClock_HasRange) (load ?  import_function(m_handle, "peak_PixelClock_HasRange") : nullptr);
     if(m_peak_PixelClock_HasRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelClock_HasRange");
-    }        
+    }
 
     m_peak_PixelClock_GetRange = (dyn_peak_PixelClock_GetRange) (load ?  import_function(m_handle, "peak_PixelClock_GetRange") : nullptr);
     if(m_peak_PixelClock_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelClock_GetRange");
-    }        
+    }
 
     m_peak_PixelClock_GetList = (dyn_peak_PixelClock_GetList) (load ?  import_function(m_handle, "peak_PixelClock_GetList") : nullptr);
     if(m_peak_PixelClock_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelClock_GetList");
-    }        
+    }
 
     m_peak_PixelClock_Set = (dyn_peak_PixelClock_Set) (load ?  import_function(m_handle, "peak_PixelClock_Set") : nullptr);
     if(m_peak_PixelClock_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelClock_Set");
-    }        
+    }
 
     m_peak_PixelClock_Get = (dyn_peak_PixelClock_Get) (load ?  import_function(m_handle, "peak_PixelClock_Get") : nullptr);
     if(m_peak_PixelClock_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelClock_Get");
-    }        
+    }
 
     m_peak_IOChannel_GetAccessStatus = (dyn_peak_IOChannel_GetAccessStatus) (load ?  import_function(m_handle, "peak_IOChannel_GetAccessStatus") : nullptr);
     if(m_peak_IOChannel_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_GetAccessStatus");
-    }        
+    }
 
-    m_peak_IOChannel_GetList = (dyn_peak_IOChannel_GetList) (load ?  import_function(m_handle, "peak_IOChannel_GetList") : nullptr);
-    if(m_peak_IOChannel_GetList == nullptr && load)
+    m_PEAK_API_STATUS_DEPRECATED = (dyn_PEAK_API_STATUS_DEPRECATED) (load ?  import_function(m_handle, "PEAK_API_STATUS_DEPRECATED") : nullptr);
+    if(m_PEAK_API_STATUS_DEPRECATED == nullptr && load)
     {
-        throw std::runtime_error("Failed to load peak_IOChannel_GetList");
-    }        
+        throw std::runtime_error("Failed to load PEAK_API_STATUS_DEPRECATED");
+    }
+
+    m_peak_IOChannel_GetListForDirection = (dyn_peak_IOChannel_GetListForDirection) (load ?  import_function(m_handle, "peak_IOChannel_GetListForDirection") : nullptr);
+    if(m_peak_IOChannel_GetListForDirection == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IOChannel_GetListForDirection");
+    }
+
+    m_peak_IOChannel_Direction_GetAccessStatus = (dyn_peak_IOChannel_Direction_GetAccessStatus) (load ?  import_function(m_handle, "peak_IOChannel_Direction_GetAccessStatus") : nullptr);
+    if(m_peak_IOChannel_Direction_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IOChannel_Direction_GetAccessStatus");
+    }
+
+    m_peak_IOChannel_Direction_Get = (dyn_peak_IOChannel_Direction_Get) (load ?  import_function(m_handle, "peak_IOChannel_Direction_Get") : nullptr);
+    if(m_peak_IOChannel_Direction_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IOChannel_Direction_Get");
+    }
+
+    m_peak_IOChannel_Type_GetAccessStatus = (dyn_peak_IOChannel_Type_GetAccessStatus) (load ?  import_function(m_handle, "peak_IOChannel_Type_GetAccessStatus") : nullptr);
+    if(m_peak_IOChannel_Type_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IOChannel_Type_GetAccessStatus");
+    }
+
+    m_peak_IOChannel_Type_Get = (dyn_peak_IOChannel_Type_Get) (load ?  import_function(m_handle, "peak_IOChannel_Type_Get") : nullptr);
+    if(m_peak_IOChannel_Type_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IOChannel_Type_Get");
+    }
 
     m_peak_IOChannel_Level_GetAccessStatus = (dyn_peak_IOChannel_Level_GetAccessStatus) (load ?  import_function(m_handle, "peak_IOChannel_Level_GetAccessStatus") : nullptr);
     if(m_peak_IOChannel_Level_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_Level_GetAccessStatus");
-    }        
+    }
 
     m_peak_IOChannel_Level_IsHigh = (dyn_peak_IOChannel_Level_IsHigh) (load ?  import_function(m_handle, "peak_IOChannel_Level_IsHigh") : nullptr);
     if(m_peak_IOChannel_Level_IsHigh == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_Level_IsHigh");
-    }        
+    }
+
+    m_peak_IOChannel_Level_SetHigh = (dyn_peak_IOChannel_Level_SetHigh) (load ?  import_function(m_handle, "peak_IOChannel_Level_SetHigh") : nullptr);
+    if(m_peak_IOChannel_Level_SetHigh == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IOChannel_Level_SetHigh");
+    }
 
     m_peak_IOChannel_Inverter_GetAccessStatus = (dyn_peak_IOChannel_Inverter_GetAccessStatus) (load ?  import_function(m_handle, "peak_IOChannel_Inverter_GetAccessStatus") : nullptr);
     if(m_peak_IOChannel_Inverter_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_Inverter_GetAccessStatus");
-    }        
+    }
 
     m_peak_IOChannel_Inverter_Enable = (dyn_peak_IOChannel_Inverter_Enable) (load ?  import_function(m_handle, "peak_IOChannel_Inverter_Enable") : nullptr);
     if(m_peak_IOChannel_Inverter_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_Inverter_Enable");
-    }        
+    }
 
     m_peak_IOChannel_Inverter_IsEnabled = (dyn_peak_IOChannel_Inverter_IsEnabled) (load ?  import_function(m_handle, "peak_IOChannel_Inverter_IsEnabled") : nullptr);
     if(m_peak_IOChannel_Inverter_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_Inverter_IsEnabled");
-    }        
+    }
 
     m_peak_IOChannel_NoiseFilter_GetAccessStatus = (dyn_peak_IOChannel_NoiseFilter_GetAccessStatus) (load ?  import_function(m_handle, "peak_IOChannel_NoiseFilter_GetAccessStatus") : nullptr);
     if(m_peak_IOChannel_NoiseFilter_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_NoiseFilter_GetAccessStatus");
-    }        
+    }
 
     m_peak_IOChannel_NoiseFilter_Enable = (dyn_peak_IOChannel_NoiseFilter_Enable) (load ?  import_function(m_handle, "peak_IOChannel_NoiseFilter_Enable") : nullptr);
     if(m_peak_IOChannel_NoiseFilter_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_NoiseFilter_Enable");
-    }        
+    }
 
     m_peak_IOChannel_NoiseFilter_IsEnabled = (dyn_peak_IOChannel_NoiseFilter_IsEnabled) (load ?  import_function(m_handle, "peak_IOChannel_NoiseFilter_IsEnabled") : nullptr);
     if(m_peak_IOChannel_NoiseFilter_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_NoiseFilter_IsEnabled");
-    }        
+    }
 
     m_peak_IOChannel_NoiseFilter_Duration_GetRange = (dyn_peak_IOChannel_NoiseFilter_Duration_GetRange) (load ?  import_function(m_handle, "peak_IOChannel_NoiseFilter_Duration_GetRange") : nullptr);
     if(m_peak_IOChannel_NoiseFilter_Duration_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_NoiseFilter_Duration_GetRange");
-    }        
+    }
 
     m_peak_IOChannel_NoiseFilter_Duration_Set = (dyn_peak_IOChannel_NoiseFilter_Duration_Set) (load ?  import_function(m_handle, "peak_IOChannel_NoiseFilter_Duration_Set") : nullptr);
     if(m_peak_IOChannel_NoiseFilter_Duration_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_NoiseFilter_Duration_Set");
-    }        
+    }
 
     m_peak_IOChannel_NoiseFilter_Duration_Get = (dyn_peak_IOChannel_NoiseFilter_Duration_Get) (load ?  import_function(m_handle, "peak_IOChannel_NoiseFilter_Duration_Get") : nullptr);
     if(m_peak_IOChannel_NoiseFilter_Duration_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IOChannel_NoiseFilter_Duration_Get");
-    }        
+    }
 
     m_peak_Trigger_GetAccessStatus = (dyn_peak_Trigger_GetAccessStatus) (load ?  import_function(m_handle, "peak_Trigger_GetAccessStatus") : nullptr);
     if(m_peak_Trigger_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_GetAccessStatus");
-    }        
+    }
 
     m_peak_Trigger_Enable = (dyn_peak_Trigger_Enable) (load ?  import_function(m_handle, "peak_Trigger_Enable") : nullptr);
     if(m_peak_Trigger_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Enable");
-    }        
+    }
 
     m_peak_Trigger_IsEnabled = (dyn_peak_Trigger_IsEnabled) (load ?  import_function(m_handle, "peak_Trigger_IsEnabled") : nullptr);
     if(m_peak_Trigger_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_IsEnabled");
-    }        
+    }
 
     m_peak_Trigger_IsExecutable = (dyn_peak_Trigger_IsExecutable) (load ?  import_function(m_handle, "peak_Trigger_IsExecutable") : nullptr);
     if(m_peak_Trigger_IsExecutable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_IsExecutable");
-    }        
+    }
 
     m_peak_Trigger_Execute = (dyn_peak_Trigger_Execute) (load ?  import_function(m_handle, "peak_Trigger_Execute") : nullptr);
     if(m_peak_Trigger_Execute == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Execute");
-    }        
+    }
 
     m_peak_Trigger_Mode_GetAccessStatus = (dyn_peak_Trigger_Mode_GetAccessStatus) (load ?  import_function(m_handle, "peak_Trigger_Mode_GetAccessStatus") : nullptr);
     if(m_peak_Trigger_Mode_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Mode_GetAccessStatus");
-    }        
+    }
 
     m_peak_Trigger_Mode_Set = (dyn_peak_Trigger_Mode_Set) (load ?  import_function(m_handle, "peak_Trigger_Mode_Set") : nullptr);
     if(m_peak_Trigger_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Mode_Set");
-    }        
+    }
 
-    m_peak_Trigger_Mode_Get = (dyn_peak_Trigger_Mode_Get) (load ?  import_function(m_handle, "peak_Trigger_Mode_Get") : nullptr);
-    if(m_peak_Trigger_Mode_Get == nullptr && load)
+    m_PEAK_API_STATUS_DEPRECATED = (dyn_PEAK_API_STATUS_DEPRECATED) (load ?  import_function(m_handle, "PEAK_API_STATUS_DEPRECATED") : nullptr);
+    if(m_PEAK_API_STATUS_DEPRECATED == nullptr && load)
     {
-        throw std::runtime_error("Failed to load peak_Trigger_Mode_Get");
-    }        
+        throw std::runtime_error("Failed to load PEAK_API_STATUS_DEPRECATED");
+    }
+
+    m_peak_Trigger_Mode_Config_Get = (dyn_peak_Trigger_Mode_Config_Get) (load ?  import_function(m_handle, "peak_Trigger_Mode_Config_Get") : nullptr);
+    if(m_peak_Trigger_Mode_Config_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Trigger_Mode_Config_Get");
+    }
 
     m_peak_Trigger_Edge_GetAccessStatus = (dyn_peak_Trigger_Edge_GetAccessStatus) (load ?  import_function(m_handle, "peak_Trigger_Edge_GetAccessStatus") : nullptr);
     if(m_peak_Trigger_Edge_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Edge_GetAccessStatus");
-    }        
+    }
 
     m_peak_Trigger_Edge_GetList = (dyn_peak_Trigger_Edge_GetList) (load ?  import_function(m_handle, "peak_Trigger_Edge_GetList") : nullptr);
     if(m_peak_Trigger_Edge_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Edge_GetList");
-    }        
+    }
 
     m_peak_Trigger_Edge_Set = (dyn_peak_Trigger_Edge_Set) (load ?  import_function(m_handle, "peak_Trigger_Edge_Set") : nullptr);
     if(m_peak_Trigger_Edge_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Edge_Set");
-    }        
+    }
 
     m_peak_Trigger_Edge_Get = (dyn_peak_Trigger_Edge_Get) (load ?  import_function(m_handle, "peak_Trigger_Edge_Get") : nullptr);
     if(m_peak_Trigger_Edge_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Edge_Get");
-    }        
+    }
 
     m_peak_Trigger_Delay_GetAccessStatus = (dyn_peak_Trigger_Delay_GetAccessStatus) (load ?  import_function(m_handle, "peak_Trigger_Delay_GetAccessStatus") : nullptr);
     if(m_peak_Trigger_Delay_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Delay_GetAccessStatus");
-    }        
+    }
 
     m_peak_Trigger_Delay_GetRange = (dyn_peak_Trigger_Delay_GetRange) (load ?  import_function(m_handle, "peak_Trigger_Delay_GetRange") : nullptr);
     if(m_peak_Trigger_Delay_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Delay_GetRange");
-    }        
+    }
 
     m_peak_Trigger_Delay_Set = (dyn_peak_Trigger_Delay_Set) (load ?  import_function(m_handle, "peak_Trigger_Delay_Set") : nullptr);
     if(m_peak_Trigger_Delay_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Delay_Set");
-    }        
+    }
 
     m_peak_Trigger_Delay_Get = (dyn_peak_Trigger_Delay_Get) (load ?  import_function(m_handle, "peak_Trigger_Delay_Get") : nullptr);
     if(m_peak_Trigger_Delay_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Delay_Get");
-    }        
+    }
 
     m_peak_Trigger_Divider_GetAccessStatus = (dyn_peak_Trigger_Divider_GetAccessStatus) (load ?  import_function(m_handle, "peak_Trigger_Divider_GetAccessStatus") : nullptr);
     if(m_peak_Trigger_Divider_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Divider_GetAccessStatus");
-    }        
+    }
 
     m_peak_Trigger_Divider_GetRange = (dyn_peak_Trigger_Divider_GetRange) (load ?  import_function(m_handle, "peak_Trigger_Divider_GetRange") : nullptr);
     if(m_peak_Trigger_Divider_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Divider_GetRange");
-    }        
+    }
 
     m_peak_Trigger_Divider_Set = (dyn_peak_Trigger_Divider_Set) (load ?  import_function(m_handle, "peak_Trigger_Divider_Set") : nullptr);
     if(m_peak_Trigger_Divider_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Divider_Set");
-    }        
+    }
 
     m_peak_Trigger_Divider_Get = (dyn_peak_Trigger_Divider_Get) (load ?  import_function(m_handle, "peak_Trigger_Divider_Get") : nullptr);
     if(m_peak_Trigger_Divider_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Divider_Get");
-    }        
+    }
 
     m_peak_Trigger_Burst_GetAccessStatus = (dyn_peak_Trigger_Burst_GetAccessStatus) (load ?  import_function(m_handle, "peak_Trigger_Burst_GetAccessStatus") : nullptr);
     if(m_peak_Trigger_Burst_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Burst_GetAccessStatus");
-    }        
+    }
 
     m_peak_Trigger_Burst_GetRange = (dyn_peak_Trigger_Burst_GetRange) (load ?  import_function(m_handle, "peak_Trigger_Burst_GetRange") : nullptr);
     if(m_peak_Trigger_Burst_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Burst_GetRange");
-    }        
+    }
 
     m_peak_Trigger_Burst_Set = (dyn_peak_Trigger_Burst_Set) (load ?  import_function(m_handle, "peak_Trigger_Burst_Set") : nullptr);
     if(m_peak_Trigger_Burst_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Burst_Set");
-    }        
+    }
 
     m_peak_Trigger_Burst_Get = (dyn_peak_Trigger_Burst_Get) (load ?  import_function(m_handle, "peak_Trigger_Burst_Get") : nullptr);
     if(m_peak_Trigger_Burst_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Trigger_Burst_Get");
-    }        
+    }
 
     m_peak_Flash_GetAccessStatus = (dyn_peak_Flash_GetAccessStatus) (load ?  import_function(m_handle, "peak_Flash_GetAccessStatus") : nullptr);
     if(m_peak_Flash_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_GetAccessStatus");
-    }        
+    }
 
     m_peak_Flash_Enable = (dyn_peak_Flash_Enable) (load ?  import_function(m_handle, "peak_Flash_Enable") : nullptr);
     if(m_peak_Flash_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Enable");
-    }        
+    }
 
     m_peak_Flash_IsEnabled = (dyn_peak_Flash_IsEnabled) (load ?  import_function(m_handle, "peak_Flash_IsEnabled") : nullptr);
     if(m_peak_Flash_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_IsEnabled");
-    }        
+    }
 
     m_peak_Flash_Mode_GetAccessStatus = (dyn_peak_Flash_Mode_GetAccessStatus) (load ?  import_function(m_handle, "peak_Flash_Mode_GetAccessStatus") : nullptr);
     if(m_peak_Flash_Mode_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Mode_GetAccessStatus");
-    }        
+    }
 
     m_peak_Flash_Mode_Set = (dyn_peak_Flash_Mode_Set) (load ?  import_function(m_handle, "peak_Flash_Mode_Set") : nullptr);
     if(m_peak_Flash_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Mode_Set");
-    }        
+    }
 
-    m_peak_Flash_Mode_Get = (dyn_peak_Flash_Mode_Get) (load ?  import_function(m_handle, "peak_Flash_Mode_Get") : nullptr);
-    if(m_peak_Flash_Mode_Get == nullptr && load)
+    m_PEAK_API_STATUS_DEPRECATED = (dyn_PEAK_API_STATUS_DEPRECATED) (load ?  import_function(m_handle, "PEAK_API_STATUS_DEPRECATED") : nullptr);
+    if(m_PEAK_API_STATUS_DEPRECATED == nullptr && load)
     {
-        throw std::runtime_error("Failed to load peak_Flash_Mode_Get");
-    }        
+        throw std::runtime_error("Failed to load PEAK_API_STATUS_DEPRECATED");
+    }
+
+    m_peak_Flash_Mode_Config_Get = (dyn_peak_Flash_Mode_Config_Get) (load ?  import_function(m_handle, "peak_Flash_Mode_Config_Get") : nullptr);
+    if(m_peak_Flash_Mode_Config_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Flash_Mode_Config_Get");
+    }
 
     m_peak_Flash_StartDelay_GetAccessStatus = (dyn_peak_Flash_StartDelay_GetAccessStatus) (load ?  import_function(m_handle, "peak_Flash_StartDelay_GetAccessStatus") : nullptr);
     if(m_peak_Flash_StartDelay_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_StartDelay_GetAccessStatus");
-    }        
+    }
 
     m_peak_Flash_StartDelay_GetRange = (dyn_peak_Flash_StartDelay_GetRange) (load ?  import_function(m_handle, "peak_Flash_StartDelay_GetRange") : nullptr);
     if(m_peak_Flash_StartDelay_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_StartDelay_GetRange");
-    }        
+    }
 
     m_peak_Flash_StartDelay_Set = (dyn_peak_Flash_StartDelay_Set) (load ?  import_function(m_handle, "peak_Flash_StartDelay_Set") : nullptr);
     if(m_peak_Flash_StartDelay_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_StartDelay_Set");
-    }        
+    }
 
     m_peak_Flash_StartDelay_Get = (dyn_peak_Flash_StartDelay_Get) (load ?  import_function(m_handle, "peak_Flash_StartDelay_Get") : nullptr);
     if(m_peak_Flash_StartDelay_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_StartDelay_Get");
-    }        
+    }
 
     m_peak_Flash_EndDelay_GetAccessStatus = (dyn_peak_Flash_EndDelay_GetAccessStatus) (load ?  import_function(m_handle, "peak_Flash_EndDelay_GetAccessStatus") : nullptr);
     if(m_peak_Flash_EndDelay_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_EndDelay_GetAccessStatus");
-    }        
+    }
 
     m_peak_Flash_EndDelay_GetRange = (dyn_peak_Flash_EndDelay_GetRange) (load ?  import_function(m_handle, "peak_Flash_EndDelay_GetRange") : nullptr);
     if(m_peak_Flash_EndDelay_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_EndDelay_GetRange");
-    }        
+    }
 
     m_peak_Flash_EndDelay_Set = (dyn_peak_Flash_EndDelay_Set) (load ?  import_function(m_handle, "peak_Flash_EndDelay_Set") : nullptr);
     if(m_peak_Flash_EndDelay_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_EndDelay_Set");
-    }        
+    }
 
     m_peak_Flash_EndDelay_Get = (dyn_peak_Flash_EndDelay_Get) (load ?  import_function(m_handle, "peak_Flash_EndDelay_Get") : nullptr);
     if(m_peak_Flash_EndDelay_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_EndDelay_Get");
-    }        
+    }
 
     m_peak_Flash_Duration_GetAccessStatus = (dyn_peak_Flash_Duration_GetAccessStatus) (load ?  import_function(m_handle, "peak_Flash_Duration_GetAccessStatus") : nullptr);
     if(m_peak_Flash_Duration_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Duration_GetAccessStatus");
-    }        
+    }
 
     m_peak_Flash_Duration_GetRange = (dyn_peak_Flash_Duration_GetRange) (load ?  import_function(m_handle, "peak_Flash_Duration_GetRange") : nullptr);
     if(m_peak_Flash_Duration_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Duration_GetRange");
-    }        
+    }
 
     m_peak_Flash_Duration_Set = (dyn_peak_Flash_Duration_Set) (load ?  import_function(m_handle, "peak_Flash_Duration_Set") : nullptr);
     if(m_peak_Flash_Duration_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Duration_Set");
-    }        
+    }
 
     m_peak_Flash_Duration_Get = (dyn_peak_Flash_Duration_Get) (load ?  import_function(m_handle, "peak_Flash_Duration_Get") : nullptr);
     if(m_peak_Flash_Duration_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Flash_Duration_Get");
-    }        
+    }
 
     m_peak_Focus_GetAccessStatus = (dyn_peak_Focus_GetAccessStatus) (load ?  import_function(m_handle, "peak_Focus_GetAccessStatus") : nullptr);
     if(m_peak_Focus_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Focus_GetAccessStatus");
-    }        
+    }
 
     m_peak_Focus_GetRange = (dyn_peak_Focus_GetRange) (load ?  import_function(m_handle, "peak_Focus_GetRange") : nullptr);
     if(m_peak_Focus_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Focus_GetRange");
-    }        
+    }
 
     m_peak_Focus_Set = (dyn_peak_Focus_Set) (load ?  import_function(m_handle, "peak_Focus_Set") : nullptr);
     if(m_peak_Focus_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Focus_Set");
-    }        
+    }
 
     m_peak_Focus_Get = (dyn_peak_Focus_Get) (load ?  import_function(m_handle, "peak_Focus_Get") : nullptr);
     if(m_peak_Focus_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Focus_Get");
-    }        
+    }
 
     m_peak_PixelFormat_GetAccessStatus = (dyn_peak_PixelFormat_GetAccessStatus) (load ?  import_function(m_handle, "peak_PixelFormat_GetAccessStatus") : nullptr);
     if(m_peak_PixelFormat_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelFormat_GetAccessStatus");
-    }        
+    }
 
     m_peak_PixelFormat_GetList = (dyn_peak_PixelFormat_GetList) (load ?  import_function(m_handle, "peak_PixelFormat_GetList") : nullptr);
     if(m_peak_PixelFormat_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelFormat_GetList");
-    }        
+    }
 
     m_peak_PixelFormat_Set = (dyn_peak_PixelFormat_Set) (load ?  import_function(m_handle, "peak_PixelFormat_Set") : nullptr);
     if(m_peak_PixelFormat_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelFormat_Set");
-    }        
+    }
 
     m_peak_PixelFormat_Get = (dyn_peak_PixelFormat_Get) (load ?  import_function(m_handle, "peak_PixelFormat_Get") : nullptr);
     if(m_peak_PixelFormat_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_PixelFormat_Get");
-    }        
+    }
 
     m_peak_Gain_GetAccessStatus = (dyn_peak_Gain_GetAccessStatus) (load ?  import_function(m_handle, "peak_Gain_GetAccessStatus") : nullptr);
     if(m_peak_Gain_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gain_GetAccessStatus");
-    }        
+    }
 
     m_peak_Gain_GetChannelList = (dyn_peak_Gain_GetChannelList) (load ?  import_function(m_handle, "peak_Gain_GetChannelList") : nullptr);
     if(m_peak_Gain_GetChannelList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gain_GetChannelList");
-    }        
+    }
 
     m_peak_Gain_GetRange = (dyn_peak_Gain_GetRange) (load ?  import_function(m_handle, "peak_Gain_GetRange") : nullptr);
     if(m_peak_Gain_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gain_GetRange");
-    }        
+    }
 
     m_peak_Gain_Set = (dyn_peak_Gain_Set) (load ?  import_function(m_handle, "peak_Gain_Set") : nullptr);
     if(m_peak_Gain_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gain_Set");
-    }        
+    }
 
     m_peak_Gain_Get = (dyn_peak_Gain_Get) (load ?  import_function(m_handle, "peak_Gain_Get") : nullptr);
     if(m_peak_Gain_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gain_Get");
-    }        
+    }
 
     m_peak_Gamma_GetAccessStatus = (dyn_peak_Gamma_GetAccessStatus) (load ?  import_function(m_handle, "peak_Gamma_GetAccessStatus") : nullptr);
     if(m_peak_Gamma_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gamma_GetAccessStatus");
-    }        
+    }
 
     m_peak_Gamma_GetRange = (dyn_peak_Gamma_GetRange) (load ?  import_function(m_handle, "peak_Gamma_GetRange") : nullptr);
     if(m_peak_Gamma_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gamma_GetRange");
-    }        
+    }
 
     m_peak_Gamma_Set = (dyn_peak_Gamma_Set) (load ?  import_function(m_handle, "peak_Gamma_Set") : nullptr);
     if(m_peak_Gamma_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gamma_Set");
-    }        
+    }
 
     m_peak_Gamma_Get = (dyn_peak_Gamma_Get) (load ?  import_function(m_handle, "peak_Gamma_Get") : nullptr);
     if(m_peak_Gamma_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Gamma_Get");
-    }        
+    }
 
     m_peak_ColorCorrection_GetAccessStatus = (dyn_peak_ColorCorrection_GetAccessStatus) (load ?  import_function(m_handle, "peak_ColorCorrection_GetAccessStatus") : nullptr);
     if(m_peak_ColorCorrection_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_GetAccessStatus");
-    }        
+    }
 
     m_peak_ColorCorrection_Mode_GetList = (dyn_peak_ColorCorrection_Mode_GetList) (load ?  import_function(m_handle, "peak_ColorCorrection_Mode_GetList") : nullptr);
     if(m_peak_ColorCorrection_Mode_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Mode_GetList");
-    }        
+    }
 
     m_peak_ColorCorrection_Mode_Set = (dyn_peak_ColorCorrection_Mode_Set) (load ?  import_function(m_handle, "peak_ColorCorrection_Mode_Set") : nullptr);
     if(m_peak_ColorCorrection_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Mode_Set");
-    }        
+    }
 
     m_peak_ColorCorrection_Mode_Get = (dyn_peak_ColorCorrection_Mode_Get) (load ?  import_function(m_handle, "peak_ColorCorrection_Mode_Get") : nullptr);
     if(m_peak_ColorCorrection_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Mode_Get");
-    }        
+    }
 
     m_peak_ColorCorrection_Matrix_GetAccessStatus = (dyn_peak_ColorCorrection_Matrix_GetAccessStatus) (load ?  import_function(m_handle, "peak_ColorCorrection_Matrix_GetAccessStatus") : nullptr);
     if(m_peak_ColorCorrection_Matrix_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Matrix_GetAccessStatus");
-    }        
+    }
 
     m_peak_ColorCorrection_Matrix_GetRange = (dyn_peak_ColorCorrection_Matrix_GetRange) (load ?  import_function(m_handle, "peak_ColorCorrection_Matrix_GetRange") : nullptr);
     if(m_peak_ColorCorrection_Matrix_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Matrix_GetRange");
-    }        
+    }
 
     m_peak_ColorCorrection_Matrix_Set = (dyn_peak_ColorCorrection_Matrix_Set) (load ?  import_function(m_handle, "peak_ColorCorrection_Matrix_Set") : nullptr);
     if(m_peak_ColorCorrection_Matrix_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Matrix_Set");
-    }        
+    }
 
     m_peak_ColorCorrection_Matrix_Get = (dyn_peak_ColorCorrection_Matrix_Get) (load ?  import_function(m_handle, "peak_ColorCorrection_Matrix_Get") : nullptr);
     if(m_peak_ColorCorrection_Matrix_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Matrix_Get");
-    }        
+    }
 
     m_peak_ColorCorrection_Enable = (dyn_peak_ColorCorrection_Enable) (load ?  import_function(m_handle, "peak_ColorCorrection_Enable") : nullptr);
     if(m_peak_ColorCorrection_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_Enable");
-    }        
+    }
 
     m_peak_ColorCorrection_IsEnabled = (dyn_peak_ColorCorrection_IsEnabled) (load ?  import_function(m_handle, "peak_ColorCorrection_IsEnabled") : nullptr);
     if(m_peak_ColorCorrection_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ColorCorrection_IsEnabled");
-    }        
+    }
 
     m_peak_AutoBrightness_GetAccessStatus = (dyn_peak_AutoBrightness_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_GetAccessStatus") : nullptr);
     if(m_peak_AutoBrightness_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_GetAccessStatus");
-    }        
+    }
+
+    m_peak_AutoBrightness_Target_GetAccessStatus = (dyn_peak_AutoBrightness_Target_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_Target_GetAccessStatus") : nullptr);
+    if(m_peak_AutoBrightness_Target_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoBrightness_Target_GetAccessStatus");
+    }
 
     m_peak_AutoBrightness_Target_GetRange = (dyn_peak_AutoBrightness_Target_GetRange) (load ?  import_function(m_handle, "peak_AutoBrightness_Target_GetRange") : nullptr);
     if(m_peak_AutoBrightness_Target_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Target_GetRange");
-    }        
+    }
 
     m_peak_AutoBrightness_Target_Set = (dyn_peak_AutoBrightness_Target_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_Target_Set") : nullptr);
     if(m_peak_AutoBrightness_Target_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Target_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_Target_Get = (dyn_peak_AutoBrightness_Target_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_Target_Get") : nullptr);
     if(m_peak_AutoBrightness_Target_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Target_Get");
-    }        
+    }
+
+    m_peak_AutoBrightness_TargetTolerance_GetAccessStatus = (dyn_peak_AutoBrightness_TargetTolerance_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetTolerance_GetAccessStatus") : nullptr);
+    if(m_peak_AutoBrightness_TargetTolerance_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoBrightness_TargetTolerance_GetAccessStatus");
+    }
 
     m_peak_AutoBrightness_TargetTolerance_GetRange = (dyn_peak_AutoBrightness_TargetTolerance_GetRange) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetTolerance_GetRange") : nullptr);
     if(m_peak_AutoBrightness_TargetTolerance_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_TargetTolerance_GetRange");
-    }        
+    }
 
     m_peak_AutoBrightness_TargetTolerance_Set = (dyn_peak_AutoBrightness_TargetTolerance_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetTolerance_Set") : nullptr);
     if(m_peak_AutoBrightness_TargetTolerance_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_TargetTolerance_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_TargetTolerance_Get = (dyn_peak_AutoBrightness_TargetTolerance_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetTolerance_Get") : nullptr);
     if(m_peak_AutoBrightness_TargetTolerance_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_TargetTolerance_Get");
-    }        
+    }
+
+    m_peak_AutoBrightness_TargetPercentile_GetAccessStatus = (dyn_peak_AutoBrightness_TargetPercentile_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetPercentile_GetAccessStatus") : nullptr);
+    if(m_peak_AutoBrightness_TargetPercentile_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoBrightness_TargetPercentile_GetAccessStatus");
+    }
 
     m_peak_AutoBrightness_TargetPercentile_GetRange = (dyn_peak_AutoBrightness_TargetPercentile_GetRange) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetPercentile_GetRange") : nullptr);
     if(m_peak_AutoBrightness_TargetPercentile_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_TargetPercentile_GetRange");
-    }        
+    }
 
     m_peak_AutoBrightness_TargetPercentile_Set = (dyn_peak_AutoBrightness_TargetPercentile_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetPercentile_Set") : nullptr);
     if(m_peak_AutoBrightness_TargetPercentile_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_TargetPercentile_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_TargetPercentile_Get = (dyn_peak_AutoBrightness_TargetPercentile_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_TargetPercentile_Get") : nullptr);
     if(m_peak_AutoBrightness_TargetPercentile_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_TargetPercentile_Get");
-    }        
+    }
+
+    m_peak_AutoBrightness_ROI_GetAccessStatus = (dyn_peak_AutoBrightness_ROI_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_GetAccessStatus") : nullptr);
+    if(m_peak_AutoBrightness_ROI_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_GetAccessStatus");
+    }
 
     m_peak_AutoBrightness_ROI_Mode_Set = (dyn_peak_AutoBrightness_ROI_Mode_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_Mode_Set") : nullptr);
     if(m_peak_AutoBrightness_ROI_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_Mode_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_ROI_Mode_Get = (dyn_peak_AutoBrightness_ROI_Mode_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_Mode_Get") : nullptr);
     if(m_peak_AutoBrightness_ROI_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_Mode_Get");
-    }        
+    }
 
     m_peak_AutoBrightness_ROI_Offset_GetRange = (dyn_peak_AutoBrightness_ROI_Offset_GetRange) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_Offset_GetRange") : nullptr);
     if(m_peak_AutoBrightness_ROI_Offset_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_Offset_GetRange");
-    }        
+    }
 
     m_peak_AutoBrightness_ROI_Size_GetRange = (dyn_peak_AutoBrightness_ROI_Size_GetRange) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_Size_GetRange") : nullptr);
     if(m_peak_AutoBrightness_ROI_Size_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_Size_GetRange");
-    }        
+    }
 
     m_peak_AutoBrightness_ROI_Set = (dyn_peak_AutoBrightness_ROI_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_Set") : nullptr);
     if(m_peak_AutoBrightness_ROI_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_ROI_Get = (dyn_peak_AutoBrightness_ROI_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_ROI_Get") : nullptr);
     if(m_peak_AutoBrightness_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_ROI_Get");
-    }        
+    }
 
     m_peak_AutoBrightness_Exposure_GetAccessStatus = (dyn_peak_AutoBrightness_Exposure_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_Exposure_GetAccessStatus") : nullptr);
     if(m_peak_AutoBrightness_Exposure_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Exposure_GetAccessStatus");
-    }        
+    }
+
+    m_peak_AutoBrightness_Exposure_Mode_GetList = (dyn_peak_AutoBrightness_Exposure_Mode_GetList) (load ?  import_function(m_handle, "peak_AutoBrightness_Exposure_Mode_GetList") : nullptr);
+    if(m_peak_AutoBrightness_Exposure_Mode_GetList == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoBrightness_Exposure_Mode_GetList");
+    }
 
     m_peak_AutoBrightness_Exposure_Mode_Set = (dyn_peak_AutoBrightness_Exposure_Mode_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_Exposure_Mode_Set") : nullptr);
     if(m_peak_AutoBrightness_Exposure_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Exposure_Mode_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_Exposure_Mode_Get = (dyn_peak_AutoBrightness_Exposure_Mode_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_Exposure_Mode_Get") : nullptr);
     if(m_peak_AutoBrightness_Exposure_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Exposure_Mode_Get");
-    }        
+    }
 
     m_peak_AutoBrightness_Gain_GetAccessStatus = (dyn_peak_AutoBrightness_Gain_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoBrightness_Gain_GetAccessStatus") : nullptr);
     if(m_peak_AutoBrightness_Gain_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Gain_GetAccessStatus");
-    }        
+    }
+
+    m_peak_AutoBrightness_Gain_Mode_GetList = (dyn_peak_AutoBrightness_Gain_Mode_GetList) (load ?  import_function(m_handle, "peak_AutoBrightness_Gain_Mode_GetList") : nullptr);
+    if(m_peak_AutoBrightness_Gain_Mode_GetList == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoBrightness_Gain_Mode_GetList");
+    }
 
     m_peak_AutoBrightness_Gain_Mode_Set = (dyn_peak_AutoBrightness_Gain_Mode_Set) (load ?  import_function(m_handle, "peak_AutoBrightness_Gain_Mode_Set") : nullptr);
     if(m_peak_AutoBrightness_Gain_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Gain_Mode_Set");
-    }        
+    }
 
     m_peak_AutoBrightness_Gain_Mode_Get = (dyn_peak_AutoBrightness_Gain_Mode_Get) (load ?  import_function(m_handle, "peak_AutoBrightness_Gain_Mode_Get") : nullptr);
     if(m_peak_AutoBrightness_Gain_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoBrightness_Gain_Mode_Get");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_GetAccessStatus = (dyn_peak_AutoWhiteBalance_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_GetAccessStatus") : nullptr);
     if(m_peak_AutoWhiteBalance_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_GetAccessStatus");
-    }        
+    }
+
+    m_peak_AutoWhiteBalance_ROI_GetAccessStatus = (dyn_peak_AutoWhiteBalance_ROI_GetAccessStatus) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_GetAccessStatus") : nullptr);
+    if(m_peak_AutoWhiteBalance_ROI_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_GetAccessStatus");
+    }
 
     m_peak_AutoWhiteBalance_ROI_Mode_Set = (dyn_peak_AutoWhiteBalance_ROI_Mode_Set) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_Mode_Set") : nullptr);
     if(m_peak_AutoWhiteBalance_ROI_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_Mode_Set");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_ROI_Mode_Get = (dyn_peak_AutoWhiteBalance_ROI_Mode_Get) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_Mode_Get") : nullptr);
     if(m_peak_AutoWhiteBalance_ROI_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_Mode_Get");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_ROI_Offset_GetRange = (dyn_peak_AutoWhiteBalance_ROI_Offset_GetRange) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_Offset_GetRange") : nullptr);
     if(m_peak_AutoWhiteBalance_ROI_Offset_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_Offset_GetRange");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_ROI_Size_GetRange = (dyn_peak_AutoWhiteBalance_ROI_Size_GetRange) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_Size_GetRange") : nullptr);
     if(m_peak_AutoWhiteBalance_ROI_Size_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_Size_GetRange");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_ROI_Set = (dyn_peak_AutoWhiteBalance_ROI_Set) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_Set") : nullptr);
     if(m_peak_AutoWhiteBalance_ROI_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_Set");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_ROI_Get = (dyn_peak_AutoWhiteBalance_ROI_Get) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_ROI_Get") : nullptr);
     if(m_peak_AutoWhiteBalance_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_ROI_Get");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_Mode_Set = (dyn_peak_AutoWhiteBalance_Mode_Set) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_Mode_Set") : nullptr);
     if(m_peak_AutoWhiteBalance_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_Mode_Set");
-    }        
+    }
 
     m_peak_AutoWhiteBalance_Mode_Get = (dyn_peak_AutoWhiteBalance_Mode_Get) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_Mode_Get") : nullptr);
     if(m_peak_AutoWhiteBalance_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_AutoWhiteBalance_Mode_Get");
-    }        
+    }
+
+    m_peak_AutoWhiteBalance_Mode_GetList = (dyn_peak_AutoWhiteBalance_Mode_GetList) (load ?  import_function(m_handle, "peak_AutoWhiteBalance_Mode_GetList") : nullptr);
+    if(m_peak_AutoWhiteBalance_Mode_GetList == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_AutoWhiteBalance_Mode_GetList");
+    }
 
     m_peak_ROI_GetAccessStatus = (dyn_peak_ROI_GetAccessStatus) (load ?  import_function(m_handle, "peak_ROI_GetAccessStatus") : nullptr);
     if(m_peak_ROI_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_GetAccessStatus");
-    }        
+    }
 
     m_peak_ROI_Offset_GetRange = (dyn_peak_ROI_Offset_GetRange) (load ?  import_function(m_handle, "peak_ROI_Offset_GetRange") : nullptr);
     if(m_peak_ROI_Offset_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Offset_GetRange");
-    }        
+    }
 
     m_peak_ROI_Offset_GetAccessStatus = (dyn_peak_ROI_Offset_GetAccessStatus) (load ?  import_function(m_handle, "peak_ROI_Offset_GetAccessStatus") : nullptr);
     if(m_peak_ROI_Offset_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Offset_GetAccessStatus");
-    }        
+    }
 
     m_peak_ROI_Offset_Set = (dyn_peak_ROI_Offset_Set) (load ?  import_function(m_handle, "peak_ROI_Offset_Set") : nullptr);
     if(m_peak_ROI_Offset_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Offset_Set");
-    }        
+    }
 
     m_peak_ROI_Offset_Get = (dyn_peak_ROI_Offset_Get) (load ?  import_function(m_handle, "peak_ROI_Offset_Get") : nullptr);
     if(m_peak_ROI_Offset_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Offset_Get");
-    }        
+    }
 
     m_peak_ROI_Size_GetRange = (dyn_peak_ROI_Size_GetRange) (load ?  import_function(m_handle, "peak_ROI_Size_GetRange") : nullptr);
     if(m_peak_ROI_Size_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Size_GetRange");
-    }        
+    }
 
     m_peak_ROI_Size_GetAccessStatus = (dyn_peak_ROI_Size_GetAccessStatus) (load ?  import_function(m_handle, "peak_ROI_Size_GetAccessStatus") : nullptr);
     if(m_peak_ROI_Size_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Size_GetAccessStatus");
-    }        
+    }
 
     m_peak_ROI_Size_Set = (dyn_peak_ROI_Size_Set) (load ?  import_function(m_handle, "peak_ROI_Size_Set") : nullptr);
     if(m_peak_ROI_Size_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Size_Set");
-    }        
+    }
 
     m_peak_ROI_Size_Get = (dyn_peak_ROI_Size_Get) (load ?  import_function(m_handle, "peak_ROI_Size_Get") : nullptr);
     if(m_peak_ROI_Size_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Size_Get");
-    }        
+    }
 
     m_peak_ROI_Set = (dyn_peak_ROI_Set) (load ?  import_function(m_handle, "peak_ROI_Set") : nullptr);
     if(m_peak_ROI_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Set");
-    }        
+    }
 
     m_peak_ROI_Get = (dyn_peak_ROI_Get) (load ?  import_function(m_handle, "peak_ROI_Get") : nullptr);
     if(m_peak_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_ROI_Get");
-    }        
+    }
 
     m_peak_Binning_GetAccessStatus = (dyn_peak_Binning_GetAccessStatus) (load ?  import_function(m_handle, "peak_Binning_GetAccessStatus") : nullptr);
     if(m_peak_Binning_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Binning_GetAccessStatus");
-    }        
+    }
 
     m_peak_Binning_FactorX_GetList = (dyn_peak_Binning_FactorX_GetList) (load ?  import_function(m_handle, "peak_Binning_FactorX_GetList") : nullptr);
     if(m_peak_Binning_FactorX_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Binning_FactorX_GetList");
-    }        
+    }
 
     m_peak_Binning_FactorY_GetList = (dyn_peak_Binning_FactorY_GetList) (load ?  import_function(m_handle, "peak_Binning_FactorY_GetList") : nullptr);
     if(m_peak_Binning_FactorY_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Binning_FactorY_GetList");
-    }        
+    }
 
     m_peak_Binning_Set = (dyn_peak_Binning_Set) (load ?  import_function(m_handle, "peak_Binning_Set") : nullptr);
     if(m_peak_Binning_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Binning_Set");
-    }        
+    }
 
     m_peak_Binning_Get = (dyn_peak_Binning_Get) (load ?  import_function(m_handle, "peak_Binning_Get") : nullptr);
     if(m_peak_Binning_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Binning_Get");
-    }        
+    }
 
     m_peak_BinningManual_GetAccessStatus = (dyn_peak_BinningManual_GetAccessStatus) (load ?  import_function(m_handle, "peak_BinningManual_GetAccessStatus") : nullptr);
     if(m_peak_BinningManual_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_BinningManual_GetAccessStatus");
-    }        
+    }
 
     m_peak_BinningManual_FactorX_GetList = (dyn_peak_BinningManual_FactorX_GetList) (load ?  import_function(m_handle, "peak_BinningManual_FactorX_GetList") : nullptr);
     if(m_peak_BinningManual_FactorX_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_BinningManual_FactorX_GetList");
-    }        
+    }
 
     m_peak_BinningManual_FactorY_GetList = (dyn_peak_BinningManual_FactorY_GetList) (load ?  import_function(m_handle, "peak_BinningManual_FactorY_GetList") : nullptr);
     if(m_peak_BinningManual_FactorY_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_BinningManual_FactorY_GetList");
-    }        
+    }
 
     m_peak_BinningManual_Set = (dyn_peak_BinningManual_Set) (load ?  import_function(m_handle, "peak_BinningManual_Set") : nullptr);
     if(m_peak_BinningManual_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_BinningManual_Set");
-    }        
+    }
 
     m_peak_BinningManual_Get = (dyn_peak_BinningManual_Get) (load ?  import_function(m_handle, "peak_BinningManual_Get") : nullptr);
     if(m_peak_BinningManual_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_BinningManual_Get");
-    }        
+    }
 
     m_peak_Decimation_GetAccessStatus = (dyn_peak_Decimation_GetAccessStatus) (load ?  import_function(m_handle, "peak_Decimation_GetAccessStatus") : nullptr);
     if(m_peak_Decimation_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Decimation_GetAccessStatus");
-    }        
+    }
 
     m_peak_Decimation_FactorX_GetList = (dyn_peak_Decimation_FactorX_GetList) (load ?  import_function(m_handle, "peak_Decimation_FactorX_GetList") : nullptr);
     if(m_peak_Decimation_FactorX_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Decimation_FactorX_GetList");
-    }        
+    }
 
     m_peak_Decimation_FactorY_GetList = (dyn_peak_Decimation_FactorY_GetList) (load ?  import_function(m_handle, "peak_Decimation_FactorY_GetList") : nullptr);
     if(m_peak_Decimation_FactorY_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Decimation_FactorY_GetList");
-    }        
+    }
 
     m_peak_Decimation_Set = (dyn_peak_Decimation_Set) (load ?  import_function(m_handle, "peak_Decimation_Set") : nullptr);
     if(m_peak_Decimation_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Decimation_Set");
-    }        
+    }
 
     m_peak_Decimation_Get = (dyn_peak_Decimation_Get) (load ?  import_function(m_handle, "peak_Decimation_Get") : nullptr);
     if(m_peak_Decimation_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Decimation_Get");
-    }        
+    }
 
     m_peak_DecimationManual_GetAccessStatus = (dyn_peak_DecimationManual_GetAccessStatus) (load ?  import_function(m_handle, "peak_DecimationManual_GetAccessStatus") : nullptr);
     if(m_peak_DecimationManual_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_DecimationManual_GetAccessStatus");
-    }        
+    }
 
     m_peak_DecimationManual_FactorX_GetList = (dyn_peak_DecimationManual_FactorX_GetList) (load ?  import_function(m_handle, "peak_DecimationManual_FactorX_GetList") : nullptr);
     if(m_peak_DecimationManual_FactorX_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_DecimationManual_FactorX_GetList");
-    }        
+    }
 
     m_peak_DecimationManual_FactorY_GetList = (dyn_peak_DecimationManual_FactorY_GetList) (load ?  import_function(m_handle, "peak_DecimationManual_FactorY_GetList") : nullptr);
     if(m_peak_DecimationManual_FactorY_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_DecimationManual_FactorY_GetList");
-    }        
+    }
 
     m_peak_DecimationManual_Set = (dyn_peak_DecimationManual_Set) (load ?  import_function(m_handle, "peak_DecimationManual_Set") : nullptr);
     if(m_peak_DecimationManual_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_DecimationManual_Set");
-    }        
+    }
 
     m_peak_DecimationManual_Get = (dyn_peak_DecimationManual_Get) (load ?  import_function(m_handle, "peak_DecimationManual_Get") : nullptr);
     if(m_peak_DecimationManual_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_DecimationManual_Get");
-    }        
+    }
 
     m_peak_Scaling_GetAccessStatus = (dyn_peak_Scaling_GetAccessStatus) (load ?  import_function(m_handle, "peak_Scaling_GetAccessStatus") : nullptr);
     if(m_peak_Scaling_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Scaling_GetAccessStatus");
-    }        
+    }
 
     m_peak_Scaling_FactorX_GetRange = (dyn_peak_Scaling_FactorX_GetRange) (load ?  import_function(m_handle, "peak_Scaling_FactorX_GetRange") : nullptr);
     if(m_peak_Scaling_FactorX_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Scaling_FactorX_GetRange");
-    }        
+    }
 
     m_peak_Scaling_FactorY_GetRange = (dyn_peak_Scaling_FactorY_GetRange) (load ?  import_function(m_handle, "peak_Scaling_FactorY_GetRange") : nullptr);
     if(m_peak_Scaling_FactorY_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Scaling_FactorY_GetRange");
-    }        
+    }
 
     m_peak_Scaling_Set = (dyn_peak_Scaling_Set) (load ?  import_function(m_handle, "peak_Scaling_Set") : nullptr);
     if(m_peak_Scaling_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Scaling_Set");
-    }        
+    }
 
     m_peak_Scaling_Get = (dyn_peak_Scaling_Get) (load ?  import_function(m_handle, "peak_Scaling_Get") : nullptr);
     if(m_peak_Scaling_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Scaling_Get");
-    }        
+    }
 
     m_peak_Mirror_LeftRight_GetAccessStatus = (dyn_peak_Mirror_LeftRight_GetAccessStatus) (load ?  import_function(m_handle, "peak_Mirror_LeftRight_GetAccessStatus") : nullptr);
     if(m_peak_Mirror_LeftRight_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Mirror_LeftRight_GetAccessStatus");
-    }        
+    }
 
     m_peak_Mirror_LeftRight_Enable = (dyn_peak_Mirror_LeftRight_Enable) (load ?  import_function(m_handle, "peak_Mirror_LeftRight_Enable") : nullptr);
     if(m_peak_Mirror_LeftRight_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Mirror_LeftRight_Enable");
-    }        
+    }
 
     m_peak_Mirror_LeftRight_IsEnabled = (dyn_peak_Mirror_LeftRight_IsEnabled) (load ?  import_function(m_handle, "peak_Mirror_LeftRight_IsEnabled") : nullptr);
     if(m_peak_Mirror_LeftRight_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Mirror_LeftRight_IsEnabled");
-    }        
+    }
 
     m_peak_Mirror_UpDown_GetAccessStatus = (dyn_peak_Mirror_UpDown_GetAccessStatus) (load ?  import_function(m_handle, "peak_Mirror_UpDown_GetAccessStatus") : nullptr);
     if(m_peak_Mirror_UpDown_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Mirror_UpDown_GetAccessStatus");
-    }        
+    }
 
     m_peak_Mirror_UpDown_Enable = (dyn_peak_Mirror_UpDown_Enable) (load ?  import_function(m_handle, "peak_Mirror_UpDown_Enable") : nullptr);
     if(m_peak_Mirror_UpDown_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Mirror_UpDown_Enable");
-    }        
+    }
 
     m_peak_Mirror_UpDown_IsEnabled = (dyn_peak_Mirror_UpDown_IsEnabled) (load ?  import_function(m_handle, "peak_Mirror_UpDown_IsEnabled") : nullptr);
     if(m_peak_Mirror_UpDown_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Mirror_UpDown_IsEnabled");
-    }        
+    }
 
     m_peak_CameraMemory_Area_GetAccessStatus = (dyn_peak_CameraMemory_Area_GetAccessStatus) (load ?  import_function(m_handle, "peak_CameraMemory_Area_GetAccessStatus") : nullptr);
     if(m_peak_CameraMemory_Area_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraMemory_Area_GetAccessStatus");
-    }        
+    }
 
     m_peak_CameraMemory_Area_GetList = (dyn_peak_CameraMemory_Area_GetList) (load ?  import_function(m_handle, "peak_CameraMemory_Area_GetList") : nullptr);
     if(m_peak_CameraMemory_Area_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraMemory_Area_GetList");
-    }        
+    }
 
     m_peak_CameraMemory_Area_Size_Get = (dyn_peak_CameraMemory_Area_Size_Get) (load ?  import_function(m_handle, "peak_CameraMemory_Area_Size_Get") : nullptr);
     if(m_peak_CameraMemory_Area_Size_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraMemory_Area_Size_Get");
-    }        
+    }
 
     m_peak_CameraMemory_Area_Data_Clear = (dyn_peak_CameraMemory_Area_Data_Clear) (load ?  import_function(m_handle, "peak_CameraMemory_Area_Data_Clear") : nullptr);
     if(m_peak_CameraMemory_Area_Data_Clear == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraMemory_Area_Data_Clear");
-    }        
+    }
 
     m_peak_CameraMemory_Area_Data_Write = (dyn_peak_CameraMemory_Area_Data_Write) (load ?  import_function(m_handle, "peak_CameraMemory_Area_Data_Write") : nullptr);
     if(m_peak_CameraMemory_Area_Data_Write == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraMemory_Area_Data_Write");
-    }        
+    }
 
     m_peak_CameraMemory_Area_Data_Read = (dyn_peak_CameraMemory_Area_Data_Read) (load ?  import_function(m_handle, "peak_CameraMemory_Area_Data_Read") : nullptr);
     if(m_peak_CameraMemory_Area_Data_Read == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_CameraMemory_Area_Data_Read");
-    }        
+    }
 
     m_peak_GFA_EnableWriteAccess = (dyn_peak_GFA_EnableWriteAccess) (load ?  import_function(m_handle, "peak_GFA_EnableWriteAccess") : nullptr);
     if(m_peak_GFA_EnableWriteAccess == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_EnableWriteAccess");
-    }        
+    }
 
     m_peak_GFA_IsWriteAccessEnabled = (dyn_peak_GFA_IsWriteAccessEnabled) (load ?  import_function(m_handle, "peak_GFA_IsWriteAccessEnabled") : nullptr);
     if(m_peak_GFA_IsWriteAccessEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_IsWriteAccessEnabled");
-    }        
+    }
 
     m_peak_GFA_Feature_GetAccessStatus = (dyn_peak_GFA_Feature_GetAccessStatus) (load ?  import_function(m_handle, "peak_GFA_Feature_GetAccessStatus") : nullptr);
     if(m_peak_GFA_Feature_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Feature_GetAccessStatus");
-    }        
+    }
 
     m_peak_GFA_Float_HasRange = (dyn_peak_GFA_Float_HasRange) (load ?  import_function(m_handle, "peak_GFA_Float_HasRange") : nullptr);
     if(m_peak_GFA_Float_HasRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Float_HasRange");
-    }        
+    }
 
     m_peak_GFA_Float_GetRange = (dyn_peak_GFA_Float_GetRange) (load ?  import_function(m_handle, "peak_GFA_Float_GetRange") : nullptr);
     if(m_peak_GFA_Float_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Float_GetRange");
-    }        
+    }
 
     m_peak_GFA_Float_GetList = (dyn_peak_GFA_Float_GetList) (load ?  import_function(m_handle, "peak_GFA_Float_GetList") : nullptr);
     if(m_peak_GFA_Float_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Float_GetList");
-    }        
+    }
 
     m_peak_GFA_Float_Set = (dyn_peak_GFA_Float_Set) (load ?  import_function(m_handle, "peak_GFA_Float_Set") : nullptr);
     if(m_peak_GFA_Float_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Float_Set");
-    }        
+    }
 
     m_peak_GFA_Float_Get = (dyn_peak_GFA_Float_Get) (load ?  import_function(m_handle, "peak_GFA_Float_Get") : nullptr);
     if(m_peak_GFA_Float_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Float_Get");
-    }        
+    }
 
     m_peak_GFA_Integer_HasRange = (dyn_peak_GFA_Integer_HasRange) (load ?  import_function(m_handle, "peak_GFA_Integer_HasRange") : nullptr);
     if(m_peak_GFA_Integer_HasRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Integer_HasRange");
-    }        
+    }
 
     m_peak_GFA_Integer_GetRange = (dyn_peak_GFA_Integer_GetRange) (load ?  import_function(m_handle, "peak_GFA_Integer_GetRange") : nullptr);
     if(m_peak_GFA_Integer_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Integer_GetRange");
-    }        
+    }
 
     m_peak_GFA_Integer_GetList = (dyn_peak_GFA_Integer_GetList) (load ?  import_function(m_handle, "peak_GFA_Integer_GetList") : nullptr);
     if(m_peak_GFA_Integer_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Integer_GetList");
-    }        
+    }
 
     m_peak_GFA_Integer_Set = (dyn_peak_GFA_Integer_Set) (load ?  import_function(m_handle, "peak_GFA_Integer_Set") : nullptr);
     if(m_peak_GFA_Integer_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Integer_Set");
-    }        
+    }
 
     m_peak_GFA_Integer_Get = (dyn_peak_GFA_Integer_Get) (load ?  import_function(m_handle, "peak_GFA_Integer_Get") : nullptr);
     if(m_peak_GFA_Integer_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Integer_Get");
-    }        
+    }
 
     m_peak_GFA_Boolean_Set = (dyn_peak_GFA_Boolean_Set) (load ?  import_function(m_handle, "peak_GFA_Boolean_Set") : nullptr);
     if(m_peak_GFA_Boolean_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Boolean_Set");
-    }        
+    }
 
     m_peak_GFA_Boolean_Get = (dyn_peak_GFA_Boolean_Get) (load ?  import_function(m_handle, "peak_GFA_Boolean_Get") : nullptr);
     if(m_peak_GFA_Boolean_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Boolean_Get");
-    }        
+    }
 
     m_peak_GFA_String_Set = (dyn_peak_GFA_String_Set) (load ?  import_function(m_handle, "peak_GFA_String_Set") : nullptr);
     if(m_peak_GFA_String_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_String_Set");
-    }        
+    }
 
     m_peak_GFA_String_Get = (dyn_peak_GFA_String_Get) (load ?  import_function(m_handle, "peak_GFA_String_Get") : nullptr);
     if(m_peak_GFA_String_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_String_Get");
-    }        
+    }
 
     m_peak_GFA_Command_Execute = (dyn_peak_GFA_Command_Execute) (load ?  import_function(m_handle, "peak_GFA_Command_Execute") : nullptr);
     if(m_peak_GFA_Command_Execute == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Command_Execute");
-    }        
+    }
 
     m_peak_GFA_Command_WaitForDone = (dyn_peak_GFA_Command_WaitForDone) (load ?  import_function(m_handle, "peak_GFA_Command_WaitForDone") : nullptr);
     if(m_peak_GFA_Command_WaitForDone == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Command_WaitForDone");
-    }        
+    }
 
     m_peak_GFA_Enumeration_GetList = (dyn_peak_GFA_Enumeration_GetList) (load ?  import_function(m_handle, "peak_GFA_Enumeration_GetList") : nullptr);
     if(m_peak_GFA_Enumeration_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Enumeration_GetList");
-    }        
+    }
 
     m_peak_GFA_EnumerationEntry_GetAccessStatus = (dyn_peak_GFA_EnumerationEntry_GetAccessStatus) (load ?  import_function(m_handle, "peak_GFA_EnumerationEntry_GetAccessStatus") : nullptr);
     if(m_peak_GFA_EnumerationEntry_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_EnumerationEntry_GetAccessStatus");
-    }        
+    }
 
     m_peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue = (dyn_peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue) (load ?  import_function(m_handle, "peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue") : nullptr);
     if(m_peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue");
-    }        
+    }
 
     m_peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue = (dyn_peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue) (load ?  import_function(m_handle, "peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue") : nullptr);
     if(m_peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue");
-    }        
+    }
 
     m_peak_GFA_Enumeration_Set = (dyn_peak_GFA_Enumeration_Set) (load ?  import_function(m_handle, "peak_GFA_Enumeration_Set") : nullptr);
     if(m_peak_GFA_Enumeration_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Enumeration_Set");
-    }        
+    }
 
     m_peak_GFA_Enumeration_SetBySymbolicValue = (dyn_peak_GFA_Enumeration_SetBySymbolicValue) (load ?  import_function(m_handle, "peak_GFA_Enumeration_SetBySymbolicValue") : nullptr);
     if(m_peak_GFA_Enumeration_SetBySymbolicValue == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Enumeration_SetBySymbolicValue");
-    }        
+    }
 
     m_peak_GFA_Enumeration_SetByIntegerValue = (dyn_peak_GFA_Enumeration_SetByIntegerValue) (load ?  import_function(m_handle, "peak_GFA_Enumeration_SetByIntegerValue") : nullptr);
     if(m_peak_GFA_Enumeration_SetByIntegerValue == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Enumeration_SetByIntegerValue");
-    }        
+    }
 
     m_peak_GFA_Enumeration_Get = (dyn_peak_GFA_Enumeration_Get) (load ?  import_function(m_handle, "peak_GFA_Enumeration_Get") : nullptr);
     if(m_peak_GFA_Enumeration_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Enumeration_Get");
-    }        
+    }
 
     m_peak_GFA_Register_Set = (dyn_peak_GFA_Register_Set) (load ?  import_function(m_handle, "peak_GFA_Register_Set") : nullptr);
     if(m_peak_GFA_Register_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Register_Set");
-    }        
+    }
 
     m_peak_GFA_Register_Get = (dyn_peak_GFA_Register_Get) (load ?  import_function(m_handle, "peak_GFA_Register_Get") : nullptr);
     if(m_peak_GFA_Register_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Register_Get");
-    }        
+    }
 
     m_peak_GFA_Data_Write = (dyn_peak_GFA_Data_Write) (load ?  import_function(m_handle, "peak_GFA_Data_Write") : nullptr);
     if(m_peak_GFA_Data_Write == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Data_Write");
-    }        
+    }
 
     m_peak_GFA_Data_Read = (dyn_peak_GFA_Data_Read) (load ?  import_function(m_handle, "peak_GFA_Data_Read") : nullptr);
     if(m_peak_GFA_Data_Read == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_GFA_Data_Read");
-    }        
+    }
 
     m_peak_IPL_PixelFormat_GetList = (dyn_peak_IPL_PixelFormat_GetList) (load ?  import_function(m_handle, "peak_IPL_PixelFormat_GetList") : nullptr);
     if(m_peak_IPL_PixelFormat_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_PixelFormat_GetList");
-    }        
+    }
 
     m_peak_IPL_PixelFormat_Set = (dyn_peak_IPL_PixelFormat_Set) (load ?  import_function(m_handle, "peak_IPL_PixelFormat_Set") : nullptr);
     if(m_peak_IPL_PixelFormat_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_PixelFormat_Set");
-    }        
+    }
 
     m_peak_IPL_PixelFormat_Get = (dyn_peak_IPL_PixelFormat_Get) (load ?  import_function(m_handle, "peak_IPL_PixelFormat_Get") : nullptr);
     if(m_peak_IPL_PixelFormat_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_PixelFormat_Get");
-    }        
+    }
 
     m_peak_IPL_Gain_GetRange = (dyn_peak_IPL_Gain_GetRange) (load ?  import_function(m_handle, "peak_IPL_Gain_GetRange") : nullptr);
     if(m_peak_IPL_Gain_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Gain_GetRange");
-    }        
+    }
 
     m_peak_IPL_Gain_Set = (dyn_peak_IPL_Gain_Set) (load ?  import_function(m_handle, "peak_IPL_Gain_Set") : nullptr);
     if(m_peak_IPL_Gain_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Gain_Set");
-    }        
+    }
 
     m_peak_IPL_Gain_Get = (dyn_peak_IPL_Gain_Get) (load ?  import_function(m_handle, "peak_IPL_Gain_Get") : nullptr);
     if(m_peak_IPL_Gain_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Gain_Get");
-    }        
+    }
 
     m_peak_IPL_Gamma_GetRange = (dyn_peak_IPL_Gamma_GetRange) (load ?  import_function(m_handle, "peak_IPL_Gamma_GetRange") : nullptr);
     if(m_peak_IPL_Gamma_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Gamma_GetRange");
-    }        
+    }
 
     m_peak_IPL_Gamma_Set = (dyn_peak_IPL_Gamma_Set) (load ?  import_function(m_handle, "peak_IPL_Gamma_Set") : nullptr);
     if(m_peak_IPL_Gamma_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Gamma_Set");
-    }        
+    }
 
     m_peak_IPL_Gamma_Get = (dyn_peak_IPL_Gamma_Get) (load ?  import_function(m_handle, "peak_IPL_Gamma_Get") : nullptr);
     if(m_peak_IPL_Gamma_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Gamma_Get");
-    }        
+    }
 
     m_peak_IPL_ColorCorrection_Matrix_Set = (dyn_peak_IPL_ColorCorrection_Matrix_Set) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_Matrix_Set") : nullptr);
     if(m_peak_IPL_ColorCorrection_Matrix_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_Matrix_Set");
-    }        
+    }
 
     m_peak_IPL_ColorCorrection_Matrix_Get = (dyn_peak_IPL_ColorCorrection_Matrix_Get) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_Matrix_Get") : nullptr);
     if(m_peak_IPL_ColorCorrection_Matrix_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_Matrix_Get");
-    }        
+    }
 
     m_peak_IPL_ColorCorrection_Saturation_Get = (dyn_peak_IPL_ColorCorrection_Saturation_Get) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_Saturation_Get") : nullptr);
     if(m_peak_IPL_ColorCorrection_Saturation_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_Saturation_Get");
-    }        
+    }
 
     m_peak_IPL_ColorCorrection_Saturation_Set = (dyn_peak_IPL_ColorCorrection_Saturation_Set) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_Saturation_Set") : nullptr);
     if(m_peak_IPL_ColorCorrection_Saturation_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_Saturation_Set");
-    }        
+    }
 
     m_peak_IPL_ColorCorrection_Saturation_GetRange = (dyn_peak_IPL_ColorCorrection_Saturation_GetRange) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_Saturation_GetRange") : nullptr);
     if(m_peak_IPL_ColorCorrection_Saturation_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_Saturation_GetRange");
-    }        
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_Enable = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_Enable) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_Enable") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_Enable");
+    }
+
+    m_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled = (dyn_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled") : nullptr);
+    if(m_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled");
+    }
 
     m_peak_IPL_ColorCorrection_Enable = (dyn_peak_IPL_ColorCorrection_Enable) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_Enable") : nullptr);
     if(m_peak_IPL_ColorCorrection_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_Enable");
-    }        
+    }
 
     m_peak_IPL_ColorCorrection_IsEnabled = (dyn_peak_IPL_ColorCorrection_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_ColorCorrection_IsEnabled") : nullptr);
     if(m_peak_IPL_ColorCorrection_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ColorCorrection_IsEnabled");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Target_GetRange = (dyn_peak_IPL_AutoBrightness_Target_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Target_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_Target_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Target_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Target_Set = (dyn_peak_IPL_AutoBrightness_Target_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Target_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_Target_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Target_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Target_Get = (dyn_peak_IPL_AutoBrightness_Target_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Target_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_Target_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Target_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_TargetTolerance_GetRange = (dyn_peak_IPL_AutoBrightness_TargetTolerance_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_TargetTolerance_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_TargetTolerance_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_TargetTolerance_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_TargetTolerance_Set = (dyn_peak_IPL_AutoBrightness_TargetTolerance_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_TargetTolerance_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_TargetTolerance_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_TargetTolerance_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_TargetTolerance_Get = (dyn_peak_IPL_AutoBrightness_TargetTolerance_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_TargetTolerance_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_TargetTolerance_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_TargetTolerance_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_TargetPercentile_GetRange = (dyn_peak_IPL_AutoBrightness_TargetPercentile_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_TargetPercentile_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_TargetPercentile_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_TargetPercentile_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_TargetPercentile_Set = (dyn_peak_IPL_AutoBrightness_TargetPercentile_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_TargetPercentile_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_TargetPercentile_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_TargetPercentile_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_TargetPercentile_Get = (dyn_peak_IPL_AutoBrightness_TargetPercentile_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_TargetPercentile_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_TargetPercentile_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_TargetPercentile_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ROI_Mode_Set = (dyn_peak_IPL_AutoBrightness_ROI_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ROI_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_ROI_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ROI_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ROI_Mode_Get = (dyn_peak_IPL_AutoBrightness_ROI_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ROI_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_ROI_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ROI_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ROI_Offset_GetRange = (dyn_peak_IPL_AutoBrightness_ROI_Offset_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ROI_Offset_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_ROI_Offset_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ROI_Offset_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ROI_Size_GetRange = (dyn_peak_IPL_AutoBrightness_ROI_Size_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ROI_Size_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_ROI_Size_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ROI_Size_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ROI_Set = (dyn_peak_IPL_AutoBrightness_ROI_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ROI_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_ROI_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ROI_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ROI_Get = (dyn_peak_IPL_AutoBrightness_ROI_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ROI_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ROI_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Exposure_Mode_Set = (dyn_peak_IPL_AutoBrightness_Exposure_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Exposure_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_Exposure_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Exposure_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Exposure_Mode_Get = (dyn_peak_IPL_AutoBrightness_Exposure_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Exposure_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_Exposure_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Exposure_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ExposureLimit_Get = (dyn_peak_IPL_AutoBrightness_ExposureLimit_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ExposureLimit_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_ExposureLimit_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ExposureLimit_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_ExposureLimit_Set = (dyn_peak_IPL_AutoBrightness_ExposureLimit_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_ExposureLimit_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_ExposureLimit_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_ExposureLimit_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Gain_Mode_Set = (dyn_peak_IPL_AutoBrightness_Gain_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Gain_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_Gain_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Gain_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Gain_Mode_Get = (dyn_peak_IPL_AutoBrightness_Gain_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Gain_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_Gain_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Gain_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainAnalog_Mode_Set = (dyn_peak_IPL_AutoBrightness_GainAnalog_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainAnalog_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainAnalog_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainAnalog_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainAnalog_Mode_Get = (dyn_peak_IPL_AutoBrightness_GainAnalog_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainAnalog_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainAnalog_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainAnalog_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainDigital_Mode_Set = (dyn_peak_IPL_AutoBrightness_GainDigital_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainDigital_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainDigital_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainDigital_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainDigital_Mode_Get = (dyn_peak_IPL_AutoBrightness_GainDigital_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainDigital_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainDigital_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainDigital_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainCombined_Mode_Set = (dyn_peak_IPL_AutoBrightness_GainCombined_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainCombined_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainCombined_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainCombined_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainCombined_Mode_Get = (dyn_peak_IPL_AutoBrightness_GainCombined_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainCombined_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainCombined_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainCombined_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainHost_Mode_Set = (dyn_peak_IPL_AutoBrightness_GainHost_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainHost_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainHost_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainHost_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainHost_Mode_Get = (dyn_peak_IPL_AutoBrightness_GainHost_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainHost_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainHost_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainHost_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Algorithm_Set = (dyn_peak_IPL_AutoBrightness_Algorithm_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Algorithm_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_Algorithm_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Algorithm_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_Algorithm_Get = (dyn_peak_IPL_AutoBrightness_Algorithm_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_Algorithm_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_Algorithm_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_Algorithm_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_AverageLast_Get = (dyn_peak_IPL_AutoBrightness_AverageLast_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_AverageLast_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_AverageLast_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_AverageLast_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainLimit_Set = (dyn_peak_IPL_AutoBrightness_GainLimit_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainLimit_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainLimit_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainLimit_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainLimit_Get = (dyn_peak_IPL_AutoBrightness_GainLimit_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainLimit_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainLimit_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainLimit_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainLimit_GetRange = (dyn_peak_IPL_AutoBrightness_GainLimit_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainLimit_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainLimit_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainLimit_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainAnalogLimit_Set = (dyn_peak_IPL_AutoBrightness_GainAnalogLimit_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainAnalogLimit_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainAnalogLimit_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainAnalogLimit_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainAnalogLimit_Get = (dyn_peak_IPL_AutoBrightness_GainAnalogLimit_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainAnalogLimit_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainAnalogLimit_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainAnalogLimit_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainAnalogLimit_GetRange = (dyn_peak_IPL_AutoBrightness_GainAnalogLimit_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainAnalogLimit_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainAnalogLimit_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainAnalogLimit_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainDigitalLimit_Set = (dyn_peak_IPL_AutoBrightness_GainDigitalLimit_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainDigitalLimit_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainDigitalLimit_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainDigitalLimit_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainDigitalLimit_Get = (dyn_peak_IPL_AutoBrightness_GainDigitalLimit_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainDigitalLimit_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainDigitalLimit_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainDigitalLimit_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainDigitalLimit_GetRange = (dyn_peak_IPL_AutoBrightness_GainDigitalLimit_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainDigitalLimit_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainDigitalLimit_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainDigitalLimit_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainCombinedLimit_Set = (dyn_peak_IPL_AutoBrightness_GainCombinedLimit_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainCombinedLimit_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainCombinedLimit_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainCombinedLimit_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainCombinedLimit_Get = (dyn_peak_IPL_AutoBrightness_GainCombinedLimit_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainCombinedLimit_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainCombinedLimit_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainCombinedLimit_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainCombinedLimit_GetRange = (dyn_peak_IPL_AutoBrightness_GainCombinedLimit_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainCombinedLimit_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainCombinedLimit_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainCombinedLimit_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainHostLimit_Set = (dyn_peak_IPL_AutoBrightness_GainHostLimit_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainHostLimit_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainHostLimit_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainHostLimit_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainHostLimit_Get = (dyn_peak_IPL_AutoBrightness_GainHostLimit_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainHostLimit_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainHostLimit_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainHostLimit_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_GainHostLimit_GetRange = (dyn_peak_IPL_AutoBrightness_GainHostLimit_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_GainHostLimit_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_GainHostLimit_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_GainHostLimit_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_SkipFrames_Set = (dyn_peak_IPL_AutoBrightness_SkipFrames_Set) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_SkipFrames_Set") : nullptr);
     if(m_peak_IPL_AutoBrightness_SkipFrames_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_SkipFrames_Set");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_SkipFrames_Get = (dyn_peak_IPL_AutoBrightness_SkipFrames_Get) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_SkipFrames_Get") : nullptr);
     if(m_peak_IPL_AutoBrightness_SkipFrames_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_SkipFrames_Get");
-    }        
+    }
 
     m_peak_IPL_AutoBrightness_SkipFrames_GetRange = (dyn_peak_IPL_AutoBrightness_SkipFrames_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoBrightness_SkipFrames_GetRange") : nullptr);
     if(m_peak_IPL_AutoBrightness_SkipFrames_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoBrightness_SkipFrames_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_ROI_Mode_Set = (dyn_peak_IPL_AutoWhiteBalance_ROI_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_ROI_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_ROI_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_ROI_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_ROI_Mode_Get = (dyn_peak_IPL_AutoWhiteBalance_ROI_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_ROI_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_ROI_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_ROI_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange = (dyn_peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_ROI_Size_GetRange = (dyn_peak_IPL_AutoWhiteBalance_ROI_Size_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_ROI_Size_GetRange") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_ROI_Size_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_ROI_Size_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_ROI_Set = (dyn_peak_IPL_AutoWhiteBalance_ROI_Set) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_ROI_Set") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_ROI_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_ROI_Set");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_ROI_Get = (dyn_peak_IPL_AutoWhiteBalance_ROI_Get) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_ROI_Get") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_ROI_Get");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_Mode_Set = (dyn_peak_IPL_AutoWhiteBalance_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_Mode_Get = (dyn_peak_IPL_AutoWhiteBalance_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_SkipFrames_Set = (dyn_peak_IPL_AutoWhiteBalance_SkipFrames_Set) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_SkipFrames_Set") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_SkipFrames_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_SkipFrames_Set");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_SkipFrames_Get = (dyn_peak_IPL_AutoWhiteBalance_SkipFrames_Get) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_SkipFrames_Get") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_SkipFrames_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_SkipFrames_Get");
-    }        
+    }
 
     m_peak_IPL_AutoWhiteBalance_SkipFrames_GetRange = (dyn_peak_IPL_AutoWhiteBalance_SkipFrames_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoWhiteBalance_SkipFrames_GetRange") : nullptr);
     if(m_peak_IPL_AutoWhiteBalance_SkipFrames_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoWhiteBalance_SkipFrames_GetRange");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_GetAccessStatus = (dyn_peak_IPL_AutoFocus_GetAccessStatus) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_GetAccessStatus") : nullptr);
     if(m_peak_IPL_AutoFocus_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_GetAccessStatus");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_ROI_Set = (dyn_peak_IPL_AutoFocus_ROI_Set) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_ROI_Set") : nullptr);
     if(m_peak_IPL_AutoFocus_ROI_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_ROI_Set");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_ROI_Get = (dyn_peak_IPL_AutoFocus_ROI_Get) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_ROI_Get") : nullptr);
     if(m_peak_IPL_AutoFocus_ROI_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_ROI_Get");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Mode_Set = (dyn_peak_IPL_AutoFocus_Mode_Set) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Mode_Set") : nullptr);
     if(m_peak_IPL_AutoFocus_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Mode_Set");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Mode_Get = (dyn_peak_IPL_AutoFocus_Mode_Get) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Mode_Get") : nullptr);
     if(m_peak_IPL_AutoFocus_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Mode_Get");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_SearchAlgorithm_Set = (dyn_peak_IPL_AutoFocus_SearchAlgorithm_Set) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_SearchAlgorithm_Set") : nullptr);
     if(m_peak_IPL_AutoFocus_SearchAlgorithm_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_SearchAlgorithm_Set");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_SearchAlgorithm_Get = (dyn_peak_IPL_AutoFocus_SearchAlgorithm_Get) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_SearchAlgorithm_Get") : nullptr);
     if(m_peak_IPL_AutoFocus_SearchAlgorithm_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_SearchAlgorithm_Get");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_SharpnessAlgorithm_Set = (dyn_peak_IPL_AutoFocus_SharpnessAlgorithm_Set) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_SharpnessAlgorithm_Set") : nullptr);
     if(m_peak_IPL_AutoFocus_SharpnessAlgorithm_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_SharpnessAlgorithm_Set");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_SharpnessAlgorithm_Get = (dyn_peak_IPL_AutoFocus_SharpnessAlgorithm_Get) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_SharpnessAlgorithm_Get") : nullptr);
     if(m_peak_IPL_AutoFocus_SharpnessAlgorithm_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_SharpnessAlgorithm_Get");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Range_Set = (dyn_peak_IPL_AutoFocus_Range_Set) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Range_Set") : nullptr);
     if(m_peak_IPL_AutoFocus_Range_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Range_Set");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Range_Get = (dyn_peak_IPL_AutoFocus_Range_Get) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Range_Get") : nullptr);
     if(m_peak_IPL_AutoFocus_Range_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Range_Get");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Hysteresis_Set = (dyn_peak_IPL_AutoFocus_Hysteresis_Set) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Hysteresis_Set") : nullptr);
     if(m_peak_IPL_AutoFocus_Hysteresis_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Hysteresis_Set");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Hysteresis_Get = (dyn_peak_IPL_AutoFocus_Hysteresis_Get) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Hysteresis_Get") : nullptr);
     if(m_peak_IPL_AutoFocus_Hysteresis_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Hysteresis_Get");
-    }        
+    }
 
     m_peak_IPL_AutoFocus_Hysteresis_GetRange = (dyn_peak_IPL_AutoFocus_Hysteresis_GetRange) (load ?  import_function(m_handle, "peak_IPL_AutoFocus_Hysteresis_GetRange") : nullptr);
     if(m_peak_IPL_AutoFocus_Hysteresis_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_AutoFocus_Hysteresis_GetRange");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_Sensitivity_Set = (dyn_peak_IPL_HotpixelCorrection_Sensitivity_Set) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_Sensitivity_Set") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_Sensitivity_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_Sensitivity_Set");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_Sensitivity_Get = (dyn_peak_IPL_HotpixelCorrection_Sensitivity_Get) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_Sensitivity_Get") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_Sensitivity_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_Sensitivity_Get");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_GetList = (dyn_peak_IPL_HotpixelCorrection_GetList) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_GetList") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_GetList");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_SetList = (dyn_peak_IPL_HotpixelCorrection_SetList) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_SetList") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_SetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_SetList");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_ResetList = (dyn_peak_IPL_HotpixelCorrection_ResetList) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_ResetList") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_ResetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_ResetList");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_Enable = (dyn_peak_IPL_HotpixelCorrection_Enable) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_Enable") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_Enable");
-    }        
+    }
 
     m_peak_IPL_HotpixelCorrection_IsEnabled = (dyn_peak_IPL_HotpixelCorrection_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_HotpixelCorrection_IsEnabled") : nullptr);
     if(m_peak_IPL_HotpixelCorrection_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_HotpixelCorrection_IsEnabled");
-    }        
+    }
 
     m_peak_IPL_Mirror_UpDown_Enable = (dyn_peak_IPL_Mirror_UpDown_Enable) (load ?  import_function(m_handle, "peak_IPL_Mirror_UpDown_Enable") : nullptr);
     if(m_peak_IPL_Mirror_UpDown_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Mirror_UpDown_Enable");
-    }        
+    }
 
     m_peak_IPL_Mirror_UpDown_IsEnabled = (dyn_peak_IPL_Mirror_UpDown_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_Mirror_UpDown_IsEnabled") : nullptr);
     if(m_peak_IPL_Mirror_UpDown_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Mirror_UpDown_IsEnabled");
-    }        
+    }
 
     m_peak_IPL_Mirror_LeftRight_Enable = (dyn_peak_IPL_Mirror_LeftRight_Enable) (load ?  import_function(m_handle, "peak_IPL_Mirror_LeftRight_Enable") : nullptr);
     if(m_peak_IPL_Mirror_LeftRight_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Mirror_LeftRight_Enable");
-    }        
+    }
 
     m_peak_IPL_Mirror_LeftRight_IsEnabled = (dyn_peak_IPL_Mirror_LeftRight_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_Mirror_LeftRight_IsEnabled") : nullptr);
     if(m_peak_IPL_Mirror_LeftRight_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Mirror_LeftRight_IsEnabled");
-    }        
+    }
 
     m_peak_IPL_ProcessFrame = (dyn_peak_IPL_ProcessFrame) (load ?  import_function(m_handle, "peak_IPL_ProcessFrame") : nullptr);
     if(m_peak_IPL_ProcessFrame == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ProcessFrame");
-    }        
+    }
 
     m_peak_IPL_ProcessFrameInplace = (dyn_peak_IPL_ProcessFrameInplace) (load ?  import_function(m_handle, "peak_IPL_ProcessFrameInplace") : nullptr);
     if(m_peak_IPL_ProcessFrameInplace == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ProcessFrameInplace");
-    }        
+    }
+
+    m_peak_IPL_ReadImage = (dyn_peak_IPL_ReadImage) (load ?  import_function(m_handle, "peak_IPL_ReadImage") : nullptr);
+    if(m_peak_IPL_ReadImage == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_ReadImage");
+    }
 
     m_peak_IPL_EdgeEnhancement_Enable = (dyn_peak_IPL_EdgeEnhancement_Enable) (load ?  import_function(m_handle, "peak_IPL_EdgeEnhancement_Enable") : nullptr);
     if(m_peak_IPL_EdgeEnhancement_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_EdgeEnhancement_Enable");
-    }        
+    }
 
     m_peak_IPL_EdgeEnhancement_IsEnabled = (dyn_peak_IPL_EdgeEnhancement_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_EdgeEnhancement_IsEnabled") : nullptr);
     if(m_peak_IPL_EdgeEnhancement_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_EdgeEnhancement_IsEnabled");
-    }        
+    }
 
     m_peak_IPL_EdgeEnhancement_Factor_Set = (dyn_peak_IPL_EdgeEnhancement_Factor_Set) (load ?  import_function(m_handle, "peak_IPL_EdgeEnhancement_Factor_Set") : nullptr);
     if(m_peak_IPL_EdgeEnhancement_Factor_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_EdgeEnhancement_Factor_Set");
-    }        
+    }
 
     m_peak_IPL_EdgeEnhancement_Factor_Get = (dyn_peak_IPL_EdgeEnhancement_Factor_Get) (load ?  import_function(m_handle, "peak_IPL_EdgeEnhancement_Factor_Get") : nullptr);
     if(m_peak_IPL_EdgeEnhancement_Factor_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_EdgeEnhancement_Factor_Get");
-    }        
+    }
 
     m_peak_IPL_EdgeEnhancement_Factor_GetDefault = (dyn_peak_IPL_EdgeEnhancement_Factor_GetDefault) (load ?  import_function(m_handle, "peak_IPL_EdgeEnhancement_Factor_GetDefault") : nullptr);
     if(m_peak_IPL_EdgeEnhancement_Factor_GetDefault == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_EdgeEnhancement_Factor_GetDefault");
-    }        
+    }
 
     m_peak_IPL_EdgeEnhancement_Factor_GetRange = (dyn_peak_IPL_EdgeEnhancement_Factor_GetRange) (load ?  import_function(m_handle, "peak_IPL_EdgeEnhancement_Factor_GetRange") : nullptr);
     if(m_peak_IPL_EdgeEnhancement_Factor_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_EdgeEnhancement_Factor_GetRange");
-    }        
+    }
 
     m_peak_IPL_Sharpness_Measure = (dyn_peak_IPL_Sharpness_Measure) (load ?  import_function(m_handle, "peak_IPL_Sharpness_Measure") : nullptr);
     if(m_peak_IPL_Sharpness_Measure == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Sharpness_Measure");
-    }        
+    }
 
     m_peak_IPL_Sharpness_GetList = (dyn_peak_IPL_Sharpness_GetList) (load ?  import_function(m_handle, "peak_IPL_Sharpness_GetList") : nullptr);
     if(m_peak_IPL_Sharpness_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Sharpness_GetList");
-    }        
+    }
+
+    m_peak_IPL_Rotation_Angle_Set = (dyn_peak_IPL_Rotation_Angle_Set) (load ?  import_function(m_handle, "peak_IPL_Rotation_Angle_Set") : nullptr);
+    if(m_peak_IPL_Rotation_Angle_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Rotation_Angle_Set");
+    }
+
+    m_peak_IPL_Rotation_Angle_Get = (dyn_peak_IPL_Rotation_Angle_Get) (load ?  import_function(m_handle, "peak_IPL_Rotation_Angle_Get") : nullptr);
+    if(m_peak_IPL_Rotation_Angle_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Rotation_Angle_Get");
+    }
+
+    m_peak_IPL_Histogram_ProcessFrame = (dyn_peak_IPL_Histogram_ProcessFrame) (load ?  import_function(m_handle, "peak_IPL_Histogram_ProcessFrame") : nullptr);
+    if(m_peak_IPL_Histogram_ProcessFrame == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Histogram_ProcessFrame");
+    }
+
+    m_peak_IPL_Histogram_Release = (dyn_peak_IPL_Histogram_Release) (load ?  import_function(m_handle, "peak_IPL_Histogram_Release") : nullptr);
+    if(m_peak_IPL_Histogram_Release == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Histogram_Release");
+    }
+
+    m_peak_IPL_Histogram_Channel_GetCount = (dyn_peak_IPL_Histogram_Channel_GetCount) (load ?  import_function(m_handle, "peak_IPL_Histogram_Channel_GetCount") : nullptr);
+    if(m_peak_IPL_Histogram_Channel_GetCount == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Histogram_Channel_GetCount");
+    }
+
+    m_peak_IPL_Histogram_Channel_GetInfo = (dyn_peak_IPL_Histogram_Channel_GetInfo) (load ?  import_function(m_handle, "peak_IPL_Histogram_Channel_GetInfo") : nullptr);
+    if(m_peak_IPL_Histogram_Channel_GetInfo == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Histogram_Channel_GetInfo");
+    }
+
+    m_peak_IPL_Histogram_Channel_GetBinArray = (dyn_peak_IPL_Histogram_Channel_GetBinArray) (load ?  import_function(m_handle, "peak_IPL_Histogram_Channel_GetBinArray") : nullptr);
+    if(m_peak_IPL_Histogram_Channel_GetBinArray == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_Histogram_Channel_GetBinArray");
+    }
 
     m_peak_VideoWriter_Open = (dyn_peak_VideoWriter_Open) (load ?  import_function(m_handle, "peak_VideoWriter_Open") : nullptr);
     if(m_peak_VideoWriter_Open == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Open");
-    }        
+    }
 
     m_peak_VideoWriter_Close = (dyn_peak_VideoWriter_Close) (load ?  import_function(m_handle, "peak_VideoWriter_Close") : nullptr);
     if(m_peak_VideoWriter_Close == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Close");
-    }        
+    }
 
     m_peak_VideoWriter_AddFrame = (dyn_peak_VideoWriter_AddFrame) (load ?  import_function(m_handle, "peak_VideoWriter_AddFrame") : nullptr);
     if(m_peak_VideoWriter_AddFrame == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_AddFrame");
-    }        
+    }
 
     m_peak_VideoWriter_Container_GetEncoderList = (dyn_peak_VideoWriter_Container_GetEncoderList) (load ?  import_function(m_handle, "peak_VideoWriter_Container_GetEncoderList") : nullptr);
     if(m_peak_VideoWriter_Container_GetEncoderList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Container_GetEncoderList");
-    }        
+    }
 
     m_peak_VideoWriter_Encoder_GetPixelFormatList = (dyn_peak_VideoWriter_Encoder_GetPixelFormatList) (load ?  import_function(m_handle, "peak_VideoWriter_Encoder_GetPixelFormatList") : nullptr);
     if(m_peak_VideoWriter_Encoder_GetPixelFormatList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Encoder_GetPixelFormatList");
-    }        
+    }
 
     m_peak_VideoWriter_Encoder_GetContainerList = (dyn_peak_VideoWriter_Encoder_GetContainerList) (load ?  import_function(m_handle, "peak_VideoWriter_Encoder_GetContainerList") : nullptr);
     if(m_peak_VideoWriter_Encoder_GetContainerList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Encoder_GetContainerList");
-    }        
+    }
 
     m_peak_VideoWriter_GetInfo = (dyn_peak_VideoWriter_GetInfo) (load ?  import_function(m_handle, "peak_VideoWriter_GetInfo") : nullptr);
     if(m_peak_VideoWriter_GetInfo == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_GetInfo");
-    }        
+    }
 
     m_peak_VideoWriter_Container_Option_Set = (dyn_peak_VideoWriter_Container_Option_Set) (load ?  import_function(m_handle, "peak_VideoWriter_Container_Option_Set") : nullptr);
     if(m_peak_VideoWriter_Container_Option_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Container_Option_Set");
-    }        
+    }
 
     m_peak_VideoWriter_Container_Option_Get = (dyn_peak_VideoWriter_Container_Option_Get) (load ?  import_function(m_handle, "peak_VideoWriter_Container_Option_Get") : nullptr);
     if(m_peak_VideoWriter_Container_Option_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Container_Option_Get");
-    }        
+    }
 
     m_peak_VideoWriter_Encoder_Option_Set = (dyn_peak_VideoWriter_Encoder_Option_Set) (load ?  import_function(m_handle, "peak_VideoWriter_Encoder_Option_Set") : nullptr);
     if(m_peak_VideoWriter_Encoder_Option_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Encoder_Option_Set");
-    }        
+    }
 
     m_peak_VideoWriter_Encoder_Option_Get = (dyn_peak_VideoWriter_Encoder_Option_Get) (load ?  import_function(m_handle, "peak_VideoWriter_Encoder_Option_Get") : nullptr);
     if(m_peak_VideoWriter_Encoder_Option_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_Encoder_Option_Get");
-    }        
+    }
 
     m_peak_VideoWriter_WaitUntilQueueEmpty = (dyn_peak_VideoWriter_WaitUntilQueueEmpty) (load ?  import_function(m_handle, "peak_VideoWriter_WaitUntilQueueEmpty") : nullptr);
     if(m_peak_VideoWriter_WaitUntilQueueEmpty == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_VideoWriter_WaitUntilQueueEmpty");
-    }        
+    }
 
     m_peak_Inference_CNN_Open = (dyn_peak_Inference_CNN_Open) (load ?  import_function(m_handle, "peak_Inference_CNN_Open") : nullptr);
     if(m_peak_Inference_CNN_Open == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_CNN_Open");
-    }        
+    }
 
     m_peak_Inference_CNN_Close = (dyn_peak_Inference_CNN_Close) (load ?  import_function(m_handle, "peak_Inference_CNN_Close") : nullptr);
     if(m_peak_Inference_CNN_Close == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_CNN_Close");
-    }        
+    }
 
     m_peak_Inference_CNN_ProcessFrame = (dyn_peak_Inference_CNN_ProcessFrame) (load ?  import_function(m_handle, "peak_Inference_CNN_ProcessFrame") : nullptr);
     if(m_peak_Inference_CNN_ProcessFrame == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_CNN_ProcessFrame");
-    }        
+    }
 
     m_peak_Inference_CNN_Info_Get = (dyn_peak_Inference_CNN_Info_Get) (load ?  import_function(m_handle, "peak_Inference_CNN_Info_Get") : nullptr);
     if(m_peak_Inference_CNN_Info_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_CNN_Info_Get");
-    }        
+    }
 
     m_peak_Inference_Result_Get = (dyn_peak_Inference_Result_Get) (load ?  import_function(m_handle, "peak_Inference_Result_Get") : nullptr);
     if(m_peak_Inference_Result_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_Result_Get");
-    }        
+    }
 
     m_peak_Inference_Result_Release = (dyn_peak_Inference_Result_Release) (load ?  import_function(m_handle, "peak_Inference_Result_Release") : nullptr);
     if(m_peak_Inference_Result_Release == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_Result_Release");
-    }        
+    }
 
     m_peak_Inference_Result_Classification_GetList = (dyn_peak_Inference_Result_Classification_GetList) (load ?  import_function(m_handle, "peak_Inference_Result_Classification_GetList") : nullptr);
     if(m_peak_Inference_Result_Classification_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_Result_Classification_GetList");
-    }        
+    }
 
     m_peak_Inference_Result_Detection_GetList = (dyn_peak_Inference_Result_Detection_GetList) (load ?  import_function(m_handle, "peak_Inference_Result_Detection_GetList") : nullptr);
     if(m_peak_Inference_Result_Detection_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_Result_Detection_GetList");
-    }        
+    }
 
     m_peak_Inference_Statistics_Get = (dyn_peak_Inference_Statistics_Get) (load ?  import_function(m_handle, "peak_Inference_Statistics_Get") : nullptr);
     if(m_peak_Inference_Statistics_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_Statistics_Get");
-    }        
+    }
 
     m_peak_Inference_Statistics_Reset = (dyn_peak_Inference_Statistics_Reset) (load ?  import_function(m_handle, "peak_Inference_Statistics_Reset") : nullptr);
     if(m_peak_Inference_Statistics_Reset == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_Statistics_Reset");
-    }        
+    }
 
     m_peak_Inference_ConfidenceThreshold_Get = (dyn_peak_Inference_ConfidenceThreshold_Get) (load ?  import_function(m_handle, "peak_Inference_ConfidenceThreshold_Get") : nullptr);
     if(m_peak_Inference_ConfidenceThreshold_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_ConfidenceThreshold_Get");
-    }        
+    }
 
     m_peak_Inference_ConfidenceThreshold_GetRange = (dyn_peak_Inference_ConfidenceThreshold_GetRange) (load ?  import_function(m_handle, "peak_Inference_ConfidenceThreshold_GetRange") : nullptr);
     if(m_peak_Inference_ConfidenceThreshold_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_ConfidenceThreshold_GetRange");
-    }        
+    }
 
     m_peak_Inference_ConfidenceThreshold_Set = (dyn_peak_Inference_ConfidenceThreshold_Set) (load ?  import_function(m_handle, "peak_Inference_ConfidenceThreshold_Set") : nullptr);
     if(m_peak_Inference_ConfidenceThreshold_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Inference_ConfidenceThreshold_Set");
-    }        
+    }
 
     m_peak_MessageQueue_Create = (dyn_peak_MessageQueue_Create) (load ?  import_function(m_handle, "peak_MessageQueue_Create") : nullptr);
     if(m_peak_MessageQueue_Create == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Create");
-    }        
+    }
 
     m_peak_MessageQueue_Destroy = (dyn_peak_MessageQueue_Destroy) (load ?  import_function(m_handle, "peak_MessageQueue_Destroy") : nullptr);
     if(m_peak_MessageQueue_Destroy == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Destroy");
-    }        
+    }
 
     m_peak_MessageQueue_EnableMessage = (dyn_peak_MessageQueue_EnableMessage) (load ?  import_function(m_handle, "peak_MessageQueue_EnableMessage") : nullptr);
     if(m_peak_MessageQueue_EnableMessage == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_EnableMessage");
-    }        
+    }
 
     m_peak_MessageQueue_DisableMessage = (dyn_peak_MessageQueue_DisableMessage) (load ?  import_function(m_handle, "peak_MessageQueue_DisableMessage") : nullptr);
     if(m_peak_MessageQueue_DisableMessage == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_DisableMessage");
-    }        
+    }
 
     m_peak_MessageQueue_EnableMessageList = (dyn_peak_MessageQueue_EnableMessageList) (load ?  import_function(m_handle, "peak_MessageQueue_EnableMessageList") : nullptr);
     if(m_peak_MessageQueue_EnableMessageList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_EnableMessageList");
-    }        
+    }
 
     m_peak_MessageQueue_DisableMessageList = (dyn_peak_MessageQueue_DisableMessageList) (load ?  import_function(m_handle, "peak_MessageQueue_DisableMessageList") : nullptr);
     if(m_peak_MessageQueue_DisableMessageList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_DisableMessageList");
-    }        
+    }
 
     m_peak_MessageQueue_EnabledMessages_GetList = (dyn_peak_MessageQueue_EnabledMessages_GetList) (load ?  import_function(m_handle, "peak_MessageQueue_EnabledMessages_GetList") : nullptr);
     if(m_peak_MessageQueue_EnabledMessages_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_EnabledMessages_GetList");
-    }        
+    }
 
     m_peak_MessageQueue_SetMode = (dyn_peak_MessageQueue_SetMode) (load ?  import_function(m_handle, "peak_MessageQueue_SetMode") : nullptr);
     if(m_peak_MessageQueue_SetMode == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_SetMode");
-    }        
+    }
 
     m_peak_MessageQueue_GetMode = (dyn_peak_MessageQueue_GetMode) (load ?  import_function(m_handle, "peak_MessageQueue_GetMode") : nullptr);
     if(m_peak_MessageQueue_GetMode == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_GetMode");
-    }        
+    }
 
     m_peak_MessageQueue_Start = (dyn_peak_MessageQueue_Start) (load ?  import_function(m_handle, "peak_MessageQueue_Start") : nullptr);
     if(m_peak_MessageQueue_Start == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Start");
-    }        
+    }
 
     m_peak_MessageQueue_Stop = (dyn_peak_MessageQueue_Stop) (load ?  import_function(m_handle, "peak_MessageQueue_Stop") : nullptr);
     if(m_peak_MessageQueue_Stop == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Stop");
-    }        
+    }
 
     m_peak_MessageQueue_IsStarted = (dyn_peak_MessageQueue_IsStarted) (load ?  import_function(m_handle, "peak_MessageQueue_IsStarted") : nullptr);
     if(m_peak_MessageQueue_IsStarted == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_IsStarted");
-    }        
+    }
 
     m_peak_MessageQueue_WaitForMessage = (dyn_peak_MessageQueue_WaitForMessage) (load ?  import_function(m_handle, "peak_MessageQueue_WaitForMessage") : nullptr);
     if(m_peak_MessageQueue_WaitForMessage == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_WaitForMessage");
-    }        
+    }
 
     m_peak_MessageQueue_Flush = (dyn_peak_MessageQueue_Flush) (load ?  import_function(m_handle, "peak_MessageQueue_Flush") : nullptr);
     if(m_peak_MessageQueue_Flush == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Flush");
-    }        
+    }
 
     m_peak_MessageQueue_IsMessageSupported = (dyn_peak_MessageQueue_IsMessageSupported) (load ?  import_function(m_handle, "peak_MessageQueue_IsMessageSupported") : nullptr);
     if(m_peak_MessageQueue_IsMessageSupported == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_IsMessageSupported");
-    }        
+    }
 
     m_peak_MessageQueue_Statistics_Get = (dyn_peak_MessageQueue_Statistics_Get) (load ?  import_function(m_handle, "peak_MessageQueue_Statistics_Get") : nullptr);
     if(m_peak_MessageQueue_Statistics_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Statistics_Get");
-    }        
+    }
 
     m_peak_MessageQueue_Statistics_Reset = (dyn_peak_MessageQueue_Statistics_Reset) (load ?  import_function(m_handle, "peak_MessageQueue_Statistics_Reset") : nullptr);
     if(m_peak_MessageQueue_Statistics_Reset == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_Statistics_Reset");
-    }        
+    }
 
     m_peak_MessageQueue_MaxQueueSize_Set = (dyn_peak_MessageQueue_MaxQueueSize_Set) (load ?  import_function(m_handle, "peak_MessageQueue_MaxQueueSize_Set") : nullptr);
     if(m_peak_MessageQueue_MaxQueueSize_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_MaxQueueSize_Set");
-    }        
+    }
 
     m_peak_MessageQueue_MaxQueueSize_Get = (dyn_peak_MessageQueue_MaxQueueSize_Get) (load ?  import_function(m_handle, "peak_MessageQueue_MaxQueueSize_Get") : nullptr);
     if(m_peak_MessageQueue_MaxQueueSize_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_MessageQueue_MaxQueueSize_Get");
-    }        
+    }
 
     m_peak_Message_Release = (dyn_peak_Message_Release) (load ?  import_function(m_handle, "peak_Message_Release") : nullptr);
     if(m_peak_Message_Release == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Release");
-    }        
+    }
 
     m_peak_Message_GetInfo = (dyn_peak_Message_GetInfo) (load ?  import_function(m_handle, "peak_Message_GetInfo") : nullptr);
     if(m_peak_Message_GetInfo == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_GetInfo");
-    }        
+    }
 
     m_peak_Message_Type_Get = (dyn_peak_Message_Type_Get) (load ?  import_function(m_handle, "peak_Message_Type_Get") : nullptr);
     if(m_peak_Message_Type_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Type_Get");
-    }        
+    }
 
     m_peak_Message_CameraHandle_Get = (dyn_peak_Message_CameraHandle_Get) (load ?  import_function(m_handle, "peak_Message_CameraHandle_Get") : nullptr);
     if(m_peak_Message_CameraHandle_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_CameraHandle_Get");
-    }        
+    }
 
     m_peak_Message_ID_Get = (dyn_peak_Message_ID_Get) (load ?  import_function(m_handle, "peak_Message_ID_Get") : nullptr);
     if(m_peak_Message_ID_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_ID_Get");
-    }        
+    }
 
     m_peak_Message_HostTimestamp_Get = (dyn_peak_Message_HostTimestamp_Get) (load ?  import_function(m_handle, "peak_Message_HostTimestamp_Get") : nullptr);
     if(m_peak_Message_HostTimestamp_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_HostTimestamp_Get");
-    }        
+    }
 
     m_peak_Message_Data_Type_Get = (dyn_peak_Message_Data_Type_Get) (load ?  import_function(m_handle, "peak_Message_Data_Type_Get") : nullptr);
     if(m_peak_Message_Data_Type_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_Type_Get");
-    }        
+    }
 
     m_peak_Message_Data_RemoteDevice_Get = (dyn_peak_Message_Data_RemoteDevice_Get) (load ?  import_function(m_handle, "peak_Message_Data_RemoteDevice_Get") : nullptr);
     if(m_peak_Message_Data_RemoteDevice_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_RemoteDevice_Get");
-    }        
+    }
 
     m_peak_Message_Data_RemoteDeviceError_Get = (dyn_peak_Message_Data_RemoteDeviceError_Get) (load ?  import_function(m_handle, "peak_Message_Data_RemoteDeviceError_Get") : nullptr);
     if(m_peak_Message_Data_RemoteDeviceError_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_RemoteDeviceError_Get");
-    }        
+    }
 
     m_peak_Message_Data_RemoteDeviceDropped_Get = (dyn_peak_Message_Data_RemoteDeviceDropped_Get) (load ?  import_function(m_handle, "peak_Message_Data_RemoteDeviceDropped_Get") : nullptr);
     if(m_peak_Message_Data_RemoteDeviceDropped_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_RemoteDeviceDropped_Get");
-    }        
+    }
 
     m_peak_Message_Data_RemoteDeviceFrame_Get = (dyn_peak_Message_Data_RemoteDeviceFrame_Get) (load ?  import_function(m_handle, "peak_Message_Data_RemoteDeviceFrame_Get") : nullptr);
     if(m_peak_Message_Data_RemoteDeviceFrame_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_RemoteDeviceFrame_Get");
-    }        
+    }
 
     m_peak_Message_Data_RemoteDeviceTemperature_Get = (dyn_peak_Message_Data_RemoteDeviceTemperature_Get) (load ?  import_function(m_handle, "peak_Message_Data_RemoteDeviceTemperature_Get") : nullptr);
     if(m_peak_Message_Data_RemoteDeviceTemperature_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_RemoteDeviceTemperature_Get");
-    }        
+    }
 
     m_peak_Message_Data_AutoFocusData_Get = (dyn_peak_Message_Data_AutoFocusData_Get) (load ?  import_function(m_handle, "peak_Message_Data_AutoFocusData_Get") : nullptr);
     if(m_peak_Message_Data_AutoFocusData_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_AutoFocusData_Get");
-    }        
+    }
 
     m_peak_Message_Data_DeviceFound_Get = (dyn_peak_Message_Data_DeviceFound_Get) (load ?  import_function(m_handle, "peak_Message_Data_DeviceFound_Get") : nullptr);
     if(m_peak_Message_Data_DeviceFound_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_DeviceFound_Get");
-    }        
+    }
 
     m_peak_Message_Data_DeviceLost_Get = (dyn_peak_Message_Data_DeviceLost_Get) (load ?  import_function(m_handle, "peak_Message_Data_DeviceLost_Get") : nullptr);
     if(m_peak_Message_Data_DeviceLost_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_DeviceLost_Get");
-    }        
+    }
 
     m_peak_Message_Data_DeviceReconnected_Get = (dyn_peak_Message_Data_DeviceReconnected_Get) (load ?  import_function(m_handle, "peak_Message_Data_DeviceReconnected_Get") : nullptr);
     if(m_peak_Message_Data_DeviceReconnected_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_DeviceReconnected_Get");
-    }        
+    }
 
     m_peak_Message_Data_DeviceDisconnected_Get = (dyn_peak_Message_Data_DeviceDisconnected_Get) (load ?  import_function(m_handle, "peak_Message_Data_DeviceDisconnected_Get") : nullptr);
     if(m_peak_Message_Data_DeviceDisconnected_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_DeviceDisconnected_Get");
-    }        
+    }
 
     m_peak_Message_Data_FirmwareUpdate_Get = (dyn_peak_Message_Data_FirmwareUpdate_Get) (load ?  import_function(m_handle, "peak_Message_Data_FirmwareUpdate_Get") : nullptr);
     if(m_peak_Message_Data_FirmwareUpdate_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_Message_Data_FirmwareUpdate_Get");
-    }        
+    }
 
     m_peak_I2C_Create = (dyn_peak_I2C_Create) (load ?  import_function(m_handle, "peak_I2C_Create") : nullptr);
     if(m_peak_I2C_Create == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Create");
-    }        
+    }
 
     m_peak_I2C_Destroy = (dyn_peak_I2C_Destroy) (load ?  import_function(m_handle, "peak_I2C_Destroy") : nullptr);
     if(m_peak_I2C_Destroy == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Destroy");
-    }        
+    }
 
     m_peak_I2C_GetAccessStatus = (dyn_peak_I2C_GetAccessStatus) (load ?  import_function(m_handle, "peak_I2C_GetAccessStatus") : nullptr);
     if(m_peak_I2C_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_GetAccessStatus");
-    }        
+    }
 
     m_peak_I2C_Mode_GetList = (dyn_peak_I2C_Mode_GetList) (load ?  import_function(m_handle, "peak_I2C_Mode_GetList") : nullptr);
     if(m_peak_I2C_Mode_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Mode_GetList");
-    }        
+    }
 
     m_peak_I2C_Mode_Set = (dyn_peak_I2C_Mode_Set) (load ?  import_function(m_handle, "peak_I2C_Mode_Set") : nullptr);
     if(m_peak_I2C_Mode_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Mode_Set");
-    }        
+    }
 
     m_peak_I2C_Mode_Get = (dyn_peak_I2C_Mode_Get) (load ?  import_function(m_handle, "peak_I2C_Mode_Get") : nullptr);
     if(m_peak_I2C_Mode_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Mode_Get");
-    }        
+    }
 
     m_peak_I2C_DeviceAddress_GetRange = (dyn_peak_I2C_DeviceAddress_GetRange) (load ?  import_function(m_handle, "peak_I2C_DeviceAddress_GetRange") : nullptr);
     if(m_peak_I2C_DeviceAddress_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_DeviceAddress_GetRange");
-    }        
+    }
 
     m_peak_I2C_DeviceAddress_Set = (dyn_peak_I2C_DeviceAddress_Set) (load ?  import_function(m_handle, "peak_I2C_DeviceAddress_Set") : nullptr);
     if(m_peak_I2C_DeviceAddress_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_DeviceAddress_Set");
-    }        
+    }
 
     m_peak_I2C_DeviceAddress_Get = (dyn_peak_I2C_DeviceAddress_Get) (load ?  import_function(m_handle, "peak_I2C_DeviceAddress_Get") : nullptr);
     if(m_peak_I2C_DeviceAddress_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_DeviceAddress_Get");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Length_GetList = (dyn_peak_I2C_RegisterAddress_Length_GetList) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Length_GetList") : nullptr);
     if(m_peak_I2C_RegisterAddress_Length_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Length_GetList");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Length_Set = (dyn_peak_I2C_RegisterAddress_Length_Set) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Length_Set") : nullptr);
     if(m_peak_I2C_RegisterAddress_Length_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Length_Set");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Length_Get = (dyn_peak_I2C_RegisterAddress_Length_Get) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Length_Get") : nullptr);
     if(m_peak_I2C_RegisterAddress_Length_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Length_Get");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Endianness_Set = (dyn_peak_I2C_RegisterAddress_Endianness_Set) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Endianness_Set") : nullptr);
     if(m_peak_I2C_RegisterAddress_Endianness_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Endianness_Set");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Endianness_Get = (dyn_peak_I2C_RegisterAddress_Endianness_Get) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Endianness_Get") : nullptr);
     if(m_peak_I2C_RegisterAddress_Endianness_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Endianness_Get");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Set = (dyn_peak_I2C_RegisterAddress_Set) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Set") : nullptr);
     if(m_peak_I2C_RegisterAddress_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Set");
-    }        
+    }
 
     m_peak_I2C_RegisterAddress_Get = (dyn_peak_I2C_RegisterAddress_Get) (load ?  import_function(m_handle, "peak_I2C_RegisterAddress_Get") : nullptr);
     if(m_peak_I2C_RegisterAddress_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_RegisterAddress_Get");
-    }        
+    }
 
     m_peak_I2C_AckPolling_Enable = (dyn_peak_I2C_AckPolling_Enable) (load ?  import_function(m_handle, "peak_I2C_AckPolling_Enable") : nullptr);
     if(m_peak_I2C_AckPolling_Enable == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_AckPolling_Enable");
-    }        
+    }
 
     m_peak_I2C_AckPolling_IsEnabled = (dyn_peak_I2C_AckPolling_IsEnabled) (load ?  import_function(m_handle, "peak_I2C_AckPolling_IsEnabled") : nullptr);
     if(m_peak_I2C_AckPolling_IsEnabled == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_AckPolling_IsEnabled");
-    }        
+    }
 
     m_peak_I2C_AckPolling_Timeout_GetAccessStatus = (dyn_peak_I2C_AckPolling_Timeout_GetAccessStatus) (load ?  import_function(m_handle, "peak_I2C_AckPolling_Timeout_GetAccessStatus") : nullptr);
     if(m_peak_I2C_AckPolling_Timeout_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_AckPolling_Timeout_GetAccessStatus");
-    }        
+    }
 
     m_peak_I2C_AckPolling_Timeout_GetRange = (dyn_peak_I2C_AckPolling_Timeout_GetRange) (load ?  import_function(m_handle, "peak_I2C_AckPolling_Timeout_GetRange") : nullptr);
     if(m_peak_I2C_AckPolling_Timeout_GetRange == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_AckPolling_Timeout_GetRange");
-    }        
+    }
 
     m_peak_I2C_AckPolling_Timeout_Set = (dyn_peak_I2C_AckPolling_Timeout_Set) (load ?  import_function(m_handle, "peak_I2C_AckPolling_Timeout_Set") : nullptr);
     if(m_peak_I2C_AckPolling_Timeout_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_AckPolling_Timeout_Set");
-    }        
+    }
 
     m_peak_I2C_AckPolling_Timeout_Get = (dyn_peak_I2C_AckPolling_Timeout_Get) (load ?  import_function(m_handle, "peak_I2C_AckPolling_Timeout_Get") : nullptr);
     if(m_peak_I2C_AckPolling_Timeout_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_AckPolling_Timeout_Get");
-    }        
+    }
 
     m_peak_I2C_Data_Write = (dyn_peak_I2C_Data_Write) (load ?  import_function(m_handle, "peak_I2C_Data_Write") : nullptr);
     if(m_peak_I2C_Data_Write == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Data_Write");
-    }        
+    }
 
     m_peak_I2C_Data_Read = (dyn_peak_I2C_Data_Read) (load ?  import_function(m_handle, "peak_I2C_Data_Read") : nullptr);
     if(m_peak_I2C_Data_Read == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Data_Read");
-    }        
+    }
 
     m_peak_I2C_Data_MaxSize_Get = (dyn_peak_I2C_Data_MaxSize_Get) (load ?  import_function(m_handle, "peak_I2C_Data_MaxSize_Get") : nullptr);
     if(m_peak_I2C_Data_MaxSize_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_Data_MaxSize_Get");
-    }        
+    }
 
     m_peak_I2C_OperationStatus_Get = (dyn_peak_I2C_OperationStatus_Get) (load ?  import_function(m_handle, "peak_I2C_OperationStatus_Get") : nullptr);
     if(m_peak_I2C_OperationStatus_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_I2C_OperationStatus_Get");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Create = (dyn_peak_IPL_ImageWriter_Create) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Create") : nullptr);
     if(m_peak_IPL_ImageWriter_Create == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Create");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Destroy = (dyn_peak_IPL_ImageWriter_Destroy) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Destroy") : nullptr);
     if(m_peak_IPL_ImageWriter_Destroy == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Destroy");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Save = (dyn_peak_IPL_ImageWriter_Save) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Save") : nullptr);
     if(m_peak_IPL_ImageWriter_Save == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Save");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Format_Set = (dyn_peak_IPL_ImageWriter_Format_Set) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Format_Set") : nullptr);
     if(m_peak_IPL_ImageWriter_Format_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Format_Set");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Format_Get = (dyn_peak_IPL_ImageWriter_Format_Get) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Format_Get") : nullptr);
     if(m_peak_IPL_ImageWriter_Format_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Format_Get");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Compression_Set = (dyn_peak_IPL_ImageWriter_Compression_Set) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Compression_Set") : nullptr);
     if(m_peak_IPL_ImageWriter_Compression_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Compression_Set");
-    }        
+    }
 
     m_peak_IPL_ImageWriter_Compression_Get = (dyn_peak_IPL_ImageWriter_Compression_Get) (load ?  import_function(m_handle, "peak_IPL_ImageWriter_Compression_Get") : nullptr);
     if(m_peak_IPL_ImageWriter_Compression_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_ImageWriter_Compression_Get");
-    }        
+    }
 
     m_peak_IPL_Binning_FactorX_GetList = (dyn_peak_IPL_Binning_FactorX_GetList) (load ?  import_function(m_handle, "peak_IPL_Binning_FactorX_GetList") : nullptr);
     if(m_peak_IPL_Binning_FactorX_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Binning_FactorX_GetList");
-    }        
+    }
 
     m_peak_IPL_Binning_FactorY_GetList = (dyn_peak_IPL_Binning_FactorY_GetList) (load ?  import_function(m_handle, "peak_IPL_Binning_FactorY_GetList") : nullptr);
     if(m_peak_IPL_Binning_FactorY_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Binning_FactorY_GetList");
-    }        
+    }
 
     m_peak_IPL_Binning_Set = (dyn_peak_IPL_Binning_Set) (load ?  import_function(m_handle, "peak_IPL_Binning_Set") : nullptr);
     if(m_peak_IPL_Binning_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Binning_Set");
-    }        
+    }
 
     m_peak_IPL_Binning_Get = (dyn_peak_IPL_Binning_Get) (load ?  import_function(m_handle, "peak_IPL_Binning_Get") : nullptr);
     if(m_peak_IPL_Binning_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Binning_Get");
-    }        
+    }
 
     m_peak_IPL_Decimation_FactorX_GetList = (dyn_peak_IPL_Decimation_FactorX_GetList) (load ?  import_function(m_handle, "peak_IPL_Decimation_FactorX_GetList") : nullptr);
     if(m_peak_IPL_Decimation_FactorX_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Decimation_FactorX_GetList");
-    }        
+    }
 
     m_peak_IPL_Decimation_FactorY_GetList = (dyn_peak_IPL_Decimation_FactorY_GetList) (load ?  import_function(m_handle, "peak_IPL_Decimation_FactorY_GetList") : nullptr);
     if(m_peak_IPL_Decimation_FactorY_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Decimation_FactorY_GetList");
-    }        
+    }
 
     m_peak_IPL_Decimation_Set = (dyn_peak_IPL_Decimation_Set) (load ?  import_function(m_handle, "peak_IPL_Decimation_Set") : nullptr);
     if(m_peak_IPL_Decimation_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Decimation_Set");
-    }        
+    }
 
     m_peak_IPL_Decimation_Get = (dyn_peak_IPL_Decimation_Get) (load ?  import_function(m_handle, "peak_IPL_Decimation_Get") : nullptr);
     if(m_peak_IPL_Decimation_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_IPL_Decimation_Get");
-    }        
+    }
 
     m_peak_FirmwareUpdate_CompatibleCameraList_Get = (dyn_peak_FirmwareUpdate_CompatibleCameraList_Get) (load ?  import_function(m_handle, "peak_FirmwareUpdate_CompatibleCameraList_Get") : nullptr);
     if(m_peak_FirmwareUpdate_CompatibleCameraList_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_FirmwareUpdate_CompatibleCameraList_Get");
-    }        
+    }
 
     m_peak_FirmwareUpdate_Execute = (dyn_peak_FirmwareUpdate_Execute) (load ?  import_function(m_handle, "peak_FirmwareUpdate_Execute") : nullptr);
     if(m_peak_FirmwareUpdate_Execute == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_FirmwareUpdate_Execute");
-    }        
+    }
 
     m_peak_TestPattern_GetAccessStatus = (dyn_peak_TestPattern_GetAccessStatus) (load ?  import_function(m_handle, "peak_TestPattern_GetAccessStatus") : nullptr);
     if(m_peak_TestPattern_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_TestPattern_GetAccessStatus");
-    }        
+    }
 
     m_peak_TestPattern_Set = (dyn_peak_TestPattern_Set) (load ?  import_function(m_handle, "peak_TestPattern_Set") : nullptr);
     if(m_peak_TestPattern_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_TestPattern_Set");
-    }        
+    }
 
     m_peak_TestPattern_Get = (dyn_peak_TestPattern_Get) (load ?  import_function(m_handle, "peak_TestPattern_Get") : nullptr);
     if(m_peak_TestPattern_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_TestPattern_Get");
-    }        
+    }
 
     m_peak_TestPattern_GetList = (dyn_peak_TestPattern_GetList) (load ?  import_function(m_handle, "peak_TestPattern_GetList") : nullptr);
     if(m_peak_TestPattern_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_TestPattern_GetList");
-    }        
+    }
 
     m_peak_LED_GetAccessStatus = (dyn_peak_LED_GetAccessStatus) (load ?  import_function(m_handle, "peak_LED_GetAccessStatus") : nullptr);
     if(m_peak_LED_GetAccessStatus == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_LED_GetAccessStatus");
-    }        
+    }
 
     m_peak_LED_Target_GetList = (dyn_peak_LED_Target_GetList) (load ?  import_function(m_handle, "peak_LED_Target_GetList") : nullptr);
     if(m_peak_LED_Target_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_LED_Target_GetList");
-    }        
+    }
 
     m_peak_LED_Mode_GetList = (dyn_peak_LED_Mode_GetList) (load ?  import_function(m_handle, "peak_LED_Mode_GetList") : nullptr);
     if(m_peak_LED_Mode_GetList == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_LED_Mode_GetList");
-    }        
+    }
 
     m_peak_LED_Set = (dyn_peak_LED_Set) (load ?  import_function(m_handle, "peak_LED_Set") : nullptr);
     if(m_peak_LED_Set == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_LED_Set");
-    }        
+    }
 
     m_peak_LED_Get = (dyn_peak_LED_Get) (load ?  import_function(m_handle, "peak_LED_Get") : nullptr);
     if(m_peak_LED_Get == nullptr && load)
     {
         throw std::runtime_error("Failed to load peak_LED_Get");
-    }        
+    }
 
-            
+    m_peak_BlackLevel_Auto_GetAccessStatus = (dyn_peak_BlackLevel_Auto_GetAccessStatus) (load ?  import_function(m_handle, "peak_BlackLevel_Auto_GetAccessStatus") : nullptr);
+    if(m_peak_BlackLevel_Auto_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Auto_GetAccessStatus");
+    }
+
+    m_peak_BlackLevel_Auto_Enable = (dyn_peak_BlackLevel_Auto_Enable) (load ?  import_function(m_handle, "peak_BlackLevel_Auto_Enable") : nullptr);
+    if(m_peak_BlackLevel_Auto_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Auto_Enable");
+    }
+
+    m_peak_BlackLevel_Auto_IsEnabled = (dyn_peak_BlackLevel_Auto_IsEnabled) (load ?  import_function(m_handle, "peak_BlackLevel_Auto_IsEnabled") : nullptr);
+    if(m_peak_BlackLevel_Auto_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Auto_IsEnabled");
+    }
+
+    m_peak_BlackLevel_Offset_GetAccessStatus = (dyn_peak_BlackLevel_Offset_GetAccessStatus) (load ?  import_function(m_handle, "peak_BlackLevel_Offset_GetAccessStatus") : nullptr);
+    if(m_peak_BlackLevel_Offset_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Offset_GetAccessStatus");
+    }
+
+    m_peak_BlackLevel_Offset_Set = (dyn_peak_BlackLevel_Offset_Set) (load ?  import_function(m_handle, "peak_BlackLevel_Offset_Set") : nullptr);
+    if(m_peak_BlackLevel_Offset_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Offset_Set");
+    }
+
+    m_peak_BlackLevel_Offset_Get = (dyn_peak_BlackLevel_Offset_Get) (load ?  import_function(m_handle, "peak_BlackLevel_Offset_Get") : nullptr);
+    if(m_peak_BlackLevel_Offset_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Offset_Get");
+    }
+
+    m_peak_BlackLevel_Offset_GetRange = (dyn_peak_BlackLevel_Offset_GetRange) (load ?  import_function(m_handle, "peak_BlackLevel_Offset_GetRange") : nullptr);
+    if(m_peak_BlackLevel_Offset_GetRange == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_BlackLevel_Offset_GetRange");
+    }
+
+    m_peak_Bandwidth_LinkSpeed_GetAccessStatus = (dyn_peak_Bandwidth_LinkSpeed_GetAccessStatus) (load ?  import_function(m_handle, "peak_Bandwidth_LinkSpeed_GetAccessStatus") : nullptr);
+    if(m_peak_Bandwidth_LinkSpeed_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_LinkSpeed_GetAccessStatus");
+    }
+
+    m_peak_Bandwidth_LinkSpeed_Get = (dyn_peak_Bandwidth_LinkSpeed_Get) (load ?  import_function(m_handle, "peak_Bandwidth_LinkSpeed_Get") : nullptr);
+    if(m_peak_Bandwidth_LinkSpeed_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_LinkSpeed_Get");
+    }
+
+    m_peak_Bandwidth_ThroughputLimit_GetAccessStatus = (dyn_peak_Bandwidth_ThroughputLimit_GetAccessStatus) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputLimit_GetAccessStatus") : nullptr);
+    if(m_peak_Bandwidth_ThroughputLimit_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputLimit_GetAccessStatus");
+    }
+
+    m_peak_Bandwidth_ThroughputLimit_GetRange = (dyn_peak_Bandwidth_ThroughputLimit_GetRange) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputLimit_GetRange") : nullptr);
+    if(m_peak_Bandwidth_ThroughputLimit_GetRange == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputLimit_GetRange");
+    }
+
+    m_peak_Bandwidth_ThroughputLimit_Set = (dyn_peak_Bandwidth_ThroughputLimit_Set) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputLimit_Set") : nullptr);
+    if(m_peak_Bandwidth_ThroughputLimit_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputLimit_Set");
+    }
+
+    m_peak_Bandwidth_ThroughputLimit_Get = (dyn_peak_Bandwidth_ThroughputLimit_Get) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputLimit_Get") : nullptr);
+    if(m_peak_Bandwidth_ThroughputLimit_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputLimit_Get");
+    }
+
+    m_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus = (dyn_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus") : nullptr);
+    if(m_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus");
+    }
+
+    m_peak_Bandwidth_ThroughputFrameRateLimit_Get = (dyn_peak_Bandwidth_ThroughputFrameRateLimit_Get) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputFrameRateLimit_Get") : nullptr);
+    if(m_peak_Bandwidth_ThroughputFrameRateLimit_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputFrameRateLimit_Get");
+    }
+
+    m_peak_Bandwidth_ThroughputCalculated_GetAccessStatus = (dyn_peak_Bandwidth_ThroughputCalculated_GetAccessStatus) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputCalculated_GetAccessStatus") : nullptr);
+    if(m_peak_Bandwidth_ThroughputCalculated_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputCalculated_GetAccessStatus");
+    }
+
+    m_peak_Bandwidth_ThroughputCalculated_Get = (dyn_peak_Bandwidth_ThroughputCalculated_Get) (load ?  import_function(m_handle, "peak_Bandwidth_ThroughputCalculated_Get") : nullptr);
+    if(m_peak_Bandwidth_ThroughputCalculated_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Bandwidth_ThroughputCalculated_Get");
+    }
+
+    m_peak_IPO_GetAccessStatus = (dyn_peak_IPO_GetAccessStatus) (load ?  import_function(m_handle, "peak_IPO_GetAccessStatus") : nullptr);
+    if(m_peak_IPO_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPO_GetAccessStatus");
+    }
+
+    m_peak_IPO_IsEnabled = (dyn_peak_IPO_IsEnabled) (load ?  import_function(m_handle, "peak_IPO_IsEnabled") : nullptr);
+    if(m_peak_IPO_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPO_IsEnabled");
+    }
+
+    m_peak_IPO_Enable = (dyn_peak_IPO_Enable) (load ?  import_function(m_handle, "peak_IPO_Enable") : nullptr);
+    if(m_peak_IPO_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPO_Enable");
+    }
+
+    m_peak_IPL_DigitalBlack_GetRange = (dyn_peak_IPL_DigitalBlack_GetRange) (load ?  import_function(m_handle, "peak_IPL_DigitalBlack_GetRange") : nullptr);
+    if(m_peak_IPL_DigitalBlack_GetRange == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_DigitalBlack_GetRange");
+    }
+
+    m_peak_IPL_DigitalBlack_Set = (dyn_peak_IPL_DigitalBlack_Set) (load ?  import_function(m_handle, "peak_IPL_DigitalBlack_Set") : nullptr);
+    if(m_peak_IPL_DigitalBlack_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_DigitalBlack_Set");
+    }
+
+    m_peak_IPL_DigitalBlack_Get = (dyn_peak_IPL_DigitalBlack_Get) (load ?  import_function(m_handle, "peak_IPL_DigitalBlack_Get") : nullptr);
+    if(m_peak_IPL_DigitalBlack_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_DigitalBlack_Get");
+    }
+
+    m_peak_IPL_LUT_Enable = (dyn_peak_IPL_LUT_Enable) (load ?  import_function(m_handle, "peak_IPL_LUT_Enable") : nullptr);
+    if(m_peak_IPL_LUT_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_Enable");
+    }
+
+    m_peak_IPL_LUT_IsEnabled = (dyn_peak_IPL_LUT_IsEnabled) (load ?  import_function(m_handle, "peak_IPL_LUT_IsEnabled") : nullptr);
+    if(m_peak_IPL_LUT_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_IsEnabled");
+    }
+
+    m_peak_IPL_LUT_Preset_Set = (dyn_peak_IPL_LUT_Preset_Set) (load ?  import_function(m_handle, "peak_IPL_LUT_Preset_Set") : nullptr);
+    if(m_peak_IPL_LUT_Preset_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_Preset_Set");
+    }
+
+    m_peak_IPL_LUT_Value_Set = (dyn_peak_IPL_LUT_Value_Set) (load ?  import_function(m_handle, "peak_IPL_LUT_Value_Set") : nullptr);
+    if(m_peak_IPL_LUT_Value_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_Value_Set");
+    }
+
+    m_peak_IPL_LUT_Value_Get = (dyn_peak_IPL_LUT_Value_Get) (load ?  import_function(m_handle, "peak_IPL_LUT_Value_Get") : nullptr);
+    if(m_peak_IPL_LUT_Value_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_Value_Get");
+    }
+
+    m_peak_IPL_LUT_ValueList_Set = (dyn_peak_IPL_LUT_ValueList_Set) (load ?  import_function(m_handle, "peak_IPL_LUT_ValueList_Set") : nullptr);
+    if(m_peak_IPL_LUT_ValueList_Set == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_ValueList_Set");
+    }
+
+    m_peak_IPL_LUT_ValueList_Get = (dyn_peak_IPL_LUT_ValueList_Get) (load ?  import_function(m_handle, "peak_IPL_LUT_ValueList_Get") : nullptr);
+    if(m_peak_IPL_LUT_ValueList_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_IPL_LUT_ValueList_Get");
+    }
+
+    m_peak_Chunks_GetAccessStatus = (dyn_peak_Chunks_GetAccessStatus) (load ?  import_function(m_handle, "peak_Chunks_GetAccessStatus") : nullptr);
+    if(m_peak_Chunks_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_GetAccessStatus");
+    }
+
+    m_peak_Chunks_Enable = (dyn_peak_Chunks_Enable) (load ?  import_function(m_handle, "peak_Chunks_Enable") : nullptr);
+    if(m_peak_Chunks_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Enable");
+    }
+
+    m_peak_Chunks_IsEnabled = (dyn_peak_Chunks_IsEnabled) (load ?  import_function(m_handle, "peak_Chunks_IsEnabled") : nullptr);
+    if(m_peak_Chunks_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_IsEnabled");
+    }
+
+    m_peak_Chunks_AutoUpdate_Enable = (dyn_peak_Chunks_AutoUpdate_Enable) (load ?  import_function(m_handle, "peak_Chunks_AutoUpdate_Enable") : nullptr);
+    if(m_peak_Chunks_AutoUpdate_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_AutoUpdate_Enable");
+    }
+
+    m_peak_Chunks_AutoUpdate_IsEnabled = (dyn_peak_Chunks_AutoUpdate_IsEnabled) (load ?  import_function(m_handle, "peak_Chunks_AutoUpdate_IsEnabled") : nullptr);
+    if(m_peak_Chunks_AutoUpdate_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_AutoUpdate_IsEnabled");
+    }
+
+    m_peak_Chunks_Update = (dyn_peak_Chunks_Update) (load ?  import_function(m_handle, "peak_Chunks_Update") : nullptr);
+    if(m_peak_Chunks_Update == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Update");
+    }
+
+    m_peak_Chunks_Type_GetAccessStatus = (dyn_peak_Chunks_Type_GetAccessStatus) (load ?  import_function(m_handle, "peak_Chunks_Type_GetAccessStatus") : nullptr);
+    if(m_peak_Chunks_Type_GetAccessStatus == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Type_GetAccessStatus");
+    }
+
+    m_peak_Chunks_Type_Enable = (dyn_peak_Chunks_Type_Enable) (load ?  import_function(m_handle, "peak_Chunks_Type_Enable") : nullptr);
+    if(m_peak_Chunks_Type_Enable == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Type_Enable");
+    }
+
+    m_peak_Chunks_Type_IsEnabled = (dyn_peak_Chunks_Type_IsEnabled) (load ?  import_function(m_handle, "peak_Chunks_Type_IsEnabled") : nullptr);
+    if(m_peak_Chunks_Type_IsEnabled == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Type_IsEnabled");
+    }
+
+    m_peak_Chunks_Type_Supported_GetList = (dyn_peak_Chunks_Type_Supported_GetList) (load ?  import_function(m_handle, "peak_Chunks_Type_Supported_GetList") : nullptr);
+    if(m_peak_Chunks_Type_Supported_GetList == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Type_Supported_GetList");
+    }
+
+    m_peak_Chunks_FrameInfo_Get = (dyn_peak_Chunks_FrameInfo_Get) (load ?  import_function(m_handle, "peak_Chunks_FrameInfo_Get") : nullptr);
+    if(m_peak_Chunks_FrameInfo_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_FrameInfo_Get");
+    }
+
+    m_peak_Chunks_Exposure_Get = (dyn_peak_Chunks_Exposure_Get) (load ?  import_function(m_handle, "peak_Chunks_Exposure_Get") : nullptr);
+    if(m_peak_Chunks_Exposure_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Exposure_Get");
+    }
+
+    m_peak_Chunks_Gain_Get = (dyn_peak_Chunks_Gain_Get) (load ?  import_function(m_handle, "peak_Chunks_Gain_Get") : nullptr);
+    if(m_peak_Chunks_Gain_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Gain_Get");
+    }
+
+    m_peak_Chunks_Sequencer_Get = (dyn_peak_Chunks_Sequencer_Get) (load ?  import_function(m_handle, "peak_Chunks_Sequencer_Get") : nullptr);
+    if(m_peak_Chunks_Sequencer_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Sequencer_Get");
+    }
+
+    m_peak_Chunks_Timestamp_Get = (dyn_peak_Chunks_Timestamp_Get) (load ?  import_function(m_handle, "peak_Chunks_Timestamp_Get") : nullptr);
+    if(m_peak_Chunks_Timestamp_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_Timestamp_Get");
+    }
+
+    m_peak_Chunks_ExposureTrigger_Get = (dyn_peak_Chunks_ExposureTrigger_Get) (load ?  import_function(m_handle, "peak_Chunks_ExposureTrigger_Get") : nullptr);
+    if(m_peak_Chunks_ExposureTrigger_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_ExposureTrigger_Get");
+    }
+
+    m_peak_Chunks_UsableROI_Get = (dyn_peak_Chunks_UsableROI_Get) (load ?  import_function(m_handle, "peak_Chunks_UsableROI_Get") : nullptr);
+    if(m_peak_Chunks_UsableROI_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_UsableROI_Get");
+    }
+
+    m_peak_Chunks_LineStatus_Get = (dyn_peak_Chunks_LineStatus_Get) (load ?  import_function(m_handle, "peak_Chunks_LineStatus_Get") : nullptr);
+    if(m_peak_Chunks_LineStatus_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_LineStatus_Get");
+    }
+
+    m_peak_Chunks_AutoFeature_Get = (dyn_peak_Chunks_AutoFeature_Get) (load ?  import_function(m_handle, "peak_Chunks_AutoFeature_Get") : nullptr);
+    if(m_peak_Chunks_AutoFeature_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_AutoFeature_Get");
+    }
+
+    m_peak_Chunks_PTPStatus_Get = (dyn_peak_Chunks_PTPStatus_Get) (load ?  import_function(m_handle, "peak_Chunks_PTPStatus_Get") : nullptr);
+    if(m_peak_Chunks_PTPStatus_Get == nullptr && load)
+    {
+        throw std::runtime_error("Failed to load peak_Chunks_PTPStatus_Get");
+    }
+
+
             return true;
 }
 
@@ -5825,6 +6621,19 @@ inline PEAK_API_STATUS DynamicLoader::peak_Frame_Save(peak_frame_handle hFrame, 
     }
 }
 
+inline PEAK_API_BOOL DynamicLoader::peak_Frame_HasChunks(peak_frame_handle hFrame)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Frame_HasChunks)
+    {
+        return inst.m_peak_Frame_HasChunks(hFrame);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_CameraSettings_ParameterSet_GetAccessStatus(peak_camera_handle hCam, peak_parameter_set parameterSet)
 {
     auto& inst = instance();
@@ -6059,6 +6868,58 @@ inline PEAK_API_STATUS DynamicLoader::peak_ExposureTime_Get(peak_camera_handle h
     }
 }
 
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_ShutterMode_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_ShutterMode_GetAccessStatus)
+    {
+        return inst.m_peak_ShutterMode_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_ShutterMode_GetList(peak_camera_handle hCam, peak_shutter_mode * shutterModeList, size_t * shutterModeCount)
+{
+    auto& inst = instance();
+    if(inst.m_peak_ShutterMode_GetList)
+    {
+        return inst.m_peak_ShutterMode_GetList(hCam, shutterModeList, shutterModeCount);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_ShutterMode_Set(peak_camera_handle hCam, peak_shutter_mode shutterMode)
+{
+    auto& inst = instance();
+    if(inst.m_peak_ShutterMode_Set)
+    {
+        return inst.m_peak_ShutterMode_Set(hCam, shutterMode);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_ShutterMode_Get(peak_camera_handle hCam, peak_shutter_mode * shutterMode)
+{
+    auto& inst = instance();
+    if(inst.m_peak_ShutterMode_Get)
+    {
+        return inst.m_peak_ShutterMode_Get(hCam, shutterMode);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_PixelClock_GetAccessStatus(peak_camera_handle hCam)
 {
     auto& inst = instance();
@@ -6150,12 +7011,77 @@ inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_IOChannel_GetAccessStatus(peak
     }
 }
 
-inline PEAK_API_STATUS DynamicLoader::peak_IOChannel_GetList(peak_camera_handle hCam, peak_io_channel * ioChannelList, size_t * ioChannelCount)
+inline  DynamicLoader::PEAK_API_STATUS_DEPRECATED("Use peak_IOChannel_GetListForDirection instead") peak_IOChannel_GetList(peak_camera_handlehCam,peak_io_channel*ioChannelList,size_t*ioChannelCount)
 {
     auto& inst = instance();
-    if(inst.m_peak_IOChannel_GetList)
+    if(inst.m_PEAK_API_STATUS_DEPRECATED)
     {
-        return inst.m_peak_IOChannel_GetList(hCam, ioChannelList, ioChannelCount);
+        return inst.m_PEAK_API_STATUS_DEPRECATED(peak_IOChannel_GetList(peak_camera_handlehCam,peak_io_channel*ioChannelList,size_t*ioChannelCount);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IOChannel_GetListForDirection(peak_camera_handle hCam, peak_io_direction direction, peak_io_channel * ioChannelList, size_t * ioChannelCount)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IOChannel_GetListForDirection)
+    {
+        return inst.m_peak_IOChannel_GetListForDirection(hCam, direction, ioChannelList, ioChannelCount);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_IOChannel_Direction_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IOChannel_Direction_GetAccessStatus)
+    {
+        return inst.m_peak_IOChannel_Direction_GetAccessStatus(hCam, ioChannel);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IOChannel_Direction_Get(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_direction * direction)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IOChannel_Direction_Get)
+    {
+        return inst.m_peak_IOChannel_Direction_Get(hCam, ioChannel, direction);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_IOChannel_Type_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IOChannel_Type_GetAccessStatus)
+    {
+        return inst.m_peak_IOChannel_Type_GetAccessStatus(hCam, ioChannel);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IOChannel_Type_Get(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_type * type)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IOChannel_Type_Get)
+    {
+        return inst.m_peak_IOChannel_Type_Get(hCam, ioChannel, type);
     }
     else
     {
@@ -6182,6 +7108,19 @@ inline PEAK_API_BOOL DynamicLoader::peak_IOChannel_Level_IsHigh(peak_camera_hand
     if(inst.m_peak_IOChannel_Level_IsHigh)
     {
         return inst.m_peak_IOChannel_Level_IsHigh(hCam, ioChannel);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IOChannel_Level_SetHigh(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool high)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IOChannel_Level_SetHigh)
+    {
+        return inst.m_peak_IOChannel_Level_SetHigh(hCam, ioChannel, high);
     }
     else
     {
@@ -6397,12 +7336,25 @@ inline PEAK_API_STATUS DynamicLoader::peak_Trigger_Mode_Set(peak_camera_handle h
     }
 }
 
-inline PEAK_API_STATUS DynamicLoader::peak_Trigger_Mode_Get(peak_camera_handle hCam, peak_trigger_mode * triggerMode)
+inline  DynamicLoader::PEAK_API_STATUS_DEPRECATED("Use peak_Trigger_Mode_Config_Get instead") peak_Trigger_Mode_Get(peak_camera_handlehCam,peak_trigger_mode*triggerMode)
 {
     auto& inst = instance();
-    if(inst.m_peak_Trigger_Mode_Get)
+    if(inst.m_PEAK_API_STATUS_DEPRECATED)
     {
-        return inst.m_peak_Trigger_Mode_Get(hCam, triggerMode);
+        return inst.m_PEAK_API_STATUS_DEPRECATED(peak_Trigger_Mode_Get(peak_camera_handlehCam,peak_trigger_mode*triggerMode);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Trigger_Mode_Config_Get(peak_camera_handle hCam, peak_trigger_mode * triggerMode)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Trigger_Mode_Config_Get)
+    {
+        return inst.m_peak_Trigger_Mode_Config_Get(hCam, triggerMode);
     }
     else
     {
@@ -6683,12 +7635,25 @@ inline PEAK_API_STATUS DynamicLoader::peak_Flash_Mode_Set(peak_camera_handle hCa
     }
 }
 
-inline PEAK_API_STATUS DynamicLoader::peak_Flash_Mode_Get(peak_camera_handle hCam, peak_flash_mode * flashMode)
+inline  DynamicLoader::PEAK_API_STATUS_DEPRECATED("Use peak_Flash_Mode_Config_Get instead") peak_Flash_Mode_Get(peak_camera_handlehCam,peak_flash_mode*flashMode)
 {
     auto& inst = instance();
-    if(inst.m_peak_Flash_Mode_Get)
+    if(inst.m_PEAK_API_STATUS_DEPRECATED)
     {
-        return inst.m_peak_Flash_Mode_Get(hCam, flashMode);
+        return inst.m_PEAK_API_STATUS_DEPRECATED(peak_Flash_Mode_Get(peak_camera_handlehCam,peak_flash_mode*flashMode);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Flash_Mode_Config_Get(peak_camera_handle hCam, peak_flash_mode * flashMode)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Flash_Mode_Config_Get)
+    {
+        return inst.m_peak_Flash_Mode_Config_Get(hCam, flashMode);
     }
     else
     {
@@ -7216,6 +8181,19 @@ inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_GetAccessStatus
     }
 }
 
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_Target_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoBrightness_Target_GetAccessStatus)
+    {
+        return inst.m_peak_AutoBrightness_Target_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_Target_GetRange(peak_camera_handle hCam, uint32_t * minAutoBrightnessTarget, uint32_t * maxAutoBrightnessTarget, uint32_t * incAutoBrightnessTarget)
 {
     auto& inst = instance();
@@ -7248,6 +8226,19 @@ inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_Target_Get(peak_camera
     if(inst.m_peak_AutoBrightness_Target_Get)
     {
         return inst.m_peak_AutoBrightness_Target_Get(hCam, autoBrightnessTarget);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_TargetTolerance_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoBrightness_TargetTolerance_GetAccessStatus)
+    {
+        return inst.m_peak_AutoBrightness_TargetTolerance_GetAccessStatus(hCam);
     }
     else
     {
@@ -7294,6 +8285,19 @@ inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_TargetTolerance_Get(pe
     }
 }
 
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_TargetPercentile_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoBrightness_TargetPercentile_GetAccessStatus)
+    {
+        return inst.m_peak_AutoBrightness_TargetPercentile_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_TargetPercentile_GetRange(peak_camera_handle hCam, double * minAutoBrightnessTargetPercentile, double * maxAutoBrightnessTargetPercentile, double * incAutoBrightnessTargetPercentile)
 {
     auto& inst = instance();
@@ -7326,6 +8330,19 @@ inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_TargetPercentile_Get(p
     if(inst.m_peak_AutoBrightness_TargetPercentile_Get)
     {
         return inst.m_peak_AutoBrightness_TargetPercentile_Get(hCam, autoBrightnessTargetPercentile);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_ROI_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoBrightness_ROI_GetAccessStatus)
+    {
+        return inst.m_peak_AutoBrightness_ROI_GetAccessStatus(hCam);
     }
     else
     {
@@ -7424,6 +8441,19 @@ inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_Exposure_GetAcc
     }
 }
 
+inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_Exposure_Mode_GetList(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoBrightness_Exposure_Mode_GetList)
+    {
+        return inst.m_peak_AutoBrightness_Exposure_Mode_GetList(hCam, modeList, modeListSize);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_Exposure_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoExposureMode)
 {
     auto& inst = instance();
@@ -7463,6 +8493,19 @@ inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoBrightness_Gain_GetAccessS
     }
 }
 
+inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_Gain_Mode_GetList(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoBrightness_Gain_Mode_GetList)
+    {
+        return inst.m_peak_AutoBrightness_Gain_Mode_GetList(hCam, modeList, modeListSize);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_STATUS DynamicLoader::peak_AutoBrightness_Gain_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode)
 {
     auto& inst = instance();
@@ -7495,6 +8538,19 @@ inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoWhiteBalance_GetAccessStat
     if(inst.m_peak_AutoWhiteBalance_GetAccessStatus)
     {
         return inst.m_peak_AutoWhiteBalance_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_AutoWhiteBalance_ROI_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoWhiteBalance_ROI_GetAccessStatus)
+    {
+        return inst.m_peak_AutoWhiteBalance_ROI_GetAccessStatus(hCam);
     }
     else
     {
@@ -7599,6 +8655,19 @@ inline PEAK_API_STATUS DynamicLoader::peak_AutoWhiteBalance_Mode_Get(peak_camera
     if(inst.m_peak_AutoWhiteBalance_Mode_Get)
     {
         return inst.m_peak_AutoWhiteBalance_Mode_Get(hCam, autoWhiteBalanceMode);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_AutoWhiteBalance_Mode_GetList(peak_camera_handle hCam, peak_auto_feature_mode * modeList, size_t * modeListSize)
+{
+    auto& inst = instance();
+    if(inst.m_peak_AutoWhiteBalance_Mode_GetList)
+    {
+        return inst.m_peak_AutoWhiteBalance_Mode_GetList(hCam, modeList, modeListSize);
     }
     else
     {
@@ -8815,6 +9884,123 @@ inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_Saturation_GetRan
     }
 }
 
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get(peak_camera_handle hCam, peak_chromatic_adaption_color_space * colorSpace)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get(hCam, colorSpace);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set(peak_camera_handle hCam, peak_chromatic_adaption_color_space colorSpace)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set(hCam, colorSpace);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get(peak_camera_handle hCam, peak_chromatic_adaption_algorithm * algorithm)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get(hCam, algorithm);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set(peak_camera_handle hCam, peak_chromatic_adaption_algorithm algorithm)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set(hCam, algorithm);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get(peak_camera_handle hCam, uint32_t * colorTemperature)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get(hCam, colorTemperature);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set(peak_camera_handle hCam, uint32_t colorTemperature)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set(hCam, colorTemperature);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange(peak_camera_handle hCam, uint32_t * minColorTemperature, uint32_t * maxColorTemperature, uint32_t * incColorTemperature)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange(hCam, minColorTemperature, maxColorTemperature, incColorTemperature);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_Enable(peak_camera_handle hCam, peak_bool enable)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_Enable)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_Enable(hCam, enable);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled)
+    {
+        return inst.m_peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_STATUS DynamicLoader::peak_IPL_ColorCorrection_Enable(peak_camera_handle hCam, peak_bool enabled)
 {
     auto& inst = instance();
@@ -9985,6 +11171,19 @@ inline PEAK_API_STATUS DynamicLoader::peak_IPL_ProcessFrameInplace(peak_camera_h
     }
 }
 
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ReadImage(peak_camera_handle hCam, const char * path, peak_frame_handle * hFrame)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_ReadImage)
+    {
+        return inst.m_peak_IPL_ReadImage(hCam, path, hFrame);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
 inline PEAK_API_STATUS DynamicLoader::peak_IPL_EdgeEnhancement_Enable(peak_camera_handle hCam, peak_bool enable)
 {
     auto& inst = instance();
@@ -10082,6 +11281,97 @@ inline PEAK_API_STATUS DynamicLoader::peak_IPL_Sharpness_GetList(peak_sharpness_
     if(inst.m_peak_IPL_Sharpness_GetList)
     {
         return inst.m_peak_IPL_Sharpness_GetList(sharpnessAlgorithm, pixelFormatList, pixelFormatSize);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Rotation_Angle_Set(peak_camera_handle hCam, int32_t rotationAngle)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Rotation_Angle_Set)
+    {
+        return inst.m_peak_IPL_Rotation_Angle_Set(hCam, rotationAngle);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Rotation_Angle_Get(peak_camera_handle hCam, int32_t * rotationAngle)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Rotation_Angle_Get)
+    {
+        return inst.m_peak_IPL_Rotation_Angle_Get(hCam, rotationAngle);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Histogram_ProcessFrame(peak_frame_handle hFrame, peak_histogram_handle * hHistogram)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Histogram_ProcessFrame)
+    {
+        return inst.m_peak_IPL_Histogram_ProcessFrame(hFrame, hHistogram);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Histogram_Release(peak_histogram_handle hHistogram)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Histogram_Release)
+    {
+        return inst.m_peak_IPL_Histogram_Release(hHistogram);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Histogram_Channel_GetCount(peak_histogram_handle hHistogram, size_t * numChannels)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Histogram_Channel_GetCount)
+    {
+        return inst.m_peak_IPL_Histogram_Channel_GetCount(hHistogram, numChannels);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Histogram_Channel_GetInfo(peak_histogram_handle hHistogram, size_t channel, peak_histogram_channel_info * channelInfo)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Histogram_Channel_GetInfo)
+    {
+        return inst.m_peak_IPL_Histogram_Channel_GetInfo(hHistogram, channel, channelInfo);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_Histogram_Channel_GetBinArray(peak_histogram_handle hHistogram, size_t channel, uint64_t * binArray, size_t * binArraySize)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_Histogram_Channel_GetBinArray)
+    {
+        return inst.m_peak_IPL_Histogram_Channel_GetBinArray(hHistogram, channel, binArray, binArraySize);
     }
     else
     {
@@ -11272,7 +12562,7 @@ inline PEAK_API_STATUS DynamicLoader::peak_IPL_ImageWriter_Save(peak_imagewriter
     }
 }
 
-inline PEAK_API_STATUS DynamicLoader::peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format imageFormat)
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWriter, peak_imagefile_format imageFormat)
 {
     auto& inst = instance();
     if(inst.m_peak_IPL_ImageWriter_Format_Set)
@@ -11285,7 +12575,7 @@ inline PEAK_API_STATUS DynamicLoader::peak_IPL_ImageWriter_Format_Set(peak_image
     }
 }
 
-inline PEAK_API_STATUS DynamicLoader::peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format * imageFormat)
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWriter, peak_imagefile_format * imageFormat)
 {
     auto& inst = instance();
     if(inst.m_peak_IPL_ImageWriter_Format_Get)
@@ -11564,6 +12854,656 @@ inline PEAK_API_STATUS DynamicLoader::peak_LED_Get(peak_camera_handle hCam, peak
     if(inst.m_peak_LED_Get)
     {
         return inst.m_peak_LED_Get(hCam, target, mode);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_BlackLevel_Auto_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Auto_GetAccessStatus)
+    {
+        return inst.m_peak_BlackLevel_Auto_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_BlackLevel_Auto_Enable(peak_camera_handle hCam, peak_bool enable)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Auto_Enable)
+    {
+        return inst.m_peak_BlackLevel_Auto_Enable(hCam, enable);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_BlackLevel_Auto_IsEnabled(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Auto_IsEnabled)
+    {
+        return inst.m_peak_BlackLevel_Auto_IsEnabled(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_BlackLevel_Offset_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Offset_GetAccessStatus)
+    {
+        return inst.m_peak_BlackLevel_Offset_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_BlackLevel_Offset_Set(peak_camera_handle hCam, double offset)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Offset_Set)
+    {
+        return inst.m_peak_BlackLevel_Offset_Set(hCam, offset);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_BlackLevel_Offset_Get(peak_camera_handle hCam, double * offset)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Offset_Get)
+    {
+        return inst.m_peak_BlackLevel_Offset_Get(hCam, offset);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_BlackLevel_Offset_GetRange(peak_camera_handle hCam, double * min, double * max, double * inc)
+{
+    auto& inst = instance();
+    if(inst.m_peak_BlackLevel_Offset_GetRange)
+    {
+        return inst.m_peak_BlackLevel_Offset_GetRange(hCam, min, max, inc);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_Bandwidth_LinkSpeed_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_LinkSpeed_GetAccessStatus)
+    {
+        return inst.m_peak_Bandwidth_LinkSpeed_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Bandwidth_LinkSpeed_Get(peak_camera_handle hCam, int64_t * linkSpeed_Bps)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_LinkSpeed_Get)
+    {
+        return inst.m_peak_Bandwidth_LinkSpeed_Get(hCam, linkSpeed_Bps);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_Bandwidth_ThroughputLimit_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputLimit_GetAccessStatus)
+    {
+        return inst.m_peak_Bandwidth_ThroughputLimit_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Bandwidth_ThroughputLimit_GetRange(peak_camera_handle hCam, int64_t * minThroughputLimit_Bps, int64_t * maxThroughputLimit_Bps, int64_t * incThroughputLimit_Bps)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputLimit_GetRange)
+    {
+        return inst.m_peak_Bandwidth_ThroughputLimit_GetRange(hCam, minThroughputLimit_Bps, maxThroughputLimit_Bps, incThroughputLimit_Bps);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Bandwidth_ThroughputLimit_Set(peak_camera_handle hCam, int64_t throughputLimit_Bps)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputLimit_Set)
+    {
+        return inst.m_peak_Bandwidth_ThroughputLimit_Set(hCam, throughputLimit_Bps);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Bandwidth_ThroughputLimit_Get(peak_camera_handle hCam, int64_t * throughputLimit_Bps)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputLimit_Get)
+    {
+        return inst.m_peak_Bandwidth_ThroughputLimit_Get(hCam, throughputLimit_Bps);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus)
+    {
+        return inst.m_peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Bandwidth_ThroughputFrameRateLimit_Get(peak_camera_handle hCam, double * throughputFrameRateLimit_fps)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputFrameRateLimit_Get)
+    {
+        return inst.m_peak_Bandwidth_ThroughputFrameRateLimit_Get(hCam, throughputFrameRateLimit_fps);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_Bandwidth_ThroughputCalculated_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputCalculated_GetAccessStatus)
+    {
+        return inst.m_peak_Bandwidth_ThroughputCalculated_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Bandwidth_ThroughputCalculated_Get(peak_camera_handle hCam, int64_t * throughputCalculated_Bps)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Bandwidth_ThroughputCalculated_Get)
+    {
+        return inst.m_peak_Bandwidth_ThroughputCalculated_Get(hCam, throughputCalculated_Bps);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_IPO_GetAccessStatus(peak_interface_technology interfaceTech)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPO_GetAccessStatus)
+    {
+        return inst.m_peak_IPO_GetAccessStatus(interfaceTech);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_IPO_IsEnabled(peak_interface_technology interfaceTech)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPO_IsEnabled)
+    {
+        return inst.m_peak_IPO_IsEnabled(interfaceTech);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPO_Enable(peak_interface_technology interfaceTech, peak_bool enabled)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPO_Enable)
+    {
+        return inst.m_peak_IPO_Enable(interfaceTech, enabled);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_DigitalBlack_GetRange(peak_camera_handle hCam, double * minDigitalBlack, double * maxDigitalBlack)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_DigitalBlack_GetRange)
+    {
+        return inst.m_peak_IPL_DigitalBlack_GetRange(hCam, minDigitalBlack, maxDigitalBlack);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_DigitalBlack_Set(peak_camera_handle hCam, double digitalBlack)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_DigitalBlack_Set)
+    {
+        return inst.m_peak_IPL_DigitalBlack_Set(hCam, digitalBlack);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_DigitalBlack_Get(peak_camera_handle hCam, double * digitalBlack)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_DigitalBlack_Get)
+    {
+        return inst.m_peak_IPL_DigitalBlack_Get(hCam, digitalBlack);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_LUT_Enable(peak_camera_handle hCam, peak_bool enabled)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_Enable)
+    {
+        return inst.m_peak_IPL_LUT_Enable(hCam, enabled);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_IPL_LUT_IsEnabled(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_IsEnabled)
+    {
+        return inst.m_peak_IPL_LUT_IsEnabled(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_LUT_Preset_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_preset preset)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_Preset_Set)
+    {
+        return inst.m_peak_IPL_LUT_Preset_Set(hCam, selector, preset);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_LUT_Value_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t value)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_Value_Set)
+    {
+        return inst.m_peak_IPL_LUT_Value_Set(hCam, selector, channel, index, value);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_LUT_Value_Get(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t * value)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_Value_Get)
+    {
+        return inst.m_peak_IPL_LUT_Value_Get(hCam, selector, channel, index, value);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_LUT_ValueList_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t * values, size_t size)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_ValueList_Set)
+    {
+        return inst.m_peak_IPL_LUT_ValueList_Set(hCam, selector, channel, values, size);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_IPL_LUT_ValueList_Get(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t * values, size_t * size)
+{
+    auto& inst = instance();
+    if(inst.m_peak_IPL_LUT_ValueList_Get)
+    {
+        return inst.m_peak_IPL_LUT_ValueList_Get(hCam, selector, channel, values, size);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_Chunks_GetAccessStatus(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_GetAccessStatus)
+    {
+        return inst.m_peak_Chunks_GetAccessStatus(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Enable(peak_camera_handle hCam, peak_bool enabled)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Enable)
+    {
+        return inst.m_peak_Chunks_Enable(hCam, enabled);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_Chunks_IsEnabled(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_IsEnabled)
+    {
+        return inst.m_peak_Chunks_IsEnabled(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_AutoUpdate_Enable(peak_camera_handle hCam, peak_bool enabled)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_AutoUpdate_Enable)
+    {
+        return inst.m_peak_Chunks_AutoUpdate_Enable(hCam, enabled);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_Chunks_AutoUpdate_IsEnabled(peak_camera_handle hCam)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_AutoUpdate_IsEnabled)
+    {
+        return inst.m_peak_Chunks_AutoUpdate_IsEnabled(hCam);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Update(peak_camera_handle hCam, peak_frame_handle hFrame)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Update)
+    {
+        return inst.m_peak_Chunks_Update(hCam, hFrame);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_ACCESS_STATUS DynamicLoader::peak_Chunks_Type_GetAccessStatus(peak_camera_handle hCam, peak_chunks_type type)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Type_GetAccessStatus)
+    {
+        return inst.m_peak_Chunks_Type_GetAccessStatus(hCam, type);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Type_Enable(peak_camera_handle hCam, peak_chunks_type type, peak_bool enabled)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Type_Enable)
+    {
+        return inst.m_peak_Chunks_Type_Enable(hCam, type, enabled);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_BOOL DynamicLoader::peak_Chunks_Type_IsEnabled(peak_camera_handle hCam, peak_chunks_type type)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Type_IsEnabled)
+    {
+        return inst.m_peak_Chunks_Type_IsEnabled(hCam, type);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Type_Supported_GetList(peak_camera_handle hCam, peak_chunks_type * chunksTypesSupported, size_t * chunksTypesSize)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Type_Supported_GetList)
+    {
+        return inst.m_peak_Chunks_Type_Supported_GetList(hCam, chunksTypesSupported, chunksTypesSize);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_FrameInfo_Get(peak_camera_handle hCam, peak_chunks_frame_info * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_FrameInfo_Get)
+    {
+        return inst.m_peak_Chunks_FrameInfo_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Exposure_Get(peak_camera_handle hCam, peak_chunks_exposure * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Exposure_Get)
+    {
+        return inst.m_peak_Chunks_Exposure_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Gain_Get(peak_camera_handle hCam, peak_chunks_gain * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Gain_Get)
+    {
+        return inst.m_peak_Chunks_Gain_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Sequencer_Get(peak_camera_handle hCam, peak_chunks_sequencer * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Sequencer_Get)
+    {
+        return inst.m_peak_Chunks_Sequencer_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_Timestamp_Get(peak_camera_handle hCam, peak_chunks_timestamp * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_Timestamp_Get)
+    {
+        return inst.m_peak_Chunks_Timestamp_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_ExposureTrigger_Get(peak_camera_handle hCam, peak_chunks_exposure_trigger * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_ExposureTrigger_Get)
+    {
+        return inst.m_peak_Chunks_ExposureTrigger_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_UsableROI_Get(peak_camera_handle hCam, peak_chunks_usable_roi * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_UsableROI_Get)
+    {
+        return inst.m_peak_Chunks_UsableROI_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_LineStatus_Get(peak_camera_handle hCam, peak_chunks_line_status * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_LineStatus_Get)
+    {
+        return inst.m_peak_Chunks_LineStatus_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_AutoFeature_Get(peak_camera_handle hCam, peak_chunks_autofeature * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_AutoFeature_Get)
+    {
+        return inst.m_peak_Chunks_AutoFeature_Get(hCam, data);
+    }
+    else
+    {
+        throw std::runtime_error("Library not loaded!");
+    }
+}
+
+inline PEAK_API_STATUS DynamicLoader::peak_Chunks_PTPStatus_Get(peak_camera_handle hCam, peak_chunks_ptp_status * data)
+{
+    auto& inst = instance();
+    if(inst.m_peak_Chunks_PTPStatus_Get)
+    {
+        return inst.m_peak_Chunks_PTPStatus_Get(hCam, data);
     }
     else
     {

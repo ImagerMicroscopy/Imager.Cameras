@@ -28,9 +28,7 @@
 #include "DummyCamera.h"
 #endif
 
-#ifdef WITH_IDS_PEAK
 #include "IDSPeakCameraHandler.h"
-#endif
 
 CameraManager::CameraManager() {
 }
@@ -39,10 +37,7 @@ CameraManager::~CameraManager() {
     CloseAndorSDK3Library();
     ClosePhotometricsLibrary();
     CloseHamamatsuLibrary();
-
-#ifdef WITH_IDS_PEAK
     CloseIDSPeakLibrary();
-#endif
 }
 
 void CameraManager::discoverCameras() {
@@ -93,12 +88,10 @@ void CameraManager::discoverCameras() {
     }
 #endif
 
-#ifdef WITH_IDS_PEAK
     std::vector<std::shared_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
     for (auto& cam : idsCams) {
         _availableCameras.insert({cam->getIdentifierStr(), cam});
     }
-#endif
 
     PCOAPIWrapper pcoAPIWrapper = GetPCOAPIWrapper();
     if (pcoAPIWrapper.areAllFunctionsLoaded()) {

@@ -3,7 +3,7 @@
  *
  * \brief Interface definition file for IDS peak comfortC
  * 
- * Copyright (C) 2022 - 2024, IDS Imaging Development Systems GmbH.
+ * Copyright (C) 2022 - 2025, IDS Imaging Development Systems GmbH.
  */
 
 #ifndef PEAK_COMFORT_C_H
@@ -12,7 +12,7 @@
 /* Function declaration modifiers */
 #if defined(_WIN32)
 #    ifndef PEAK_NO_DECLSPEC_STATEMENTS
-#        ifdef paiconstant_EXPORTING
+#        ifdef PEAK_EXPORTING
 #            define PEAK_EXPORT __declspec(dllexport)
 #        else
 #            define PEAK_EXPORT __declspec(dllimport)
@@ -46,6 +46,30 @@ extern "C" {
 #    include <stdint.h>
 #endif
 
+#if !defined(PEAK_NO_WARN_DEPRECATED)
+#    if defined(__cplusplus) && __cplusplus >= 201402L || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
+#        define PEAK_DEPRECATED_ATTR [[ deprecated ]]
+#        define PEAK_DEPRECATED_ATTR_MSG(X) [[ deprecated(X) ]]
+#        define PEAK_DEPRECATED(X) X PEAK_DEPRECATED_ATTR
+#        define PEAK_DEPRECATED_MSG(X, Y) X [[ deprecated(Y) ]]
+#    elif defined(__GNUC__)
+#        define PEAK_DEPRECATED_ATTR __attribute__(( deprecated ))
+#        define PEAK_DEPRECATED_ATTR_MSG(X) __attribute__(( deprecated(X) ))
+#        define PEAK_DEPRECATED(X) X PEAK_DEPRECATED_ATTR
+#        define PEAK_DEPRECATED_MSG(X, Y) X __attribute__(( deprecated(Y) ))
+#    else
+#        define PEAK_DEPRECATED_ATTR
+#        define PEAK_DEPRECATED_ATTR_MSG(X)
+#        define PEAK_DEPRECATED(X) X
+#        define PEAK_DEPRECATED_MSG(X, Y) X
+#    endif
+#else
+#    define PEAK_DEPRECATED_ATTR
+#    define PEAK_DEPRECATED_ATTR_MSG(X)
+#    define PEAK_DEPRECATED(X) X
+#    define PEAK_DEPRECATED_MSG(X, Y) X
+#endif
+
 /* helper entities */
 struct peak_camera;
 struct peak_frame;
@@ -56,9 +80,11 @@ struct peak_message_queue;
 struct peak_message;
 struct peak_i2c;
 struct peak_imagewriter;
+struct peak_histogram;
 
 #define PEAK_VERSION_CODE(major,minor,subminor,patch) (((major) << 24) + ((minor) << 16) + ((subminor) << 8) + (patch))
 #define PEAK_API_STATUS PEAK_EXPORT peak_status PEAK_CALLCONV
+#define PEAK_API_STATUS_DEPRECATED(X) PEAK_EXPORT PEAK_DEPRECATED_ATTR_MSG(X) peak_status PEAK_CALLCONV
 #define PEAK_API_ACCESS_STATUS PEAK_EXPORT peak_access_status PEAK_CALLCONV
 #define PEAK_API_BOOL PEAK_EXPORT peak_bool PEAK_CALLCONV
 #define PEAK_API_CAMERA_ID PEAK_EXPORT peak_camera_id PEAK_CALLCONV
@@ -102,79 +128,8 @@ struct peak_imagewriter;
  */
 
 /*! \defgroup reconnect Reconnect
- *
- * The reconnect can be enabled or disabled for the specified interface technology. When the reconnect is activated,
- * the camera automatically performs a reconnect if the physical connection is lost and restored. With an enabled
- * reconnect the device will automatically be reopened and restored to its previous state.
- *
- * If the reconnect is active, additional messages are signaled. 'DeviceDisconnected' will be signaled when a physical 
- * connection loss is detected. The signal 'DeviceReconnected' will be sent when the camera reconnect is done.
- * A 'DeviceLost' signal will be sent immediately when the reconnect is not active and a device is removed. When the
- * reconnect is active and a disconnected device will be closed a 'DeviceLost' signal will occur. 
- *
- * \note Please keep in mind that the behaviour of the signals 'DeviceLost', 'DeviceDisconnected' changes whether
- *       the reconnect is active or inactive.
- *
- * \note Restoring the device configuration is currently not supported.
- *
- *  Example to enable the reconnect for all supported interface technologies:
- *
- * \code{.c}
- *   peak_interface_technology interface_technologies[] = { peak_interface_technology_GEV,
- *       peak_interface_technology_U3V, peak_interface_technology_UEYE };
- *
- *   for (size_t i = 0; i < sizeof(interface_technologies) / sizeof(peak_interface_technology); i++)
- *   {
- *       peak_access_status access_status = peak_Reconnect_GetAccessStatus(interface_technologies[i]);
- *       peak_bool current_state = PEAK_FALSE;
- *
- *       if (PEAK_IS_WRITEABLE(access_status))
- *       {
- *           peak_status enable_status = peak_Reconnect_Enable(interface_technologies[i], PEAK_TRUE);
- *           if (enable_status != PEAK_STATUS_SUCCESS)
- *           {
- *               // reconnect is enabled
- *           }
- *       }
- *       else if (PEAK_IS_READABLE(access_status))
- *       {
- *           current_state = peak_Reconnect_IsEnabled(interface_technologies[i]);
- *       }
- *       else
- *       {
- *           // the feature is not available
- *       }
- *
- *       if (current_state == PEAK_FALSE)
- *       {
- *           // reconnect not supported
- *       }
- *   }
- * \endcode
- *
- * Example to use the reconnect and disconnect message 
- * \code{.c}
- *    peak_MessageQueue_EnableMessage(hMessageQueue, NULL, PEAK_MESSAGE_TYPE_DEVICE_RECONNECTED);
- *    peak_MessageQueue_EnableMessage(hMessageQueue, NULL, PEAK_MESSAGE_TYPE_DEVICE_DISCONNECTED);
- * 
- *    ...
- *    // Wait for messages and retrieve data message type
- *    ...
- *
- *    if (messageType == PEAK_MESSAGE_TYPE_DEVICE_RECONNECTED)
- *    {
- *        peak_message_data_device_reconnected reconnectedData;
- *        peak_Message_Data_DeviceReconnected_Get(hMessage, &reconnectedData);
- *        ...
- *    }
- *    else if (messageType == PEAK_MESSAGE_TYPE_DEVICE_DISCONNECTED)
- *    {
- *        peak_message_data_device_disconnected disconnectedData;
- *        peak_Message_Data_DeviceDisconnected_Get(hMessage, &disconnectedData);
- *        ...
- *    }
- * \endcode
- */
+ * \brief Reconnect related functions and types
+*/
 
 /*! \defgroup camera Camera
  *
@@ -302,6 +257,12 @@ struct peak_imagewriter;
  * Exposure time related functions and types.
  */
 
+/*! \defgroup shuttermode Shutter mode
+ *
+ * \ingroup camera_control
+ *
+ */
+
 /*! \defgroup pixelclock Pixel clock
  *
  * \ingroup camera_control
@@ -309,74 +270,82 @@ struct peak_imagewriter;
  * Pixel clock related functions and types.
  */
 
+/*! \defgroup bandwidth Bandwidth
+ *
+ * \ingroup camera_control
+ *
+ * \brief Bandwidth related functions and types
+ */
+
+/*! \defgroup bandwidth_link_constants Link speed constants
+ *
+ * \ingroup bandwidth
+ *
+ * \brief Common constants for the link speed
+ *
+ * This includes common speeds like 1 Gbit/s for Ethernet and SuperSpeed for USB.
+ */
+
 /*! \defgroup io_channel IO channel
  *
  * \ingroup camera_control
  *
- * IO channel related functions and types.
+ * \brief An IO channel refers to the physical line through which the camera communicates with other devices
+ * for input and output operations. IO channels are used to synchronize operations, and control functions
+ * like triggering, flashing or indicating custom states.
  */
 
 /*! \defgroup trigger Trigger
  *
  * \ingroup camera_control
  *
- * Trigger related functions and types.
+ * \brief A trigger is a mechanism that synchronizes image capture with an external event or condition.
+ * This feature is crucial in applications where precise timing is needed to capture images at the right moment.
  */
 
 /*! \defgroup trigger_edge Trigger edge property
  *
  * \ingroup trigger
  *
- * Trigger edge property related functions.
+ * \brief The trigger edge refers to the specific transition of a trigger signal that triggers capturing a frame.
  */
 
 /*! \defgroup trigger_delay Trigger delay property
  *
  * \ingroup trigger
  *
- * Trigger delay property related functions.
+ * \brief Trigger delay refers to the time interval between the receipt of a
+ * trigger signal and the actual moment the camera captures an image.
  */
 
 /*! \defgroup trigger_divider Trigger divider property
  *
  * \ingroup trigger
  *
- * Trigger divider property related functions.
+ * \brief A trigger divider is a setting that allows you to control the frequency of
+ * trigger signals by dividing the incoming trigger signal.
  */
 
 /*! \defgroup trigger_burst Trigger burst property
  *
  * \ingroup trigger
  *
- * Trigger burst property related functions.
+ * \brief A burst trigger is a feature that allows the camera to capture multiple
+ * images in quick succession after receiving a single trigger signal.
  */
 
 /*! \defgroup flash Flash
  *
  * \ingroup camera_control
  *
- * Flash related functions and types.
+ * \brief Flash refers to the electrical signal used to trigger an external light source.
  */
 
-/*! \defgroup flash_start_delay Flash start delay property
+/*! \defgroup flash_prop Flash configuration options
  *
  * \ingroup flash
  *
- * Flash start delay property related functions.
- */
-
-/*! \defgroup flash_end_delay Flash end delay property
- *
- * \ingroup flash
- *
- * Flash end delay property related functions.
- */
-
-/*! \defgroup flash_duration Flash duration property
- *
- * \ingroup flash
- *
- * Flash end duration property related functions.
+ * \brief Functions to set the flash timing parameters
  */
 
 /*! \defgroup focus Focus
@@ -472,7 +441,7 @@ struct peak_imagewriter;
  * Pixel binning related functions and types.
  *
  * The function automatically determines the subsampling engine afor the largest possible number of factors.
- * To use the subsampling engine explicitly, it is recommended to use the functions from the @ref binning_manaul group.
+ * To use the subsampling engine explicitly, it is recommended to use the functions from the @ref binning_manual group.
  *
  * \note Please note that the functions from this function group are not compatible with the functions from the
  * @ref binning_manual group and therefore should not be used together.
@@ -486,7 +455,7 @@ struct peak_imagewriter;
  * Pixel decimation is also referred to as pixel skipping.
  *
  * The function automatically determines the subsampling engine afor the largest possible number of factors.
- * To use the subsampling engine explicitly, it is recommended to use the functions from the @ref decimation_manaul group.
+ * To use the subsampling engine explicitly, it is recommended to use the functions from the @ref decimation_manual group.
  *
  * \note Please note that the functions from this function group are not compatible with the functions from the
  * @ref decimation_manual group and therefore should not be used together
@@ -618,6 +587,15 @@ struct peak_imagewriter;
  * There is also a camera implementation. See \ref gain.
  */
 
+/*! \defgroup host_lut LUT
+ *
+ * \ingroup host_features
+ *
+ * \brief LUT related functions and types.
+ *
+ * This feature is applied in the host. \n
+ */
+
 /*! \defgroup host_gamma Gamma
  *
  * \ingroup host_features
@@ -628,6 +606,17 @@ struct peak_imagewriter;
  * There is also a camera implementation. See \ref gamma.
  */
 
+/*! \defgroup host_digital_black Digital Black
+ *
+ * \ingroup host_features
+ *
+ * \brief Digital black is a technique used in image processing to adjust the black point before
+ *        gamma correction is applied. Gamma correction often causes dark areas of an image
+ *        to appear gray by lifting the overall brightness and redistributing tonal values. By pulling
+ *        down the black point with digital black, the noisy pixels are eliminated first so the gamma correction
+ *        does not multiply the noise.
+ */
+
 /*! \defgroup host_color_correction Color correction
  *
  * \ingroup host_features
@@ -636,6 +625,25 @@ struct peak_imagewriter;
  *
  * This feature is applied in the host. \n
  * There is also a camera implementation. See \ref color_correction.
+ */
+
+/*! \defgroup host_chromatic_adaption Chromatic Adaption
+ *
+ * \ingroup host_color_correction
+ *
+* \brief Adjust to changes in lighting conditions to maintain consistent color perception despite variations in light sources.
+ *
+ * In industrial imaging, white balance can fail due to the lack of a neutral reference in the image, such as when the
+ * scene contains no gray or white areas, or when the colors are unevenly distributed (as in images dominated by a single color).
+ * In these cases, traditional white balance algorithms, like the gray world method, may fail to produce accurate color corrections.
+ *
+ * Chromatic adaptation provides an alternative solution by adjusting the image’s colors based on the known or
+ * estimated correlated color temperature of the light source.
+ *
+ * Refer to the IDS peak IPL documentation for additional information on Chromatic Adaptation.
+ *
+ * \note
+ * If chromatic adaption is used in combination with white balance, the result is indefinite.
  */
 
  /*! \defgroup host_auto_brightness Auto brightness control
@@ -745,6 +753,24 @@ struct peak_imagewriter;
  * There is also a camera implementation. See \ref mirror.
  */
 
+/*! \defgroup host_rotation Rotation
+ *
+ * \ingroup host_features
+ *
+ * \brief Image rotation related functions and types.
+ *
+ * This feature is applied in the host. \n
+ */
+
+/*! \defgroup host_rotation_angles Rotation angles
+ *
+ * \ingroup host_rotation
+ *
+ * \brief Supported rotation angles.
+ *
+ * Note: Only these defines are currently supported.
+ */
+
  /*! \defgroup host_binning Binning
  *
  * \ingroup host_features
@@ -798,40 +824,36 @@ struct peak_imagewriter;
 /*! \defgroup led LED
  * \ingroup camera_control
  *
- * Controls the behavior of the selected camera LED.
- *
- * *  Example to use the LED control feature:
- *
- * \code{.c}
- *
- * if (peak_LED_GetAccessStatus(hCam) == PEAK_ACCESS_READWRITE)
- * {
- *     peak_led_target target = PEAK_LED_TARGET_STATUS;
- *     size_t ledModeCount{};
- *     peak_LED_Mode_GetList(hCam, target, NULL, &ledModeCount);
- *     if(ledModeCount != 0)
- *     {
- *          peak_led_mode* ledModes = (peak_led_mode*)malloc(
- *              ledModeCount * sizeof(peak_led_mode));
- *          peak_LED_Mode_GetList(hCam, target, ledModes, &ledModeCount);
- *
- *          free(ledModes);
- *     }
- * }
- *
- * \endcode
-
- * \code{.c}
- * peak_LED_Set(hCam, PEAK_LED_TARGET_STATUS, PEAK_LED_MODE_BLINK_FAST);
- * // ...
- * // reset back to normal camera status
- * peak_LED_Set(hCam, PEAK_LED_TARGET_STATUS, PEAK_LED_MODE_CAMERA_STATUS);
- *
- * peak_led_mode mode = PEAK_LED_MODE_INVALID;
- * peak_LED_Get(hCam, PEAK_LED_TARGET_STATUS, &mode);
- *
- * \endcode
+ * \brief Controls the behavior of the selected camera LED.
  */
+
+/*! \defgroup histogram Histogram
+ * \ingroup host_features
+ *
+ * \brief Creates a histogram for a given peak_frame.
+ */
+
+/*! \defgroup blacklevel BlackLevel
+ * \ingroup camera_control
+ *
+ * \brief Controls the analog black level.
+ *
+ * This feature is only applied in the camera.
+ */
+
+ /*! \defgroup ipo IPO
+ * \brief Controls the thread for performance optimization at image acquisition
+ *
+ * The IPO thread seems to increase the CPU load to prevent all CPU cores from entering a sleep state (C-state)
+ * at the same time.
+ * The IPO thread guarantees that at least one CPU core is immediately available to process incoming stream data.
+ *
+ * \note The IPO is currently only supported for #PEAK_INTERFACE_TECHNOLOGY_U3V under Windows.
+ */
+
+/*! \defgroup chunks Chunks
+ * \brief Chunks refer to blocks of metadata transmitted alongside image data.
+*/
 
 /*!
  * \ingroup numeric
@@ -1125,8 +1147,11 @@ typedef enum
     /*! \brief The system could not provide enough memory */
     PEAK_STATUS_OUT_OF_MEMORY              = 0x8010,
 
-    /*! \brief Communication with the camera failed */
-    PEAK_STATUS_IO                         = 0x8011
+    /*! \brief An I/O error occurred */
+    PEAK_STATUS_IO                         = 0x8011,
+
+    /*! \brief Indicates that the requested functionality is not supported */
+    PEAK_STATUS_NOT_SUPPORTED              = 0x8012
 
 } peak_status;
 
@@ -1279,27 +1304,35 @@ typedef enum
 /*!
  * \brief peak interface technology
  *
- * The peak loads various transport layers. Each of them supports a different type of interface technology.
+ * The IDS peak comfortC loads various transport layers. Each of them supports a different type of interface technology.
  */
 typedef enum
 {
-     /*! \brief Invalid interface technology type
+    /*! \brief Invalid interface technology type
      *
      * Use this value for the initialization of variables of type peak_interface_technology.
      */
-    peak_interface_technology_INVALID = 0,
+    PEAK_INTERFACE_TECHNOLOGY_INVALID = 0x0,
+
     /*! \brief GigE vision interface technology */
-    peak_interface_technology_GEV,
+    PEAK_INTERFACE_TECHNOLOGY_GEV = 0x1,
+
     /*! \brief USB3 vision interface technology */
-    peak_interface_technology_U3V,
+    PEAK_INTERFACE_TECHNOLOGY_U3V = 0x2,
+
     /*! \brief uEye interface technology */
-    peak_interface_technology_UEYE
+    PEAK_INTERFACE_TECHNOLOGY_UEYE = 0x3,
+ 
+    PEAK_DEPRECATED_MSG(peak_interface_technology_INVALID, "Use PEAK_INTERFACE_TECHNOLOGY_INVALID instead") = 0x0,
+    PEAK_DEPRECATED_MSG(peak_interface_technology_GEV, "Use PEAK_INTERFACE_TECHNOLOGY_GEV instead") = 0x1,
+    PEAK_DEPRECATED_MSG(peak_interface_technology_U3V, "Use PEAK_INTERFACE_TECHNOLOGY_U3V instead") = 0x2,
+    PEAK_DEPRECATED_MSG(peak_interface_technology_UEYE, "Use PEAK_INTERFACE_TECHNOLOGY_UEYE instead") = 0x3,
 } peak_interface_technology;
 
 
 /*!
  * \ingroup library
- * \brief Init the peak comfortC library
+ * \brief Init the IDS peak comfortC library
  *
  * Initializes the internal library status.
  *
@@ -1310,12 +1343,14 @@ typedef enum
  *
  * \return #PEAK_STATUS_SUCCESS Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ERROR   An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Library_Init();
 
 /*!
  * \ingroup library
- * \brief Exit the peak comfortC library
+ * \brief Exit the IDS peak comfortC library
  *
  * Deinitializes the internal library status.
  *
@@ -1327,6 +1362,8 @@ PEAK_API_STATUS peak_Library_Init();
  * \return #PEAK_STATUS_SUCCESS         Operation was successful; no error occurred.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Library_Exit();
 
@@ -1346,6 +1383,8 @@ PEAK_API_STATUS peak_Library_Exit();
 * \return #PEAK_STATUS_SUCCESS  Operation was successful; no error occurred.
 *
 * \note This function can be used even if the library is not initialized.
+*
+* \since 1.0
 */
 PEAK_API_STATUS peak_Library_GetVersion(uint32_t* majorVersion, uint32_t* minorVersion, uint32_t* subminorVersion,
     uint32_t* patchVersion);
@@ -1389,6 +1428,8 @@ PEAK_API_STATUS peak_Library_GetVersion(uint32_t* majorVersion, uint32_t* minorV
  *
  * \note This function can be used even if the library is not initialized.
  *       This is useful in the case that #peak_Library_Init fails.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Library_GetLastError(peak_status* lastErrorCode, char* lastErrorMessage,
     size_t* lastErrorMessageSize);
@@ -1408,6 +1449,8 @@ PEAK_API_STATUS peak_Library_GetLastError(peak_status* lastErrorCode, char* last
 *
 * \return #PEAK_TRUE   The interface technology is supported.
 * \return #PEAK_FALSE  The interface technology is not supported.
+*
+* \since 1.6
 */
 PEAK_API_BOOL peak_Library_InterfaceTechnology_IsSupported(peak_interface_technology interfaceTech);
 
@@ -1558,7 +1601,7 @@ typedef struct
  * Sets the reconnect active or inactive.
  * \code{.c}
  * // enable reconnect for the interface technology GEV
- * const PEAK_API_BOOL isEnabled = peak_Reconnect_IsEnabled(peak_interface_technology_GEV);
+ * const PEAK_API_BOOL isEnabled = peak_Reconnect_IsEnabled(PEAK_INTERFACE_TECHNOLOGY_GEV);
  * \endcode
  *
  * \param[in] interfaceTech interface technology to which the setting refers.
@@ -1570,6 +1613,8 @@ typedef struct
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p interfaceTech is an invalid interface technology.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_Reconnect_Enable(peak_interface_technology interfaceTech, peak_bool enabled);
 
@@ -1579,13 +1624,15 @@ PEAK_API_STATUS peak_Reconnect_Enable(peak_interface_technology interfaceTech, p
  *
  * \code{.c}
  * // check if the reconnect is active for the GEV interface technology
- * const PEAK_API_BOOL isEnabled = peak_Reconnect_IsEnabled(peak_interface_technology_GEV);
+ * const PEAK_API_BOOL isEnabled = peak_Reconnect_IsEnabled(PEAK_INTERFACE_TECHNOLOGY_GEV);
  * \endcode
  *
  * \param[in] interfaceTech interface technology to which the setting refers.
  *
  * \return #PEAK_TRUE   The reconnect feature is currently enabled.
  * \return #PEAK_FALSE  The reconnect feature is currently disabled or the query failed.
+ *
+ * \since 1.6
  */
 PEAK_API_BOOL peak_Reconnect_IsEnabled(peak_interface_technology interfaceTech);
 
@@ -1595,7 +1642,7 @@ PEAK_API_BOOL peak_Reconnect_IsEnabled(peak_interface_technology interfaceTech);
  *
  * \code
  * // retrieve the access status for the GEV interface technology
- * const PEAK_API_ACCESS_STATUS access_status = peak_Reconnect_GetAccessStatus(peak_interface_technology_GEV);
+ * const PEAK_API_ACCESS_STATUS access_status = peak_Reconnect_GetAccessStatus(PEAK_INTERFACE_TECHNOLOGY_GEV);
  * if (PEAK_IS_READABLE(access_status)) {
  *    ...
  * }
@@ -1617,6 +1664,8 @@ PEAK_API_BOOL peak_Reconnect_IsEnabled(peak_interface_technology interfaceTech);
  * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_ACCESS_STATUS peak_Reconnect_GetAccessStatus(peak_interface_technology interfaceTech);
 
@@ -1638,6 +1687,8 @@ PEAK_API_ACCESS_STATUS peak_Reconnect_GetAccessStatus(peak_interface_technology 
  * \note Depending on the installed transport layers the camera list may take some hundred milliseconds.
  *       This is because the discovery of cameras via so called connectionless network protocols like ethernet requires
  *       a timeout controlled procedure.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraList_Update(size_t* cameraCount);
 
@@ -1671,6 +1722,8 @@ PEAK_API_STATUS peak_CameraList_Update(size_t* cameraCount);
  *       in the time between the two function calls.
  *       To eliminate this issue you may want to use an array for \p cameraList which is large enough to hold
  *       all possibly connected cameras and to spare the size query call.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraList_Get(peak_camera_descriptor* cameraList, size_t* cameraCount);
 
@@ -1692,6 +1745,8 @@ PEAK_API_STATUS peak_CameraList_Get(peak_camera_descriptor* cameraList, size_t* 
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_CAMERA_ID peak_Camera_ID_FromHandle(peak_camera_handle hCam);
 
@@ -1714,6 +1769,8 @@ PEAK_API_CAMERA_ID peak_Camera_ID_FromHandle(peak_camera_handle hCam);
  * \li #PEAK_STATUS_INVALID_PARAMETER   \p serialNumber is an invalid pointer or it is not zero-terminated.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_CAMERA_ID peak_Camera_ID_FromSerialNumber(const char* serialNumber);
 
@@ -1738,6 +1795,8 @@ PEAK_API_CAMERA_ID peak_Camera_ID_FromSerialNumber(const char* serialNumber);
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * \note The user defined name is not unique. The function returns the camera id of the first matching camera.
+ *
+ * \since 1.3
  */
 PEAK_API_CAMERA_ID peak_Camera_ID_FromUserDefinedName(const char* userDefinedName);
 
@@ -1791,6 +1850,8 @@ typedef union
  * \li #PEAK_STATUS_CAMERA_NOT_FOUND    There is no camera with the specified mac address.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_CAMERA_ID peak_Camera_ID_FromMAC(peak_mac_address macAddress);
 
@@ -1813,6 +1874,8 @@ PEAK_API_CAMERA_ID peak_Camera_ID_FromMAC(peak_mac_address macAddress);
  * \li #PEAK_STATUS_CAMERA_NOT_FOUND    There is no camera with the specified ID.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Camera_GetAccessStatus(peak_camera_id cameraID);
 
@@ -1830,6 +1893,8 @@ PEAK_API_ACCESS_STATUS peak_Camera_GetAccessStatus(peak_camera_id cameraID);
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p cameraDescriptor an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Camera_GetDescriptor(peak_camera_id cameraID, peak_camera_descriptor* cameraDescriptor);
 
@@ -1850,6 +1915,8 @@ PEAK_API_STATUS peak_Camera_GetDescriptor(peak_camera_id cameraID, peak_camera_d
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
  *
  * \note If the function fails it will set * \p hCam to #PEAK_STATUS_INVALID_HANDLE.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Camera_Open(peak_camera_id cameraID, peak_camera_handle* hCam);
 
@@ -1869,6 +1936,8 @@ PEAK_API_STATUS peak_Camera_Open(peak_camera_id cameraID, peak_camera_handle* hC
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
  *
  * \note If the function fails it will set * \p hCam to #PEAK_STATUS_INVALID_HANDLE.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Camera_OpenFirstAvailable(peak_camera_handle* hCam);
 
@@ -1886,6 +1955,8 @@ PEAK_API_STATUS peak_Camera_OpenFirstAvailable(peak_camera_handle* hCam);
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
  *
  * \note The camera handle is no longer valid after the function has returned.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Camera_Close(peak_camera_handle hCam);
 
@@ -1902,6 +1973,8 @@ PEAK_API_STATUS peak_Camera_Close(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Camera_ResetToDefaultSettings(peak_camera_handle hCam);
 
@@ -1932,6 +2005,8 @@ PEAK_API_STATUS peak_Camera_ResetToDefaultSettings(peak_camera_handle hCam);
  *           including the terminating 0.
  *       \li For #PEAK_CAMERA_TYPE_UEYE_USB and #PEAK_CAMERA_TYPE_UEYE_ETH the function accepts numeric strings only,
  *           where the numeric value is in the range (1,254).
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_Camera_UserDefinedName_Set(peak_camera_handle hCam, const char* userDefinedName);
 
@@ -1965,6 +2040,8 @@ PEAK_API_STATUS peak_Camera_UserDefinedName_Set(peak_camera_handle hCam, const c
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * \note For #PEAK_CAMERA_TYPE_UEYE_PLUS_U3V non-ASCII characters may be shown as _.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_Camera_UserDefinedName_Get(peak_camera_handle hCam, char* userDefinedName,
     size_t* userDefinedNameSize);
@@ -1981,6 +2058,8 @@ PEAK_API_STATUS peak_Camera_UserDefinedName_Get(peak_camera_handle hCam, char* u
  *
  * \return #PEAK_TRUE   The device is currently connected.
  * \return #PEAK_FALSE  The device is currently not connected.
+ *
+ * \since 1.6
  */
 PEAK_API_BOOL peak_Camera_IsConnected(peak_camera_handle hCam);
 
@@ -1997,6 +2076,8 @@ PEAK_API_BOOL peak_Camera_IsConnected(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_Camera_Reboot(peak_camera_handle hCam);
 
@@ -2157,6 +2238,8 @@ typedef struct
  * \li #PEAK_STATUS_CAMERA_NOT_FOUND    There is no camera with the specified camera id.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_EthernetConfig_GetAccessStatus(peak_camera_id cameraID);
 
@@ -2176,6 +2259,8 @@ PEAK_API_ACCESS_STATUS peak_EthernetConfig_GetAccessStatus(peak_camera_id camera
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p ethernetInfo is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_EthernetConfig_GetInfo(peak_camera_id cameraID, peak_ethernet_info* ethernetInfo);
 
@@ -2206,6 +2291,8 @@ PEAK_API_STATUS peak_EthernetConfig_GetInfo(peak_camera_id cameraID, peak_ethern
  * \li #PEAK_STATUS_CAMERA_NOT_FOUND    There is no camera with the specified camera id.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_EthernetConfig_DHCP_GetAccessStatus(peak_camera_id cameraID);
 
@@ -2239,6 +2326,8 @@ PEAK_API_ACCESS_STATUS peak_EthernetConfig_DHCP_GetAccessStatus(peak_camera_id c
  *       change. \n
  *       Use #peak_CameraList_Update() to initiate an update of the camera list. \n
  *       Consider that the camera may need some time to re-connect to the ethernet.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_EthernetConfig_DHCP_Enable(peak_camera_id cameraID, peak_bool enabled);
 
@@ -2254,6 +2343,8 @@ PEAK_API_STATUS peak_EthernetConfig_DHCP_Enable(peak_camera_id cameraID, peak_bo
  *
  * \return #PEAK_TRUE   The dhcp feature is currently enabled.
  * \return #PEAK_FALSE  The dhcp feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_EthernetConfig_DHCP_IsEnabled(peak_camera_id cameraID);
 
@@ -2287,6 +2378,8 @@ PEAK_API_BOOL peak_EthernetConfig_DHCP_IsEnabled(peak_camera_id cameraID);
  * \li #PEAK_STATUS_CAMERA_NOT_FOUND    There is no camera with the specified camera id.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_EthernetConfig_PersistentIP_GetAccessStatus(peak_camera_id cameraID);
 
@@ -2314,6 +2407,8 @@ PEAK_API_ACCESS_STATUS peak_EthernetConfig_PersistentIP_GetAccessStatus(peak_cam
  *       ip change. \n
  *       Use #peak_CameraList_Update() to initiate an update of the camera list. \n
  *       Consider that the camera may need some time to re-connect to the ethernet.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_EthernetConfig_PersistentIP_Set(peak_camera_id cameraID, peak_ip_config persistentIP);
 
@@ -2334,6 +2429,8 @@ PEAK_API_STATUS peak_EthernetConfig_PersistentIP_Set(peak_camera_id cameraID, pe
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p persistentIP is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_EthernetConfig_PersistentIP_Get(peak_camera_id cameraID, peak_ip_config* persistentIP);
 
@@ -2448,6 +2545,8 @@ typedef struct
  * \note If you decide upon \ref concept_manual_buffer_preparation make sure that all buffers are
  *       allocated and announced before you call peak_Acquisition_Start.
  *       The buffer memory must be valid for the time the acquisition runs.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Start(peak_camera_handle hCam, uint32_t numberOfFrames);
 
@@ -2472,6 +2571,8 @@ PEAK_API_STATUS peak_Acquisition_Start(peak_camera_handle hCam, uint32_t numberO
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
  *
  * \note This function will return #PEAK_STATUS_SUCCESS if there is no running acquisition.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Stop(peak_camera_handle hCam);
 
@@ -2489,6 +2590,8 @@ PEAK_API_STATUS peak_Acquisition_Stop(peak_camera_handle hCam);
  *
  * \return #PEAK_TRUE   The acquisition is currently started.
  * \return #PEAK_FALSE  The acquisition is currently not started or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Acquisition_IsStarted(peak_camera_handle hCam);
 
@@ -2525,6 +2628,8 @@ PEAK_API_BOOL peak_Acquisition_IsStarted(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_WaitForFrame(peak_camera_handle hCam, uint32_t timeout_ms, peak_frame_handle* hFrame);
 
@@ -2544,6 +2649,8 @@ PEAK_API_STATUS peak_Acquisition_WaitForFrame(peak_camera_handle hCam, uint32_t 
  * \return #PEAK_STATUS_ACCESS_DENIED       There has been no acquisition session yet.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_GetInfo(peak_camera_handle hCam, peak_acquisition_info* acquisitionInfo);
 
@@ -2562,6 +2669,8 @@ PEAK_API_STATUS peak_Acquisition_GetInfo(peak_camera_handle hCam, peak_acquisiti
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p requiredBufferSize is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Buffer_GetRequiredSize(peak_camera_handle hCam, size_t* requiredBufferSize);
 
@@ -2579,6 +2688,8 @@ PEAK_API_STATUS peak_Acquisition_Buffer_GetRequiredSize(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p requiredBufferCount is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Buffer_GetRequiredCount(peak_camera_handle hCam, size_t* requiredBufferCount);
 
@@ -2615,6 +2726,8 @@ PEAK_API_STATUS peak_Acquisition_Buffer_GetRequiredCount(peak_camera_handle hCam
  *       of buffers can be queried via #peak_Acquisition_Buffer_GetRequiredCount.
  * \note The client application is responsible for the deallocation of the announced memory. The memory must be valid
  *       until #peak_Acquisition_Buffer_Revoke is called for the related memory address.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Buffer_Announce(peak_camera_handle hCam, uint8_t* memoryAddress, size_t memorySize,
     void* userContext);
@@ -2640,6 +2753,8 @@ PEAK_API_STATUS peak_Acquisition_Buffer_Announce(peak_camera_handle hCam, uint8_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Buffer_Revoke(peak_camera_handle hCam, uint8_t* memoryAddress);
 
@@ -2661,6 +2776,8 @@ PEAK_API_STATUS peak_Acquisition_Buffer_Revoke(peak_camera_handle hCam, uint8_t*
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Acquisition_Buffer_RevokeAll(peak_camera_handle hCam);
 
@@ -2756,6 +2873,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_Acquisition_BufferHandling_Mode_GetAccessStatus(peak_camera_handle hCam);
 
@@ -2791,6 +2910,8 @@ PEAK_API_ACCESS_STATUS peak_Acquisition_BufferHandling_Mode_GetAccessStatus(peak
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_BufferHandling_Mode_GetList(peak_camera_handle hCam, peak_buffer_handling_mode* bufferHandlingModeList, size_t* bufferHandlingModesCount);
 
@@ -2813,6 +2934,8 @@ PEAK_API_STATUS peak_Acquisition_BufferHandling_Mode_GetList(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_BufferHandling_Mode_Set(peak_camera_handle hCam, peak_buffer_handling_mode mode);
 
@@ -2833,6 +2956,8 @@ PEAK_API_STATUS peak_Acquisition_BufferHandling_Mode_Set(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_BufferHandling_Mode_Get(peak_camera_handle hCam, peak_buffer_handling_mode* mode);
 
@@ -2895,6 +3020,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_Mode_GetAccessStatus(peak_camera_handle hCam);
 
@@ -2930,6 +3057,8 @@ PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_Mode_GetAccessStatus(peak_c
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_Mode_GetList(peak_camera_handle hCam, peak_loss_handling_mode* lossHandlingModeList, size_t* lossHandlingModesCount);
 
@@ -2950,6 +3079,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_Mode_GetList(peak_camera_handle hC
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_Mode_Set(peak_camera_handle hCam, peak_loss_handling_mode mode);
 
@@ -2970,6 +3101,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_Mode_Set(peak_camera_handle hCam, 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_Mode_Get(peak_camera_handle hCam, peak_loss_handling_mode* mode);
 
@@ -2996,6 +3129,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_Mode_Get(peak_camera_handle hCam, 
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_Extent_GetAccessStatus(peak_camera_handle hCam);
 
@@ -3018,6 +3153,8 @@ PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_Extent_GetAccessStatus(peak
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_Extent_GetRange(peak_camera_handle hCam, int64_t* minExtent, int64_t* maxExtent, int64_t* incExtent);
 
@@ -3038,6 +3175,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_Extent_GetRange(peak_camera_handle
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_Extent_Set(peak_camera_handle hCam, int64_t extent);
 
@@ -3060,6 +3199,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_Extent_Set(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_Extent_Get(peak_camera_handle hCam, int64_t* extent);
 
@@ -3086,6 +3227,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_Extent_Get(peak_camera_handle hCam
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccessStatus(peak_camera_handle hCam);
 
@@ -3107,6 +3250,8 @@ PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_GetAccess
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange(peak_camera_handle hCam, int64_t* minTimeout, int64_t* maxTimeout, int64_t* incTimeout);
 
@@ -3127,6 +3272,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_GetRange(peak_ca
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_Set(peak_camera_handle hCam, int64_t timeout);
 
@@ -3147,6 +3294,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_Set(peak_camera_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_Get(peak_camera_handle hCam, int64_t* timeout);
 
@@ -3173,6 +3322,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_FrameAbortTimeout_Get(peak_camera_
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_GetAccessStatus(peak_camera_handle hCam);
 
@@ -3197,6 +3348,8 @@ PEAK_API_ACCESS_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_GetAcc
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange(peak_camera_handle hCam, int64_t* minTimeout,
      int64_t* maxTimeout, int64_t* incTimeout);
@@ -3220,6 +3373,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_GetRange(peak
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_Set(peak_camera_handle hCam, int64_t timeout);
 
@@ -3240,6 +3395,8 @@ PEAK_API_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_Set(peak_came
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Acquisition_LossHandling_ResendRequestTimeout_Get(peak_camera_handle hCam, int64_t* timeout);
 
@@ -3501,6 +3658,8 @@ typedef struct
  *                                          Check #peak_pixel_format.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelFormat_GetInfo(peak_pixel_format pixelFormat, peak_pixel_format_info* pixelFormatInfo);
 
@@ -3523,6 +3682,8 @@ PEAK_API_STATUS peak_PixelFormat_GetInfo(peak_pixel_format pixelFormat, peak_pix
  * \note The frame handle is no longer valid after the function has returned.
  * \note #peak_Acquisition_Start will be rejected as long as there are unreleased frame handles for frames that were
  *       received from #peak_Acquisition_WaitForFrame.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_Release(peak_camera_handle hCam, peak_frame_handle hFrame);
 
@@ -3632,6 +3793,8 @@ typedef struct
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_GetInfo(peak_frame_handle hFrame, peak_frame_info* frameInfo);
 
@@ -3649,6 +3812,8 @@ PEAK_API_STATUS peak_Frame_GetInfo(peak_frame_handle hFrame, peak_frame_info* fr
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_Type_Get(peak_frame_handle hFrame, peak_frame_type* frameType);
 
@@ -3666,6 +3831,8 @@ PEAK_API_STATUS peak_Frame_Type_Get(peak_frame_handle hFrame, peak_frame_type* f
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_Buffer_Get(peak_frame_handle hFrame, peak_buffer* buffer);
 
@@ -3683,6 +3850,8 @@ PEAK_API_STATUS peak_Frame_Buffer_Get(peak_frame_handle hFrame, peak_buffer* buf
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_ID_Get(peak_frame_handle hFrame, uint64_t* frameID);
 
@@ -3700,6 +3869,8 @@ PEAK_API_STATUS peak_Frame_ID_Get(peak_frame_handle hFrame, uint64_t* frameID);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_Timestamp_Get(peak_frame_handle hFrame, uint64_t* timestamp_ns);
 
@@ -3717,6 +3888,8 @@ PEAK_API_STATUS peak_Frame_Timestamp_Get(peak_frame_handle hFrame, uint64_t* tim
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_ROI_Get(peak_frame_handle hFrame, peak_roi* roi);
 
@@ -3734,6 +3907,8 @@ PEAK_API_STATUS peak_Frame_ROI_Get(peak_frame_handle hFrame, peak_roi* roi);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_PixelFormat_Get(peak_frame_handle hFrame, peak_pixel_format* pixelFormat);
 
@@ -3750,6 +3925,8 @@ PEAK_API_STATUS peak_Frame_PixelFormat_Get(peak_frame_handle hFrame, peak_pixel_
  *
  * \return #PEAK_TRUE   The frame is complete.
  * \return #PEAK_FALSE  The frame is incomplete or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Frame_IsComplete(peak_frame_handle hFrame);
 
@@ -3767,6 +3944,8 @@ PEAK_API_BOOL peak_Frame_IsComplete(peak_frame_handle hFrame);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_BytesExpected_Get(peak_frame_handle hFrame, size_t* bytesExpected);
 
@@ -3784,6 +3963,8 @@ PEAK_API_STATUS peak_Frame_BytesExpected_Get(peak_frame_handle hFrame, size_t* b
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_BytesWritten_Get(peak_frame_handle hFrame, size_t* bytesWritten);
 
@@ -3801,6 +3982,8 @@ PEAK_API_STATUS peak_Frame_BytesWritten_Get(peak_frame_handle hFrame, size_t* by
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Frame_ProcessingTime_Get(peak_frame_handle hFrame, uint32_t* processingTime_ms);
 
@@ -3809,25 +3992,53 @@ PEAK_API_STATUS peak_Frame_ProcessingTime_Get(peak_frame_handle hFrame, uint32_t
  * \brief Write the frame as image to the file system
  *
  * Saves the provided frame to the specified file path. The file extension specifies the image file format
- * that is used to save the image. Default values are used for compression and quality settings.
+ * that is used to save the image. 
+ * 
+ * The supported file formats with corresponding non case sensitive file extensions:
+ * \li \ref imagewriter_png "PNG" (.png)
+ * \li \ref imagewriter_bitmap "BMP" (.bmp)
+ * \li \ref imagewriter_jpeg "JPEG" (.jpg, .jpeg)
+ * \li \ref imagewriter_tiff "TIFF" (.tif, .tiff)
+ * \li \ref imagewriter_raw "RAW" (.raw)
+ * 
+ * Default values are used for compression and quality settings.
  * \code{.c}
  *    // acquire an image
  *    peak_Acquisition_WaitForFrame(hCam, 5000, &hFrame);
  *    // saves the frame as jpeg file
  *    peak_Frame_Save(hFrame, "out.jpeg");
  * \endcode
- * \note For more configuration options and restrictions see \ref imagewriter
+ * \note The function uses the \ref imagewriter internally. For more configuration options and restrictions regarding file or pixel formats see \ref imagewriter.
  *
  * \param[in] hFrame                A camera frame handle
  * \param[in] fileName              The desired file path and file name to save the image.
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
- * \return #PEAK_STATUS_INVALID_PARAMETER   \p fileName is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p fileName is an invalid pointer or invalid file extension.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_IO                  Errors during file access e.g. no permissions on this file.
+ * \return #PEAK_STATUS_NOT_SUPPORTED       The file format is not supported for this image pixel format.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Frame_Save(peak_frame_handle hFrame, const char* fileName);
+
+/*!
+ * \ingroup frame_info
+ * \brief Check whether the frame has chunk data
+ *
+ * If true, it can be processed by the \ref chunks feature.
+ *
+ * \param[in] hFrame The frame handle.
+ *
+ * \return #PEAK_TRUE   The frame has chunk data.
+ * \return #PEAK_FALSE  The frame has no chunk data or the query failed.
+ *
+ * \since 1.13
+ */
+PEAK_API_BOOL peak_Frame_HasChunks(peak_frame_handle hFrame);
 
 /*!
  * \ingroup camera_settings
@@ -3912,6 +4123,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_CameraSettings_ParameterSet_GetAccessStatus(peak_camera_handle hCam,
     peak_parameter_set parameterSet);
@@ -3953,6 +4166,8 @@ PEAK_API_ACCESS_STATUS peak_CameraSettings_ParameterSet_GetAccessStatus(peak_cam
  *       list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_ParameterSet_GetList(peak_camera_handle hCam, peak_parameter_set* parameterSetList,
     size_t* parameterSetCount);
@@ -3979,6 +4194,8 @@ PEAK_API_STATUS peak_CameraSettings_ParameterSet_GetList(peak_camera_handle hCam
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * \note In general only the user-definable parameter sets can be stored.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_ParameterSet_Store(peak_camera_handle hCam, peak_parameter_set parameterSet);
 
@@ -4002,6 +4219,8 @@ PEAK_API_STATUS peak_CameraSettings_ParameterSet_Store(peak_camera_handle hCam, 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_ParameterSet_Apply(peak_camera_handle hCam, peak_parameter_set parameterSet);
 
@@ -4028,6 +4247,8 @@ PEAK_API_STATUS peak_CameraSettings_ParameterSet_Apply(peak_camera_handle hCam, 
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_CameraSettings_ParameterSet_Startup_GetAccessStatus(peak_camera_handle hCam);
 
@@ -4054,6 +4275,8 @@ PEAK_API_ACCESS_STATUS peak_CameraSettings_ParameterSet_Startup_GetAccessStatus(
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_ParameterSet_Startup_Set(peak_camera_handle hCam, peak_parameter_set parameterSet);
 
@@ -4074,6 +4297,8 @@ PEAK_API_STATUS peak_CameraSettings_ParameterSet_Startup_Set(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_ParameterSet_Startup_Get(peak_camera_handle hCam, peak_parameter_set* parameterSet);
 
@@ -4101,6 +4326,8 @@ PEAK_API_STATUS peak_CameraSettings_ParameterSet_Startup_Get(peak_camera_handle 
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_CameraSettings_DiskFile_GetAccessStatus(peak_camera_handle hCam);
 
@@ -4125,6 +4352,8 @@ PEAK_API_ACCESS_STATUS peak_CameraSettings_DiskFile_GetAccessStatus(peak_camera_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_DiskFile_Store(peak_camera_handle hCam, const char* file);
 
@@ -4149,6 +4378,8 @@ PEAK_API_STATUS peak_CameraSettings_DiskFile_Store(peak_camera_handle hCam, cons
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_CameraSettings_DiskFile_Apply(peak_camera_handle hCam, const char* file);
 
@@ -4175,6 +4406,8 @@ PEAK_API_STATUS peak_CameraSettings_DiskFile_Apply(peak_camera_handle hCam, cons
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_FrameRate_GetAccessStatus(peak_camera_handle hCam);
 
@@ -4199,6 +4432,8 @@ PEAK_API_ACCESS_STATUS peak_FrameRate_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_FrameRate_GetRange(peak_camera_handle hCam, double* minFrameRate_fps, double* maxFrameRate_fps,
     double* incFrameRate_fps);
@@ -4220,6 +4455,8 @@ PEAK_API_STATUS peak_FrameRate_GetRange(peak_camera_handle hCam, double* minFram
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_FrameRate_Set(peak_camera_handle hCam, double frameRate_fps);
 
@@ -4239,6 +4476,8 @@ PEAK_API_STATUS peak_FrameRate_Set(peak_camera_handle hCam, double frameRate_fps
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_FrameRate_Get(peak_camera_handle hCam, double* frameRate_fps);
 
@@ -4265,6 +4504,8 @@ PEAK_API_STATUS peak_FrameRate_Get(peak_camera_handle hCam, double* frameRate_fp
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_ExposureTime_GetAccessStatus(peak_camera_handle hCam);
 
@@ -4289,6 +4530,8 @@ PEAK_API_ACCESS_STATUS peak_ExposureTime_GetAccessStatus(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ExposureTime_GetRange(peak_camera_handle hCam, double* minExposureTime_us,
     double* maxExposureTime_us, double* incExposureTime_us);
@@ -4310,6 +4553,8 @@ PEAK_API_STATUS peak_ExposureTime_GetRange(peak_camera_handle hCam, double* minE
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ExposureTime_Set(peak_camera_handle hCam, double exposureTime_us);
 
@@ -4329,8 +4574,162 @@ PEAK_API_STATUS peak_ExposureTime_Set(peak_camera_handle hCam, double exposureTi
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ExposureTime_Get(peak_camera_handle hCam, double* exposureTime_us);
+
+/*!
+ * \ingroup shuttermode
+ * \brief Query the shutter mode access status
+ *
+ * Provides the current access status for the shutter mode.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The shutter mode is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The shutter mode is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The shutter mode is not accessible because the GFA write access is enabled.
+ * \return #PEAK_ACCESS_NONE            The shutter mode is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The shutter mode is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                              Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_ACCESS_STATUS peak_ShutterMode_GetAccessStatus(peak_camera_handle hCam);
+
+/*! \brief
+ *
+ * \ingroup shuttermode
+ *
+ * \since 1.13
+ */
+typedef enum
+{
+    /*! \brief Unknown shutter mode
+     *
+     * Use this value for the initialization of variables of type peak_shutter_mode.
+     */
+    PEAK_SHUTTER_MODE_UNKNOWN        = 0,
+
+    /*! \brief Rolling Shutter
+     *
+     * The shutter opens and closes sequentially for the pixels.
+     * All pixels have the same exposure time but the exposure of the pixel lines starts sequentially.
+     */
+    PEAK_SHUTTER_MODE_ROLLING        = 0x1,
+
+    /*! \brief Global Shutter
+     *
+     * The shutter opens and closes at the same time for all pixels.
+     * All pixels have the same exposure time and the exposure of all pixels starts simultaneously.
+     */
+    PEAK_SHUTTER_MODE_GLOBAL         = 0x2,
+
+    /*! \brief Global Reset
+     *
+     * The shutter opens at the same time for all pixels but ends in a sequential manner.
+     * Each pixel line has a different exposure time but the exposure of all pixels starts simultaneously.
+     *
+     * \note The availability of this entry may depend on the [trigger mode](\ref trigger).
+     */
+    PEAK_SHUTTER_MODE_GLOBAL_RESET   = 0x3,
+
+} peak_shutter_mode;
+
+/*!
+ * \ingroup shuttermode
+ * \brief Get the list of currently available shutter modes
+ *
+ * Queries the list of currently available shutter modes.
+ *
+ * The list of available shutter modes may depend on the camera configuration and the camera status.
+ *
+ * \note The available entries may depend on the [trigger mode](\ref trigger).
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[out] shutterModeList      Pointer to a user allocated array buffer to receive the shutter mode list.
+ *                                  If this parameter is NULL, \p shutterModeCount will contain the current
+ *                                  number of shutter modes. \n
+ *                                  The required size of \p shutterModeList in bytes is
+ *                                  \p shutterModeCount x sizeof(peak_shutter_mode).
+ * \param[in,out] shutterModeCount  \li \p shutterModeList equal NULL: \n
+ *                                      out: minimal number of shutter modes. \p shutterModeList must be
+ *                                           large enough to hold \n
+ *                                  \li \p shutterModeList unequal NULL: \n
+ *                                      in: number of shutter modes \p shutterModeList can hold \n
+ *                                      out: number of shutter modes filled by the function
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p shutterModeList is not NULL and the value of \p *shutterModeCount is
+ *                                                  too small to receive the expected amount of data.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The shutter mode feature is not accessible.
+ *                                                  Check the access status via #peak_ShutterMode_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p shutterModeCount is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \note Consider that the shutter mode list might change between the size query call and the list query call. \n
+ *       This may be the case if the camera configuration or the camera status have changed in the time between
+ *       the two function calls.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_ShutterMode_GetList(peak_camera_handle hCam, peak_shutter_mode* shutterModeList, size_t* shutterModeCount);
+
+/*!
+ * \ingroup shuttermode
+ * \brief Set the shutter mode
+ *
+ * Writes the desired shutter mode.
+ *
+ * \param[in] hCam              The camera handle.
+ * \param[in] shutterMode       The shutter mode to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p shutterMode is out of range.
+ *                                                  Check the available shutter modes via #peak_ShutterMode_GetList.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The shutter mode control is not available for write access.
+ *                                                  Check the access status via #peak_ShutterMode_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_ShutterMode_Set(peak_camera_handle hCam, peak_shutter_mode shutterMode);
+
+/*!
+ * \ingroup shuttermode
+ * \brief Get the shutter mode
+ *
+ * Reads the current shutter mode.
+ *
+ * \param[in] hCam           The camera handle.
+ * \param[out] shutterMode   The shutter mode.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The shutter mode control is not available for read access.
+ *                                                  Check the access status via #peak_ShutterMode_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p shutterMode is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_ShutterMode_Get(peak_camera_handle hCam, peak_shutter_mode* shutterMode);
 
 /*!
  * \ingroup pixelclock
@@ -4355,6 +4754,8 @@ PEAK_API_STATUS peak_ExposureTime_Get(peak_camera_handle hCam, double* exposureT
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_PixelClock_GetAccessStatus(peak_camera_handle hCam);
 
@@ -4370,6 +4771,8 @@ PEAK_API_ACCESS_STATUS peak_PixelClock_GetAccessStatus(peak_camera_handle hCam);
  *
  * \return #PEAK_TRUE   The valid values are organized as a range. Use #peak_PixelClock_GetRange.
  * \return #PEAK_FALSE  The valid values are organized as a list. Use #peak_PixelClock_GetList.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_PixelClock_HasRange(peak_camera_handle hCam);
 
@@ -4397,6 +4800,8 @@ PEAK_API_BOOL peak_PixelClock_HasRange(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelClock_GetRange(peak_camera_handle hCam, double* minPixelClock_MHz, double* maxPixelClock_MHz,
     double* incPixelClock_MHz);
@@ -4414,9 +4819,9 @@ PEAK_API_STATUS peak_PixelClock_GetRange(peak_camera_handle hCam, double* minPix
  * \param[in] hCam                  The camera handle.
  * \param[out] pixelClockList       Pointer to a user allocated array buffer to receive the pixel clock list.
  *                                  If this parameter is NULL, \p pixelClockCount will contain the current
- *                                  number of pixel formats. \n
+ *                                  number of pixel clock values. \n
  *                                  The required size of \p pixelClockList in bytes is
- *                                  \p pixelClockCount x sizeof(uint32_t).
+ *                                  \p pixelClockCount x sizeof(double).
  * \param[in,out] pixelClockCount   \li \p pixelClockList equal NULL: \n
  *                                      out: minimal number of pixel clocks \p pixelClockList must be
  *                                           large enough to hold \n
@@ -4440,6 +4845,8 @@ PEAK_API_STATUS peak_PixelClock_GetRange(peak_camera_handle hCam, double* minPix
  * \note Consider that the pixel clock list might change between the size query call and the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelClock_GetList(peak_camera_handle hCam, double* pixelClockList, size_t* pixelClockCount);
 
@@ -4462,6 +4869,8 @@ PEAK_API_STATUS peak_PixelClock_GetList(peak_camera_handle hCam, double* pixelCl
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelClock_Set(peak_camera_handle hCam, double pixelClock_MHz);
 
@@ -4481,6 +4890,8 @@ PEAK_API_STATUS peak_PixelClock_Set(peak_camera_handle hCam, double pixelClock_M
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelClock_Get(peak_camera_handle hCam, double* pixelClock_MHz);
 
@@ -4497,7 +4908,7 @@ typedef enum
 {
     /*! \brief Invalid io channel
      *
-     * Use this value for the initialization of variables of type peak_io_channel;.
+     * Use this value for the initialization of variables of type peak_io_channel.
      */
     PEAK_IO_CHANNEL_INVALID         = 0,
 
@@ -4513,29 +4924,97 @@ typedef enum
      */
     PEAK_IO_CHANNEL_SOFTWARE        = 0x1101,
 
-    /*! \brief Trigger input pin
+    /*!
+     * \internal
+     * \brief Trigger input pin
      *
      * The signal or event is initiated by an electrical signal at the cameras trigger connector.
+     * \deprecated Use PEAK_IO_CHANNEL_LINE_0 for CP/SE/FA/ACP/LE/XCP/XLE/XLS etc. instead
      */
-    PEAK_IO_CHANNEL_TRIGGER_INPUT   = 0x2101,
+    PEAK_DEPRECATED_MSG(PEAK_IO_CHANNEL_TRIGGER_INPUT, "Use PEAK_IO_CHANNEL_LINE_0 instead") = 0x2101,
 
-    /*! \brief Flash output pin
+    /*!
+     * \internal
+     * \brief Flash output pin
      *
      * The signal or event is initiated by an electrical signal at the cameras flash connector.
+     * \deprecated Use PEAK_IO_CHANNEL_LINE_1 for CP/SE/FA/ACP/LE/XCP/XLE/XLS etc. instead
      */
-    PEAK_IO_CHANNEL_FLASH_OUTPUT    = 0x2201,
+    PEAK_DEPRECATED_MSG(PEAK_IO_CHANNEL_FLASH_OUTPUT, "Use PEAK_IO_CHANNEL_LINE_1 instead") = 0x2201,
 
-    /*! \brief GPIO 1 pin
+    /*!
+     * \internal
+     * \brief GPIO 1 pin
      *
      * The signal or event is initiated by an electrical signal at the cameras GPIO 1 connector.
+     * \deprecated Use PEAK_IO_CHANNEL_LINE_2 for CP/SE/FA/ACP/LE/XCP/XLE/XLS etc. instead
      */
-    PEAK_IO_CHANNEL_GPIO_1          = 0x6301,
+    PEAK_DEPRECATED_MSG(PEAK_IO_CHANNEL_GPIO_1, "Use PEAK_IO_CHANNEL_LINE_2 instead") = 0x6301,
 
-    /*! \brief GPIO 2 pin
+    /*!
+     * \internal
+     * \brief GPIO 2 pin
      *
      * The signal or event is initiated by an electrical signal at the cameras GPIO 2 connector.
+     * \deprecated Use PEAK_IO_CHANNEL_LINE_3 for CP/SE/FA/ACP/LE/XCP/XLE/XLS etc. instead
      */
-    PEAK_IO_CHANNEL_GPIO_2          = 0x6302
+    PEAK_DEPRECATED_MSG(PEAK_IO_CHANNEL_GPIO_2, "Use PEAK_IO_CHANNEL_LINE_3 instead") = 0x6302,
+
+     /*! \brief Line 0
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 0 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_0          = 0x8000,
+
+    /*! \brief Line 1
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 1 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_1          = 0x8001,
+
+    /*! \brief Line 2
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 2 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_2          = 0x8002,
+
+    /*! \brief Line 3
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 3 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_3          = 0x8003,
+
+    /*! \brief Line 4
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 4 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_4          = 0x8004,
+
+    /*! \brief Line 5
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 5 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_5          = 0x8005,
+
+    /*! \brief Line 6
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 6 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_6          = 0x8006,
+
+    /*! \brief Line 7
+     *
+     * The signal or event is initiated by an electrical signal at the cameras Line 7 connector.
+     * Refer to the camera datasheet for a specific pinout overview.
+     */
+    PEAK_IO_CHANNEL_LINE_7          = 0x8007,
 
 } peak_io_channel;
 
@@ -4556,7 +5035,7 @@ typedef enum
  *                                      but currently used in an enabled trigger/flash configuration.
  * \return #PEAK_ACCESS_GFA_LOCK        The io channel is not accessible because the GFA write access is enabled.
  * \return #PEAK_ACCESS_NOT_SUPPORTED   The io channel is not supported.
- *                                      Check the list of supported io channels via #peak_IOChannel_GetList.
+ *                                      Check the list of supported io channels via #peak_IOChannel_GetListForDirection.
  * \return #PEAK_ACCESS_INVALID         The function failed.
  *                                      Call #peak_Library_GetLastError to get the error code and description.
  *
@@ -4566,10 +5045,54 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_PARAMETER   \p ioChannel is an invalid io channel. Check #peak_io_channel.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_IOChannel_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
 
 /*!
+ * \ingroup io_channel
+ * \brief peak IO channel direction
+ *
+ * The io channel direction specifies the flow of the signal.
+ * An io channel can either be
+ *  - an input channel
+ *  - an output channel
+ *  - a configurable channel, that can be used as input or output
+ *
+ * If configurable, the channel direction is set automatically to input when calling peak_Trigger_Enable,
+ * or to output when calling peak_IOChannel_Level_SetHigh or peak_Flash_Enable.
+ */
+typedef enum
+{
+    /*! \brief Unknown io direction
+     *
+     * Use this value for the initialization of variables of type peak_io_direction.
+     */
+    PEAK_IO_DIRECTION_UNKNOWN        = 0,
+
+    /*! \brief Input
+     *
+     * The io channel is used / usable as input.
+     */
+    PEAK_IO_DIRECTION_INPUT          = 0x1,
+
+    /*! \brief Output
+     *
+     * The io channel is used / usable as output.
+     */
+    PEAK_IO_DIRECTION_OUTPUT         = 0x2,
+
+    /*! \brief Input or Output
+     *
+     * The io channel is used / usable as input and / or output respectively.
+     */
+    PEAK_IO_DIRECTION_ANY            = 0x10
+
+} peak_io_direction;
+
+/*!
+ * \internal
  * \ingroup io_channel
  * \brief Get the list of supported io channels
  *
@@ -4577,7 +5100,50 @@ PEAK_API_ACCESS_STATUS peak_IOChannel_GetAccessStatus(peak_camera_handle hCam, p
  *
  * This function implements the \ref principle_two_stage_query principle.
  *
+ * \deprecated This function is deprecated. Use \p peak_IOChannel_GetListForDirection instead.
+ *
  * \param[in] hCam                  The camera handle.
+ * \param[out] ioChannelList        Pointer to a user allocated array buffer to receive the io channel list.
+ *                                  If this parameter is NULL, \p ioChannelCount will contain the current
+ *                                  number of io channels. \n
+ *                                  The required size of \p ioChannelList in bytes is
+ *                                  \p ioChannelCount x sizeof(#peak_io_channel).
+ * \param[in,out] ioChannelCount    \li \p ioChannelList equal NULL: \n
+ *                                      out: minimal number of io channels \p ioChannelList must be
+ *                                           large enough to hold \n
+ *                                  \li \p ioChannelList unequal NULL: \n
+ *                                      in: number of io channels \p ioChannelList can hold \n
+ *                                      out: number of io channels filled by the function
+ *
+ * \remark This will return a list with the deprecated peak_io_channel enumeration values.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p ioChannelList is not NULL and the value of \p *ioChannelCount is
+ *                                          too small to receive the expected amount of data.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The io channel feature is not supported
+ *                                          or the GFA write access is enabled.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p ioChannelCount is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
+ */
+PEAK_API_STATUS_DEPRECATED("Use peak_IOChannel_GetListForDirection instead")
+    peak_IOChannel_GetList(peak_camera_handle hCam, peak_io_channel* ioChannelList, size_t* ioChannelCount);
+
+/*!
+ * \ingroup io_channel
+ * \brief Get the list of supported io channels for the given direction
+ *
+ * Queries the list of supported io channels for the given direction. If direction is set to PEAK_IO_DIRECTION_ANY,
+ * the list contains all input and output channels. If direction is set to either PEAK_IO_DIRECTION_INPUT or
+ * PEAK_IO_DIRECTION_OUTPUT, the list only contains channels that can be used as input or output.
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[in] direction             The direction.
  * \param[out] ioChannelList        Pointer to a user allocated array buffer to receive the io channel list.
  *                                  If this parameter is NULL, \p ioChannelCount will contain the current
  *                                  number of io channels. \n
@@ -4599,8 +5165,167 @@ PEAK_API_ACCESS_STATUS peak_IOChannel_GetAccessStatus(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
  */
-PEAK_API_STATUS peak_IOChannel_GetList(peak_camera_handle hCam, peak_io_channel* ioChannelList, size_t* ioChannelCount);
+PEAK_API_STATUS peak_IOChannel_GetListForDirection(peak_camera_handle hCam,
+    peak_io_direction direction, peak_io_channel* ioChannelList, size_t* ioChannelCount);
+
+/*!
+ * \ingroup io_channel
+ * \brief Query the io channel direction property access status
+ *
+ * Provides the current access status for the direction property for the specified io channel.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam      The camera handle.
+ * \param[in] ioChannel The io channel.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The direction property is readable and the functions peak_Trigger_Enable,
+ *                                      peak_IOChannel_Level_SetHigh and peak_Flash_Enable can adjust it if necessary.
+ * \return #PEAK_ACCESS_READONLY        The direction property is readable only for the specified io channel.
+ * \return #PEAK_ACCESS_GFA_LOCK        The direction property is not accessible because the GFA write access is enabled.
+ * \return #PEAK_ACCESS_NONE            The direction property is not accessible for the specified io channel.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The direction property is not supported for the specified io channel.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_ACCESS_DENIED       The specified io channel is not accessible.
+ *                                      Check the access status of the io channel via #peak_IOChannel_GetAccessStatus.
+ * \li #PEAK_STATUS_INVALID_PARAMETER   \p ioChannel is an invalid io channel. Check #peak_io_channel.
+ * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_IOChannel_Direction_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
+
+/*!
+ * \ingroup io_channel
+ * \brief Get the io channel direction
+ *
+ * Reads the current direction for the specified io channel.
+ *
+ * \param[in] hCam                      The camera handle.
+ * \param[in] ioChannel                 The io channel.
+ * \param[out] direction                The direction.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The direction is not accessible for read.
+ *                                          Check the access status via #peak_IOChannel_Direction_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p direction is an invalid pointer
+ *                                          or \p ioChannel is an invalid channel.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IOChannel_Direction_Get(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_direction* direction );
+
+/*!
+ * \ingroup io_channel
+ * \brief peak IO channel type
+ *
+ * The io channel type specifies the electrical format of the physical line.
+ * An io channel type can either be
+ *  - Tri-State,
+ *  - opto-coupled or
+ *  - LVTTL.
+ *
+ * The type may vary across different channels, depending on the camera model.
+ */
+typedef enum
+{
+ /*! \brief Invalid io type
+  *
+  * Use this value for the initialization of variables of type peak_io_type.
+  */
+ PEAK_IO_TYPE_INVALID = 0,
+
+ /*! \brief Unknown io type
+  *
+  * The type of the io channel is unknown.
+  */
+ PEAK_IO_TYPE_UNKNOWN = 1,
+
+ /*! \brief Invalid io type
+  *
+  * The io channel is currently in Tri-State mode (not driven).
+  */
+ PEAK_IO_TYPE_TRI_STATE = 2,
+
+ /*! \brief Invalid io type
+  *
+  * The line is galvanically isolated using an optocoupler to protect the camera and the PC against surges.
+  * Only DC voltages may be applied to the physical lines or pins.
+  */
+ PEAK_IO_TYPE_OPTO_COUPLED = 3,
+
+ /*! \brief Invalid io type
+  *
+  * The line is currently accepting or sending LVTTL level signals.
+  */
+ PEAK_IO_TYPE_LVTTL = 4
+
+} peak_io_type;
+
+/*!
+ * \ingroup io_channel
+ * \brief Query the io channel type property access status
+ *
+ * Provides the current access status for the type property for the specified io channel.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam      The camera handle.
+ * \param[in] ioChannel The io channel.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The type property is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The type property is readable only for the specified io channel.
+ * \return #PEAK_ACCESS_GFA_LOCK        The type property is not accessible because the GFA write access is enabled.
+ * \return #PEAK_ACCESS_NONE            The type property is not accessible for the specified io channel.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The type property is not supported for the specified io channel.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_ACCESS_DENIED       The specified io channel is not accessible.
+ *                                      Check the access status of the io channel via #peak_IOChannel_GetAccessStatus.
+ * \li #PEAK_STATUS_INVALID_PARAMETER   \p ioChannel is an invalid io channel. Check #peak_io_channel.
+ * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_IOChannel_Type_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
+
+/*!
+ * \ingroup io_channel
+ * \brief Get the io channel type
+ *
+ * Reads the current type for the specified io channel.
+ *
+ * \param[in] hCam                      The camera handle.
+ * \param[in] ioChannel                 The io channel.
+ * \param[out] type                     The type.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The type is not accessible for read.
+ *                                          Check the access status via #peak_IOChannel_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p type is an invalid pointer
+ *                                          or \p ioChannel is an invalid channel.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IOChannel_Type_Get(peak_camera_handle hCam, peak_io_channel ioChannel, peak_io_type* type);
 
 /*!
  * \ingroup io_channel
@@ -4628,6 +5353,8 @@ PEAK_API_STATUS peak_IOChannel_GetList(peak_camera_handle hCam, peak_io_channel*
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_IOChannel_Level_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
 
@@ -4644,8 +5371,32 @@ PEAK_API_ACCESS_STATUS peak_IOChannel_Level_GetAccessStatus(peak_camera_handle h
  *
  * \return #PEAK_TRUE   The io channels level is currently high.
  * \return #PEAK_FALSE  The io channels level is currently low or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IOChannel_Level_IsHigh(peak_camera_handle hCam, peak_io_channel ioChannel);
+
+/*!
+ * \ingroup io_channel
+ * \brief Set the io channel level
+ *
+ * Writes the desired io channel level for the specified io channel. Changes the channel's direction to output if neccessary.
+ *
+ * \param[in] hCam                      The camera handle.
+ * \param[in] ioChannel                 The io channel.
+ * \param[out] high                     The level to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The level is not accessible for write.
+ *                                          Check the access status via #peak_IOChannel_Level_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p ioChannel is an invalid channel.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IOChannel_Level_SetHigh(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool high);
 
 /*!
  * \ingroup io_channel
@@ -4674,6 +5425,8 @@ PEAK_API_BOOL peak_IOChannel_Level_IsHigh(peak_camera_handle hCam, peak_io_chann
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_IOChannel_Inverter_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
 
@@ -4694,6 +5447,8 @@ PEAK_API_ACCESS_STATUS peak_IOChannel_Inverter_GetAccessStatus(peak_camera_handl
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IOChannel_Inverter_Enable(peak_camera_handle hCam, peak_io_channel ioChannel, peak_bool enabled);
 
@@ -4710,6 +5465,8 @@ PEAK_API_STATUS peak_IOChannel_Inverter_Enable(peak_camera_handle hCam, peak_io_
  *
  * \return #PEAK_TRUE   The io channel inverter property is currently enabled.
  * \return #PEAK_FALSE  The io channel inverter property is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IOChannel_Inverter_IsEnabled(peak_camera_handle hCam, peak_io_channel ioChannel);
 
@@ -4741,6 +5498,8 @@ PEAK_API_BOOL peak_IOChannel_Inverter_IsEnabled(peak_camera_handle hCam, peak_io
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_IOChannel_NoiseFilter_GetAccessStatus(peak_camera_handle hCam, peak_io_channel ioChannel);
 
@@ -4761,6 +5520,8 @@ PEAK_API_ACCESS_STATUS peak_IOChannel_NoiseFilter_GetAccessStatus(peak_camera_ha
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IOChannel_NoiseFilter_Enable(peak_camera_handle hCam, peak_io_channel ioChannel,
     peak_bool enabled);
@@ -4778,6 +5539,8 @@ PEAK_API_STATUS peak_IOChannel_NoiseFilter_Enable(peak_camera_handle hCam, peak_
  *
  * \return #PEAK_TRUE   The io channel noise filter property is currently enabled.
  * \return #PEAK_FALSE  The io channel noise filter property is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IOChannel_NoiseFilter_IsEnabled(peak_camera_handle hCam, peak_io_channel ioChannel);
 
@@ -4805,6 +5568,8 @@ PEAK_API_BOOL peak_IOChannel_NoiseFilter_IsEnabled(peak_camera_handle hCam, peak
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IOChannel_NoiseFilter_Duration_GetRange(peak_camera_handle hCam, peak_io_channel ioChannel,
     double* minNoiseFilterDuration_us, double* maxNoiseFilterDuration_us, double* incNoiseFilterDuration_us);
@@ -4829,6 +5594,8 @@ PEAK_API_STATUS peak_IOChannel_NoiseFilter_Duration_GetRange(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IOChannel_NoiseFilter_Duration_Set(peak_camera_handle hCam, peak_io_channel ioChannel,
     double noiseFilterDuration_us);
@@ -4851,6 +5618,8 @@ PEAK_API_STATUS peak_IOChannel_NoiseFilter_Duration_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IOChannel_NoiseFilter_Duration_Get(peak_camera_handle hCam, peak_io_channel ioChannel,
     double* noiseFilterDuration_us);
@@ -4889,20 +5658,9 @@ typedef enum
  *
  * A trigger mode defines a combination of a trigger target and an io channel.
  *
- * In order to set up a trigger the desired basic configuration is specified by this struct. \n
- * Then the mode is passed to #peak_Trigger_Mode_Set to set the desired trigger mode. \n
+ * In order to set up a trigger the desired basic configuration is specified by this struct.
+ * Then the mode is passed to #peak_Trigger_Mode_Set to set the desired trigger mode.
  * Any further configuration for the trigger feature is then done via the dedicated functions.
- *
- * \note The library defines several trigger mode presets which can be used to initialize a
- *       #peak_trigger_mode. \n
- *       See
- *       \li #PEAK_TRIGGER_MODE_HARDWARE_TRIGGER
- *       \li #PEAK_TRIGGER_MODE_SOFTWARE_TRIGGER
- *
- * \note The default trigger mode is #PEAK_TRIGGER_MODE_HARDWARE_TRIGGER,
- *       i.e. frame start is triggered by the trigger input channel. \n
- *       The default trigger mode is configured after the camera has been opened and as long as no other mode is
- *       explicitly set via #peak_Trigger_Mode_Set.
  */
 typedef struct
 {
@@ -4921,19 +5679,11 @@ typedef struct
 } peak_trigger_mode;
 
 /*!
+ * \internal
  * \ingroup trigger
  * \brief peak Trigger mode preset: Frame start by trigger input
  *
- * Initialize a #peak_trigger_mode with this preset and pass it to #peak_Trigger_Mode_Set to configure a
- * hardware trigger for frame start. \n
- * See the following example code.
- *
- * \code
- * const peak_trigger_mode triggerMode = PEAK_TRIGGER_MODE_HARDWARE_TRIGGER;
- * peak_status status = peak_Trigger_Mode_Set(cameraHandle, triggerMode);
- * \endcode
- *
- * \note This is the default trigger mode which is configured until #peak_Trigger_Mode_Set has been called.
+ * \deprecated This macro is deprecated. Use \p PEAK_TRIGGER_TARGET_FRAME_START + io channel instead.
  */
 #define PEAK_TRIGGER_MODE_HARDWARE_TRIGGER { PEAK_TRIGGER_TARGET_FRAME_START, PEAK_IO_CHANNEL_TRIGGER_INPUT }
 
@@ -4975,6 +5725,8 @@ typedef struct
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Trigger_GetAccessStatus(peak_camera_handle hCam);
 
@@ -4996,6 +5748,8 @@ PEAK_API_ACCESS_STATUS peak_Trigger_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -5011,6 +5765,8 @@ PEAK_API_STATUS peak_Trigger_Enable(peak_camera_handle hCam, peak_bool enabled);
  *
  * \return #PEAK_TRUE   The trigger is currently enabled.
  * \return #PEAK_FALSE  The trigger is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Trigger_IsEnabled(peak_camera_handle hCam);
 
@@ -5028,6 +5784,8 @@ PEAK_API_BOOL peak_Trigger_IsEnabled(peak_camera_handle hCam);
  *
  * \return #PEAK_TRUE   The trigger is executable.
  * \return #PEAK_FALSE  The trigger is not executable or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Trigger_IsExecutable(peak_camera_handle hCam);
 
@@ -5052,6 +5810,8 @@ PEAK_API_BOOL peak_Trigger_IsExecutable(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Execute(peak_camera_handle hCam);
 
@@ -5083,6 +5843,8 @@ PEAK_API_STATUS peak_Trigger_Execute(peak_camera_handle hCam);
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Trigger_Mode_GetAccessStatus(peak_camera_handle hCam, peak_trigger_mode triggerMode);
 
@@ -5113,8 +5875,38 @@ PEAK_API_ACCESS_STATUS peak_Trigger_Mode_GetAccessStatus(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Mode_Set(peak_camera_handle hCam, peak_trigger_mode triggerMode);
+
+/*!
+ * \internal
+ * \ingroup trigger
+ * \brief Get the trigger mode
+ *
+ * Reads the current trigger mode.
+ *
+ * \deprecated This function is deprecated. Use \p peak_Trigger_Mode_Config_Get instead.
+ *
+ * \param[in] hCam          The camera handle.
+ * \param[out] triggerMode  The trigger mode.
+ *
+ * \remark This will return the deprecated peak_io_channel enumeration value.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The trigger mode is not available for read access.
+ *                                          Check the access status of the trigger mode via
+ *                                          #peak_Trigger_Mode_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p triggerMode is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
+ */
+PEAK_API_STATUS_DEPRECATED("Use peak_Trigger_Mode_Config_Get instead")
+peak_Trigger_Mode_Get(peak_camera_handle hCam, peak_trigger_mode* triggerMode);
 
 /*!
  * \ingroup trigger
@@ -5133,8 +5925,10 @@ PEAK_API_STATUS peak_Trigger_Mode_Set(peak_camera_handle hCam, peak_trigger_mode
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
  */
-PEAK_API_STATUS peak_Trigger_Mode_Get(peak_camera_handle hCam, peak_trigger_mode* triggerMode);
+PEAK_API_STATUS peak_Trigger_Mode_Config_Get(peak_camera_handle hCam, peak_trigger_mode* triggerMode);
 
 /*!
  * \ingroup trigger_edge
@@ -5197,6 +5991,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Trigger_Edge_GetAccessStatus(peak_camera_handle hCam);
 
@@ -5237,6 +6033,8 @@ PEAK_API_ACCESS_STATUS peak_Trigger_Edge_GetAccessStatus(peak_camera_handle hCam
  * \note Consider that the trigger edge list might change between the size query call and the list query call. \n
  *       This may be the case if the trigger mode, the camera configuration, or the camera status have changed in the
  *       time between the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Edge_GetList(peak_camera_handle hCam, peak_trigger_edge* triggerEdgeList,
     size_t* triggerEdgeCount);
@@ -5260,6 +6058,8 @@ PEAK_API_STATUS peak_Trigger_Edge_GetList(peak_camera_handle hCam, peak_trigger_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Edge_Set(peak_camera_handle hCam, peak_trigger_edge triggerEdge);
 
@@ -5280,6 +6080,8 @@ PEAK_API_STATUS peak_Trigger_Edge_Set(peak_camera_handle hCam, peak_trigger_edge
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Edge_Get(peak_camera_handle hCam, peak_trigger_edge* triggerEdge);
 
@@ -5308,6 +6110,8 @@ PEAK_API_STATUS peak_Trigger_Edge_Get(peak_camera_handle hCam, peak_trigger_edge
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Trigger_Delay_GetAccessStatus(peak_camera_handle hCam);
 
@@ -5334,6 +6138,8 @@ PEAK_API_ACCESS_STATUS peak_Trigger_Delay_GetAccessStatus(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Delay_GetRange(peak_camera_handle hCam, double* minTriggerDelay_us,
     double* maxTriggerDelay_us, double* incTriggerDelay_us);
@@ -5357,6 +6163,8 @@ PEAK_API_STATUS peak_Trigger_Delay_GetRange(peak_camera_handle hCam, double* min
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Delay_Set(peak_camera_handle hCam, double triggerDelay_us);
 
@@ -5377,6 +6185,8 @@ PEAK_API_STATUS peak_Trigger_Delay_Set(peak_camera_handle hCam, double triggerDe
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Delay_Get(peak_camera_handle hCam, double* triggerDelay_us);
 
@@ -5405,6 +6215,8 @@ PEAK_API_STATUS peak_Trigger_Delay_Get(peak_camera_handle hCam, double* triggerD
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Trigger_Divider_GetAccessStatus(peak_camera_handle hCam);
 
@@ -5431,6 +6243,8 @@ PEAK_API_ACCESS_STATUS peak_Trigger_Divider_GetAccessStatus(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Divider_GetRange(peak_camera_handle hCam, uint32_t* minTriggerDivider,
     uint32_t* maxTriggerDivider, uint32_t* incTriggerDivider);
@@ -5453,6 +6267,8 @@ PEAK_API_STATUS peak_Trigger_Divider_GetRange(peak_camera_handle hCam, uint32_t*
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Divider_Set(peak_camera_handle hCam, uint32_t triggerDivider);
 
@@ -5473,6 +6289,8 @@ PEAK_API_STATUS peak_Trigger_Divider_Set(peak_camera_handle hCam, uint32_t trigg
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Divider_Get(peak_camera_handle hCam, uint32_t* triggerDivider);
 
@@ -5501,6 +6319,8 @@ PEAK_API_STATUS peak_Trigger_Divider_Get(peak_camera_handle hCam, uint32_t* trig
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Trigger_Burst_GetAccessStatus(peak_camera_handle hCam);
 
@@ -5527,6 +6347,8 @@ PEAK_API_ACCESS_STATUS peak_Trigger_Burst_GetAccessStatus(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Burst_GetRange(peak_camera_handle hCam, uint32_t* minTriggerBurst,
     uint32_t* maxTriggerBurst, uint32_t* incTriggerBurst);
@@ -5549,6 +6371,8 @@ PEAK_API_STATUS peak_Trigger_Burst_GetRange(peak_camera_handle hCam, uint32_t* m
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Burst_Set(peak_camera_handle hCam, uint32_t triggerBurst);
 
@@ -5569,14 +6393,14 @@ PEAK_API_STATUS peak_Trigger_Burst_Set(peak_camera_handle hCam, uint32_t trigger
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Trigger_Burst_Get(peak_camera_handle hCam, uint32_t* triggerBurst);
 
 /*!
  * \ingroup flash
- * \brief peak Flash reference
- *
- * The flash reference specifies which operation is represented by the flash signal.
+ * \brief Selects the internal signal that will be the source to start the flash active signal.
  */
 typedef enum
 {
@@ -5585,6 +6409,12 @@ typedef enum
      * Use this value for the initialization of variables of type peak_flash_reference.
      */
     PEAK_FLASH_REFERENCE_INVALID                = 0,
+
+    /*! \brief Line 1 signal
+     *
+     * The flash mirrors the signal of Line 1, e.g. "Flash Active".
+     */
+    PEAK_FLASH_REFERENCE_LINE_1_SIGNAL          = 0x0001,
 
     /*! \brief Exposure active
      *
@@ -5602,7 +6432,7 @@ typedef enum
      *
      * The flash is active while the acquisition is active.
      */
-    PEAK_FLASH_REFERENCE_ACQUISITION_ACTIVE     = 0x2001
+    PEAK_FLASH_REFERENCE_ACQUISITION_ACTIVE     = 0x2001,
 
 } peak_flash_reference;
 
@@ -5615,18 +6445,6 @@ typedef enum
  * In order to set up a flash the desired basic configuration is specified by this struct. \n
  * Then the mode is passed to #peak_Flash_Mode_Set to set the desired flash mode. \n
  * Any further configuration for the flash feature is then done via the dedicated functions.
- *
- * \note The library defines several flash mode presets which can be used to initialize a
- *       #peak_flash_mode. \n
- *       See
- *       \li #PEAK_FLASH_MODE_EXPOSURE_ACTIVE
- *       \li #PEAK_FLASH_MODE_ACQUISITION_ACTIVE
- *       \li #PEAK_FLASH_MODE_GLOBAL_START_WINDOW
- *
- * \note The default flash mode is #PEAK_FLASH_MODE_EXPOSURE_ACTIVE,
- *       i.e. the exposure time is reflected by the signal on the flash output channel. \n
- *       The default flash mode is configured after the camera has been opened and as long as no other mode is
- *       explicitly set via #peak_Flash_Mode_Set.
  */
 typedef struct
 {
@@ -5645,49 +6463,29 @@ typedef struct
 } peak_flash_mode;
 
 /*!
+ * \internal
  * \ingroup flash
  * \brief peak Flash mode preset: Exposure active on flash output
  *
- * Initialize a #peak_flash_mode with this preset and pass it to #peak_Flash_Mode_Set to configure a flash signal for
- * the exposure time. \n
- * See the following example code.
- *
- * \code
- * const peak_flash_mode flashMode = PEAK_FLASH_MODE_EXPOSURE_ACTIVE;
- * peak_status status = peak_Flash_Mode_Set(cameraHandle, flashMode);
- * \endcode
- *
- * \note This is the default flash mode which is configured until #peak_Flash_Mode_Set has been called.
+ * \deprecated This macro is deprecated. Use \p PEAK_FLASH_REFERENCE_EXPOSURE_ACTIVE + io channel instead.
  */
 #define PEAK_FLASH_MODE_EXPOSURE_ACTIVE { PEAK_FLASH_REFERENCE_EXPOSURE_ACTIVE, PEAK_IO_CHANNEL_FLASH_OUTPUT }
 
  /*!
+  * \internal
   * \ingroup flash
   * \brief peak Flash mode preset: Acquisition active on flash output
   *
-  * Initialize a #peak_flash_mode with this preset and pass it to #peak_Flash_Mode_Set to configure a flash signal for
-  * the acquisition duration. \n
-  * See the following example code.
-  *
-  * \code
-  * const peak_flash_mode flashMode = PEAK_FLASH_MODE_ACQUISITION_ACTIVE;
-  * peak_status status = peak_Flash_Mode_Set(cameraHandle, flashMode);
-  * \endcode
+  * \deprecated This macro is deprecated. Use \p PEAK_FLASH_REFERENCE_ACQUISITION_ACTIVE + io channel instead.
   */
 #define PEAK_FLASH_MODE_ACQUISITION_ACTIVE { PEAK_FLASH_REFERENCE_ACQUISITION_ACTIVE, PEAK_IO_CHANNEL_FLASH_OUTPUT }
 
  /*!
+  * \internal
   * \ingroup flash
   * \brief peak Flash mode preset: Global start window on flash output
   *
-  * Initialize a #peak_flash_mode with this preset and pass it to #peak_Flash_Mode_Set to configure a flash signal for
-  * the global start window duration. \n
-  * See the following example code.
-  *
-  * \code
-  * const peak_flash_mode flashMode = FLASH_GLOBAL_START_WINDOW_ON_FLASH_OUTPUT;
-  * peak_status status = peak_Flash_Mode_Set(cameraHandle, flashMode);
-  * \endcode
+  * \deprecated This macro is deprecated. Use \p PEAK_FLASH_REFERENCE_GLOBAL_START_WINDOW + io channel instead.
   */
 #define PEAK_FLASH_MODE_GLOBAL_START_WINDOW { PEAK_FLASH_REFERENCE_GLOBAL_START_WINDOW, PEAK_IO_CHANNEL_FLASH_OUTPUT }
 
@@ -5714,6 +6512,8 @@ typedef struct
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Flash_GetAccessStatus(peak_camera_handle hCam);
 
@@ -5734,6 +6534,8 @@ PEAK_API_ACCESS_STATUS peak_Flash_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -5749,6 +6551,8 @@ PEAK_API_STATUS peak_Flash_Enable(peak_camera_handle hCam, peak_bool enabled);
  *
  * \return #PEAK_TRUE   The flash is currently enabled.
  * \return #PEAK_FALSE  The flash is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Flash_IsEnabled(peak_camera_handle hCam);
 
@@ -5779,6 +6583,8 @@ PEAK_API_BOOL peak_Flash_IsEnabled(peak_camera_handle hCam);
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Flash_Mode_GetAccessStatus(peak_camera_handle hCam, peak_flash_mode flashMode);
 
@@ -5810,8 +6616,38 @@ PEAK_API_ACCESS_STATUS peak_Flash_Mode_GetAccessStatus(peak_camera_handle hCam, 
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p flashMode contains an invalid parameter, which can never be set.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_Mode_Set(peak_camera_handle hCam, peak_flash_mode flashMode);
+
+/*!
+ * \internal
+ * \ingroup flash
+ * \brief Get the flash mode
+ *
+ * Reads the current flash mode.
+ *
+ * \deprecated This function is deprecated. Use \p peak_Flash_Mode_Config_Get instead.
+ *
+ * \param[in] hCam          The camera handle.
+ * \param[out] flashMode    The flash mode.
+ *
+ * \remark This will return the deprecated peak_io_channel enumeration value.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The flash mode is not available for read access.
+ *                                          Check the access status of the flash mode via
+ *                                          #peak_Flash_Mode_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p flashMode is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
+ */
+PEAK_API_STATUS_DEPRECATED("Use peak_Flash_Mode_Config_Get instead")
+    peak_Flash_Mode_Get(peak_camera_handle hCam, peak_flash_mode* flashMode);
 
 /*!
  * \ingroup flash
@@ -5830,11 +6666,13 @@ PEAK_API_STATUS peak_Flash_Mode_Set(peak_camera_handle hCam, peak_flash_mode fla
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
  */
-PEAK_API_STATUS peak_Flash_Mode_Get(peak_camera_handle hCam, peak_flash_mode* flashMode);
+PEAK_API_STATUS peak_Flash_Mode_Config_Get(peak_camera_handle hCam, peak_flash_mode* flashMode);
 
 /*!
- * \ingroup flash_start_delay
+ * \ingroup flash_prop
  * \brief Query the flash start delay property access status
  *
  * Provides the current access status for the flash start delay property for the configured flash mode.
@@ -5858,11 +6696,13 @@ PEAK_API_STATUS peak_Flash_Mode_Get(peak_camera_handle hCam, peak_flash_mode* fl
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Flash_StartDelay_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
- * \ingroup flash_start_delay
+ * \ingroup flash_prop
  * \brief Get the current range of valid flash start delay values
  *
  * Queries the current range of valid values for the flash start delay for the configured flash mode.
@@ -5884,12 +6724,14 @@ PEAK_API_ACCESS_STATUS peak_Flash_StartDelay_GetAccessStatus(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_StartDelay_GetRange(peak_camera_handle hCam, double* minFlashStartDelay_us,
     double* maxFlashStartDelay_us, double* incFlashStartDelay_us);
 
 /*!
- * \ingroup flash_start_delay
+ * \ingroup flash_prop
  * \brief Set the flash start delay
  *
  * Writes the desired flash start delay.
@@ -5906,11 +6748,13 @@ PEAK_API_STATUS peak_Flash_StartDelay_GetRange(peak_camera_handle hCam, double* 
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_StartDelay_Set(peak_camera_handle hCam, double flashStartDelay_us);
 
 /*!
- * \ingroup flash_start_delay
+ * \ingroup flash_prop
  * \brief Get the flash start delay
  *
  * Reads the current flash start delay.
@@ -5926,11 +6770,13 @@ PEAK_API_STATUS peak_Flash_StartDelay_Set(peak_camera_handle hCam, double flashS
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_StartDelay_Get(peak_camera_handle hCam, double* flashStartDelay_us);
 
 /*!
- * \ingroup flash_end_delay
+ * \ingroup flash_prop
  * \brief Query the flash end delay property access status
  *
  * Provides the current access status for the flash end delay property for the configured flash mode.
@@ -5954,11 +6800,13 @@ PEAK_API_STATUS peak_Flash_StartDelay_Get(peak_camera_handle hCam, double* flash
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Flash_EndDelay_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
- * \ingroup flash_end_delay
+ * \ingroup flash_prop
  * \brief Get the current range of valid flash end delay values
  *
  * Queries the current range of valid values for the flash end delay for the configured flash mode.
@@ -5980,12 +6828,14 @@ PEAK_API_ACCESS_STATUS peak_Flash_EndDelay_GetAccessStatus(peak_camera_handle hC
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_EndDelay_GetRange(peak_camera_handle hCam, double* minFlashEndDelay_us,
     double* maxFlashEndDelay_us, double* incFlashEndDelay_us);
 
 /*!
- * \ingroup flash_end_delay
+ * \ingroup flash_prop
  * \brief Set the flash end delay
  *
  * Writes the desired flash end delay.
@@ -6003,11 +6853,13 @@ PEAK_API_STATUS peak_Flash_EndDelay_GetRange(peak_camera_handle hCam, double* mi
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_EndDelay_Set(peak_camera_handle hCam, double flashEndDelay_us);
 
 /*!
- * \ingroup flash_end_delay
+ * \ingroup flash_prop
  * \brief Get the flash end delay
  *
  * Reads the current flash end delay.
@@ -6023,11 +6875,13 @@ PEAK_API_STATUS peak_Flash_EndDelay_Set(peak_camera_handle hCam, double flashEnd
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_EndDelay_Get(peak_camera_handle hCam, double* flashEndDelay_us);
 
 /*!
- * \ingroup flash_duration
+ * \ingroup flash_prop
  * \brief Query the flash duration property access status
  *
  * Provides the current access status for the flash duration property for the configured flash mode.
@@ -6051,11 +6905,13 @@ PEAK_API_STATUS peak_Flash_EndDelay_Get(peak_camera_handle hCam, double* flashEn
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Flash_Duration_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
- * \ingroup flash_duration
+ * \ingroup flash_prop
  * \brief Get the current range of valid flash duration values
  *
  * Queries the current range of valid values for the flash duration for the current flash mode.
@@ -6077,12 +6933,14 @@ PEAK_API_ACCESS_STATUS peak_Flash_Duration_GetAccessStatus(peak_camera_handle hC
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_Duration_GetRange(peak_camera_handle hCam, double* minFlashDuration_us,
     double* maxFlashDuration_us, double* incFlashDuration_us);
 
 /*!
- * \ingroup flash_duration
+ * \ingroup flash_prop
  * \brief Set the flash duration
  *
  * Writes the desired flash duration.
@@ -6098,11 +6956,13 @@ PEAK_API_STATUS peak_Flash_Duration_GetRange(peak_camera_handle hCam, double* mi
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_Duration_Set(peak_camera_handle hCam, double flashDuration_us);
 
 /*!
- * \ingroup flash_duration
+ * \ingroup flash_prop
  * \brief Get the flash duration
  *
  * Reads the current flash duration.
@@ -6118,6 +6978,8 @@ PEAK_API_STATUS peak_Flash_Duration_Set(peak_camera_handle hCam, double flashDur
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Flash_Duration_Get(peak_camera_handle hCam, double* flashDuration_us);
 
@@ -6143,6 +7005,8 @@ PEAK_API_STATUS peak_Flash_Duration_Get(peak_camera_handle hCam, double* flashDu
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_ACCESS_STATUS peak_Focus_GetAccessStatus(peak_camera_handle hCam);
 
@@ -6165,6 +7029,8 @@ PEAK_API_ACCESS_STATUS peak_Focus_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE       \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED      The library is not initialized.
  * \return #PEAK_STATUS_ERROR                An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_Focus_GetRange(peak_camera_handle hCam, uint32_t* minFocus, uint32_t* maxFocus,
     uint32_t* incFocus);
@@ -6189,6 +7055,8 @@ PEAK_API_STATUS peak_Focus_GetRange(peak_camera_handle hCam, uint32_t* minFocus,
  *
  * \note There is no guarantee that the same manually set focal point will always lead to the same focal distance.
  * \note The actual focal point for a certain focal value may differ from camera model to camera model.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_Focus_Set(peak_camera_handle hCam, uint32_t focus);
 
@@ -6208,6 +7076,8 @@ PEAK_API_STATUS peak_Focus_Set(peak_camera_handle hCam, uint32_t focus);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_Focus_Get(peak_camera_handle hCam, uint32_t* focus);
 
@@ -6234,6 +7104,8 @@ PEAK_API_STATUS peak_Focus_Get(peak_camera_handle hCam, uint32_t* focus);
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_PixelFormat_GetAccessStatus(peak_camera_handle hCam);
 
@@ -6274,6 +7146,8 @@ PEAK_API_ACCESS_STATUS peak_PixelFormat_GetAccessStatus(peak_camera_handle hCam)
  * \note Consider that the pixel format list might change between the size query call and the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelFormat_GetList(peak_camera_handle hCam, peak_pixel_format* pixelFormatList,
     size_t* pixelFormatCount);
@@ -6295,6 +7169,8 @@ PEAK_API_STATUS peak_PixelFormat_GetList(peak_camera_handle hCam, peak_pixel_for
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelFormat_Set(peak_camera_handle hCam, peak_pixel_format pixelFormat);
 
@@ -6314,6 +7190,8 @@ PEAK_API_STATUS peak_PixelFormat_Set(peak_camera_handle hCam, peak_pixel_format 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_PixelFormat_Get(peak_camera_handle hCam, peak_pixel_format* pixelFormat);
 
@@ -6397,6 +7275,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Gain_GetAccessStatus(peak_camera_handle hCam, peak_gain_type gainType,
     peak_gain_channel gainChannel);
@@ -6433,6 +7313,8 @@ PEAK_API_ACCESS_STATUS peak_Gain_GetAccessStatus(peak_camera_handle hCam, peak_g
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gain_GetChannelList(peak_camera_handle hCam, peak_gain_type gainType,
     peak_gain_channel* gainChannelList, size_t* gainChannelCount);
@@ -6463,6 +7345,8 @@ PEAK_API_STATUS peak_Gain_GetChannelList(peak_camera_handle hCam, peak_gain_type
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gain_GetRange(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel,
     double* minGain, double* maxGain, double* incGain);
@@ -6489,6 +7373,8 @@ PEAK_API_STATUS peak_Gain_GetRange(peak_camera_handle hCam, peak_gain_type gainT
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gain_Set(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel,
     double gain);
@@ -6514,6 +7400,8 @@ PEAK_API_STATUS peak_Gain_Set(peak_camera_handle hCam, peak_gain_type gainType, 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gain_Get(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel,
     double* gain);
@@ -6540,6 +7428,8 @@ PEAK_API_STATUS peak_Gain_Get(peak_camera_handle hCam, peak_gain_type gainType, 
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Gamma_GetAccessStatus(peak_camera_handle hCam);
 
@@ -6562,6 +7452,8 @@ PEAK_API_ACCESS_STATUS peak_Gamma_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gamma_GetRange(peak_camera_handle hCam, double* minGamma, double* maxGamma, double* incGamma);
 
@@ -6582,6 +7474,8 @@ PEAK_API_STATUS peak_Gamma_GetRange(peak_camera_handle hCam, double* minGamma, d
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gamma_Set(peak_camera_handle hCam, double gamma);
 
@@ -6601,6 +7495,8 @@ PEAK_API_STATUS peak_Gamma_Set(peak_camera_handle hCam, double gamma);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Gamma_Get(peak_camera_handle hCam, double* gamma);
 
@@ -6659,6 +7555,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_ColorCorrection_GetAccessStatus(peak_camera_handle hCam);
 
@@ -6702,6 +7600,8 @@ PEAK_API_ACCESS_STATUS peak_ColorCorrection_GetAccessStatus(peak_camera_handle h
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Mode_GetList(peak_camera_handle hCam,
     peak_color_correction_mode* colorCorrectionModeList, size_t* colorCorrectionModeCount);
@@ -6726,6 +7626,8 @@ PEAK_API_STATUS peak_ColorCorrection_Mode_GetList(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Mode_Set(peak_camera_handle hCam, peak_color_correction_mode colorCorrectionMode);
 
@@ -6744,6 +7646,8 @@ PEAK_API_STATUS peak_ColorCorrection_Mode_Set(peak_camera_handle hCam, peak_colo
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Mode_Get(peak_camera_handle hCam, peak_color_correction_mode* colorCorrectionMode);
 
@@ -6770,6 +7674,8 @@ PEAK_API_STATUS peak_ColorCorrection_Mode_Get(peak_camera_handle hCam, peak_colo
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_ColorCorrection_Matrix_GetAccessStatus(peak_camera_handle hCam);
 
@@ -6792,6 +7698,8 @@ PEAK_API_ACCESS_STATUS peak_ColorCorrection_Matrix_GetAccessStatus(peak_camera_h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Matrix_GetRange(peak_camera_handle hCam, double* minMatrixElementValue,
     double* maxMatrixElementValue, double* incMatrixElementValue);
@@ -6813,6 +7721,8 @@ PEAK_API_STATUS peak_ColorCorrection_Matrix_GetRange(peak_camera_handle hCam, do
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Matrix_Set(peak_camera_handle hCam, peak_matrix colorCorrectionMatrix);
 
@@ -6832,6 +7742,8 @@ PEAK_API_STATUS peak_ColorCorrection_Matrix_Set(peak_camera_handle hCam, peak_ma
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Matrix_Get(peak_camera_handle hCam, peak_matrix* colorCorrectionMatrix);
 
@@ -6849,6 +7761,8 @@ PEAK_API_STATUS peak_ColorCorrection_Matrix_Get(peak_camera_handle hCam, peak_ma
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ColorCorrection_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -6864,6 +7778,8 @@ PEAK_API_STATUS peak_ColorCorrection_Enable(peak_camera_handle hCam, peak_bool e
  *
  * \return #PEAK_TRUE   The color correction feature is currently enabled.
  * \return #PEAK_FALSE  The color correction feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_ColorCorrection_IsEnabled(peak_camera_handle hCam);
 
@@ -6988,8 +7904,40 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_AutoBrightness_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup auto_brightness
+ * \brief Query the auto brightness access status
+ *
+ * Provides the current access status for the auto brightness target feature.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The auto brightness target feature is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The auto brightness target feature is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The auto brightness target feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The auto brightness target feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The auto brightness target feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not accessible.
+ *                                  Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_ACCESS_STATUS peak_AutoBrightness_Target_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
  * \ingroup auto_brightness
@@ -7004,15 +7952,19 @@ PEAK_API_ACCESS_STATUS peak_AutoBrightness_GetAccessStatus(peak_camera_handle hC
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not accessible.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_Target_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minAutoBrightnessTarget, \p maxAutoBrightnessTarget, and
  *                                          \p incAutoBrightnessTarget is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Target_GetRange(peak_camera_handle hCam, uint32_t* minAutoBrightnessTarget,
     uint32_t* maxAutoBrightnessTarget, uint32_t* incAutoBrightnessTarget);
+
+
 
 /*!
  * \ingroup auto_brightness
@@ -7027,10 +7979,12 @@ PEAK_API_STATUS peak_AutoBrightness_Target_GetRange(peak_camera_handle hCam, uin
  * \return #PEAK_STATUS_OUT_OF_RANGE    \p autoBrightnessTarget value is out of range.
  *                                      Check the range of valid values via #peak_AutoBrightness_Target_GetRange.
  * \return #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not available for write access.
- *                                      Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                      Check the access status via #peak_AutoBrightness_Target_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Target_Set(peak_camera_handle hCam, uint32_t autoBrightnessTarget);
 
@@ -7045,13 +7999,45 @@ PEAK_API_STATUS peak_AutoBrightness_Target_Set(peak_camera_handle hCam, uint32_t
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not available for read access.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_Target_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoBrightnessTarget is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Target_Get(peak_camera_handle hCam, uint32_t* autoBrightnessTarget);
+
+/*!
+ * \ingroup auto_brightness
+ * \brief Query the auto brightness access status
+ *
+ * Provides the current access status for the auto brightness target tolerance feature.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The auto brightness target tolerance feature is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The auto brightness target tolerance feature is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The auto brightness target tolerance feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The auto brightness target tolerance feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The auto brightness target tolerance feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not accessible.
+ *                                  Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_ACCESS_STATUS peak_AutoBrightness_TargetTolerance_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
  * \ingroup auto_brightness
@@ -7066,13 +8052,15 @@ PEAK_API_STATUS peak_AutoBrightness_Target_Get(peak_camera_handle hCam, uint32_t
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not accessible.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_TargetTolerance_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minAutoBrightnessTargetTolerance,
  *                                          \p maxAutoBrightnessTargetTolerance, and \p incAutoBrightnessTargetTolerance
  *                                          is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_GetRange(peak_camera_handle hCam,
     uint32_t* minAutoBrightnessTargetTolerance, uint32_t* maxAutoBrightnessTargetTolerance,
@@ -7092,10 +8080,12 @@ PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_GetRange(peak_camera_handle 
  *                                      Check the range of valid values via
  *                                      #peak_AutoBrightness_TargetTolerance_GetRange.
  * \return #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not available for write access.
- *                                      Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                      Check the access status via #peak_AutoBrightness_TargetTolerance_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_Set(peak_camera_handle hCam,
     uint32_t autoBrightnessTargetTolerance);
@@ -7111,14 +8101,46 @@ PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_Set(peak_camera_handle hCam,
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not available for read access.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_TargetTolerance_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoBrightnessTargetTolerance is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_Get(peak_camera_handle hCam,
     uint32_t* autoBrightnessTargetTolerance);
+
+/*!
+ * \ingroup auto_brightness
+ * \brief Query the auto brightness access status
+ *
+ * Provides the current access status for the auto brightness target percentile feature.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The auto brightness target percentile feature is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The auto brightness target percentile feature is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The auto brightness target percentile feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The auto brightness target percentile feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The auto brightness target percentile feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not accessible.
+ *                                  Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_ACCESS_STATUS peak_AutoBrightness_TargetPercentile_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
  * \ingroup auto_brightness
@@ -7133,13 +8155,15 @@ PEAK_API_STATUS peak_AutoBrightness_TargetTolerance_Get(peak_camera_handle hCam,
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not accessible.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_TargetPercentile_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minAutoBrightnessTargetPercentile,
  *                                          \p maxAutoBrightnessTargetPercentile, and
  *                                          \p incAutoBrightnessTargetPercentile is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_GetRange(peak_camera_handle hCam,
     double* minAutoBrightnessTargetPercentile, double* maxAutoBrightnessTargetPercentile,
@@ -7159,10 +8183,12 @@ PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_GetRange(peak_camera_handle
  *                                      Check the range of valid values via
  *                                      #peak_AutoBrightness_TargetPercentile_GetRange.
  * \return #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not available for write access.
- *                                      Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                      Check the access status via #peak_AutoBrightness_TargetPercentile_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_Set(peak_camera_handle hCam,
     double autoBrightnessTargetPercentile);
@@ -7178,14 +8204,46 @@ PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_Set(peak_camera_handle hCam
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not available for read access.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_TargetPercentile_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoBrightnessTargetPercentile is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_Get(peak_camera_handle hCam,
     double* autoBrightnessTargetPercentile);
+
+/*!
+ * \ingroup auto_brightness
+ * \brief Query the auto brightness access status
+ *
+ * Provides the current access status for the auto brightness roi feature.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The auto brightness roi feature is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The auto brightness roi feature is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The auto brightness roi feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The auto brightness roi feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The auto brightness roi feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not accessible.
+ *                                  Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_ACCESS_STATUS peak_AutoBrightness_ROI_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
  * \ingroup auto_brightness
@@ -7198,12 +8256,14 @@ PEAK_API_STATUS peak_AutoBrightness_TargetPercentile_Get(peak_camera_handle hCam
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not available for write access.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_ROI_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoBrightnessROIMode is an invalid auto feature ROI mode.
  *                                          Check #peak_auto_feature_roi_mode.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_ROI_Mode_Set(peak_camera_handle hCam,
     peak_auto_feature_roi_mode autoBrightnessROIMode);
@@ -7219,11 +8279,13 @@ PEAK_API_STATUS peak_AutoBrightness_ROI_Mode_Set(peak_camera_handle hCam,
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not available for read access.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_ROI_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoBrightnessROIMode is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_ROI_Mode_Get(peak_camera_handle hCam,
     peak_auto_feature_roi_mode* autoBrightnessROIMode);
@@ -7245,12 +8307,14 @@ PEAK_API_STATUS peak_AutoBrightness_ROI_Mode_Get(peak_camera_handle hCam,
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not accessible.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_ROI_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minROIOffset, maxROIOffset, and incROIOffset is an
  *                                          invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_ROI_Offset_GetRange(peak_camera_handle hCam,
     peak_position* minAutoBrightnessROIOffset, peak_position* maxAutoBrightnessROIOffset,
@@ -7273,12 +8337,14 @@ PEAK_API_STATUS peak_AutoBrightness_ROI_Offset_GetRange(peak_camera_handle hCam,
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not accessible.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_ROI_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minAutoBrightnessROISize, \p maxAutoBrightnessROISize,
  *                                          and \p incAutoBrightnessROISize is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_ROI_Size_GetRange(peak_camera_handle hCam, peak_size* minAutoBrightnessROISize,
     peak_size* maxAutoBrightnessROISize, peak_size* incAutoBrightnessROISize);
@@ -7302,11 +8368,13 @@ PEAK_API_STATUS peak_AutoBrightness_ROI_Size_GetRange(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_ACCESS_DENIED   The auto brightness feature is not available for write access
  *                                      or the auto brightness ROI mode is not set to
  *                                      #PEAK_AUTO_FEATURE_ROI_MODE_MANUAL.
- *                                      Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                      Check the access status via #peak_AutoBrightness_ROI_GetAccessStatus.
  *                                      Check the auto brightness ROI mode via #peak_AutoBrightness_ROI_Mode_Get.
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_ROI_Set(peak_camera_handle hCam, peak_roi autoBrightnessROI);
 
@@ -7321,11 +8389,13 @@ PEAK_API_STATUS peak_AutoBrightness_ROI_Set(peak_camera_handle hCam, peak_roi au
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness feature is not available for read access.
- *                                          Check the access status via #peak_AutoBrightness_GetAccessStatus.
+ *                                          Check the access status via #peak_AutoBrightness_ROI_GetAccessStatus.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoBrightnessROI is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_ROI_Get(peak_camera_handle hCam, peak_roi* autoBrightnessROI);
 
@@ -7354,8 +8424,49 @@ PEAK_API_STATUS peak_AutoBrightness_ROI_Get(peak_camera_handle hCam, peak_roi* a
  *                                  Check the access status via #peak_AutoBrightness_GetAccessStatus.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_AutoBrightness_Exposure_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup auto_brightness
+ * \brief Get the list of currently selectable auto brightness exposure control modes
+ *
+ * Queries the list of currently selectable auto brightness exposure control modes.
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[out] modeList             Pointer to a user allocated array buffer to receive the auto brightness exposure
+ *                                  mode list.
+ *                                  If this parameter is NULL, \p modeListSize will contain the current
+ *                                  number of auto brightness exposure modes. \n
+ *                                  The required size of \p modeList in bytes is
+ *                                  \p modeListSize x sizeof(#peak_auto_feature_mode).
+ * \param[in,out] modeListSize      \li \p modeList equal NULL: \n
+ *                                      out: minimal number of auto brightness exposure control modes \p modeList must
+ *                                      be large enough to hold \n
+ *                                  \li \p modeList unequal NULL: \n
+ *                                      in: number of auto brightness exposure control modes \p modeList can hold \n
+ *                                      out: number of auto brightness exposure control modes filled by the function
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p modeList is not NULL and the value of \p *modeListSize
+ *                                                  is too small to receive the expected amount of data.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness exposure modes property is not accessible.
+ *                                                  Check the access status of the auto brightness exposure feature via
+ *                                                  #peak_AutoBrightness_Exposure_GetAccessStatus or check the
+ *                                                  last error for more information via #peak_Library_GetLastError.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p modeListSize is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_GetList(peak_camera_handle hCam,
+    peak_auto_feature_mode* modeList, size_t* modeListSize);
 
 /*!
  * \ingroup auto_brightness
@@ -7374,6 +8485,8 @@ PEAK_API_ACCESS_STATUS peak_AutoBrightness_Exposure_GetAccessStatus(peak_camera_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoExposureMode);
 
@@ -7393,6 +8506,8 @@ PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_Set(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoExposureMode);
 
@@ -7421,8 +8536,49 @@ PEAK_API_STATUS peak_AutoBrightness_Exposure_Mode_Get(peak_camera_handle hCam, p
  *                                  Check the access status via #peak_AutoBrightness_GetAccessStatus.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_AutoBrightness_Gain_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup auto_brightness
+ * \brief Get the list of currently selectable auto brightness gain control modes
+ *
+ * Queries the list of currently selectable auto brightness gain control modes.
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[out] modeList             Pointer to a user allocated array buffer to receive the auto brightness gain
+ *                                  mode list.
+ *                                  If this parameter is NULL, \p modeListSize will contain the current
+ *                                  number of auto brightness gain modes. \n
+ *                                  The required size of \p modeList in bytes is
+ *                                  \p modeListSize x sizeof(#peak_auto_feature_mode).
+ * \param[in,out] modeListSize      \li \p modeList equal NULL: \n
+ *                                      out: minimal number of auto brightness gain control modes \p modeList must
+ *                                      be large enough to hold \n
+ *                                  \li \p modeList unequal NULL: \n
+ *                                      in: number of auto brightness gain control modes \p modeList can hold \n
+ *                                      out: number of auto brightness gain control modes filled by the function
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p modeList is not NULL and the value of \p *modeListSize
+ *                                                  is too small to receive the expected amount of data.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The auto brightness gain modes property is not accessible.
+ *                                                  Check the access status of the auto brightness gain feature via
+ *                                                  #peak_AutoBrightness_Gain_GetAccessStatus or check the
+ *                                                  last error for more information via #peak_Library_GetLastError.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p modeListSize is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_GetList(peak_camera_handle hCam,
+    peak_auto_feature_mode* modeList, size_t* modeListSize);
 
 /*!
  * \ingroup auto_brightness
@@ -7441,6 +8597,8 @@ PEAK_API_ACCESS_STATUS peak_AutoBrightness_Gain_GetAccessStatus(peak_camera_hand
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 
@@ -7460,6 +8618,8 @@ PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_Set(peak_camera_handle hCam, peak_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoGainMode);
 
@@ -7486,8 +8646,38 @@ PEAK_API_STATUS peak_AutoBrightness_Gain_Mode_Get(peak_camera_handle hCam, peak_
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_AutoWhiteBalance_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup auto_white_balance
+ * \brief Query the auto white balance ROI access status
+ *
+ * Provides the current access status for the auto white balance ROI feature.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The auto white balance ROI feature is readable and writable.
+ * \return #PEAK_ACCESS_READONLY        The auto white balance ROI feature is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The auto white balance ROI feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The auto white balance ROI feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The auto white balance ROI feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
+ */
+PEAK_API_ACCESS_STATUS peak_AutoWhiteBalance_ROI_GetAccessStatus(peak_camera_handle hCam);
 
 /*!
  * \ingroup auto_white_balance
@@ -7506,6 +8696,8 @@ PEAK_API_ACCESS_STATUS peak_AutoWhiteBalance_GetAccessStatus(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Mode_Set(peak_camera_handle hCam,
     peak_auto_feature_roi_mode autoWhiteBalanceROIMode);
@@ -7526,6 +8718,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Mode_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Mode_Get(peak_camera_handle hCam,
     peak_auto_feature_roi_mode* autoWhiteBalanceROIMode);
@@ -7555,6 +8749,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Mode_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Offset_GetRange(peak_camera_handle hCam,
     peak_position* minAutoWhiteBalanceROIOffset, peak_position* maxAutoWhiteBalanceROIOffset,
@@ -7585,6 +8781,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Offset_GetRange(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Size_GetRange(peak_camera_handle hCam, peak_size* minAutoWhiteBalanceROISize,
     peak_size* maxAutoWhiteBalanceROISize, peak_size* incAutoWhiteBalanceROISize);
@@ -7613,6 +8811,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Size_GetRange(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Set(peak_camera_handle hCam, peak_roi autoWhiteBalanceROI);
 
@@ -7632,6 +8832,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Set(peak_camera_handle hCam, peak_roi 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Get(peak_camera_handle hCam, peak_roi* autoWhiteBalanceROI);
 
@@ -7652,6 +8854,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_ROI_Get(peak_camera_handle hCam, peak_roi*
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoWhiteBalanceMode);
 
@@ -7671,8 +8875,48 @@ PEAK_API_STATUS peak_AutoWhiteBalance_Mode_Set(peak_camera_handle hCam, peak_aut
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_AutoWhiteBalance_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoWhiteBalanceMode);
+
+/*!
+ * \ingroup auto_white_balance
+ * \brief Get the list of currently selectable auto white balance control modes
+ *
+ * Queries the list of currently selectable auto white balance control modes.
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[out] modeList             Pointer to a user allocated array buffer to receive the auto white balance mode list.
+ *                                  If this parameter is NULL, \p modeListSize will contain the current
+ *                                  number of auto white balance modes. \n
+ *                                  The required size of \p modeList in bytes is
+ *                                  \p modeListSize x sizeof(#peak_auto_feature_mode).
+ * \param[in,out] modeListSize      \li \p modeList equal NULL: \n
+ *                                      out: minimal number of auto white balance control modes \p modeList must be
+ *                                           large enough to hold \n
+ *                                  \li \p modeList unequal NULL: \n
+ *                                      in: number of auto white balance control modes \p modeList can hold \n
+ *                                      out: number of auto white balance control modes filled by the function
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p modeList is not NULL and the value of \p *modeListSize
+ *                                                  is too small to receive the expected amount of data.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The auto white balance modes property is not accessible.
+ *                                                  Check the access status of the auto white balance feature via
+ *                                                  #peak_AutoWhiteBalance_GetAccessStatus or check the last error for more
+                                                    information via #peak_Library_GetLastError.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p modeListSize is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_AutoWhiteBalance_Mode_GetList(peak_camera_handle hCam,
+    peak_auto_feature_mode* modeList, size_t* modeListSize);
 
 /*!
  * \ingroup roi
@@ -7696,6 +8940,8 @@ PEAK_API_STATUS peak_AutoWhiteBalance_Mode_Get(peak_camera_handle hCam, peak_aut
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_ROI_GetAccessStatus(peak_camera_handle hCam);
 
@@ -7721,6 +8967,8 @@ PEAK_API_ACCESS_STATUS peak_ROI_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ROI_Offset_GetRange(peak_camera_handle hCam, peak_position* minROIOffset,
     peak_position* maxROIOffset, peak_position* incROIOffset);
@@ -7747,6 +8995,8 @@ PEAK_API_STATUS peak_ROI_Offset_GetRange(peak_camera_handle hCam, peak_position*
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_ROI_Offset_GetAccessStatus(peak_camera_handle hCam);
 
@@ -7767,6 +9017,8 @@ PEAK_API_ACCESS_STATUS peak_ROI_Offset_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_ROI_Offset_Set(peak_camera_handle hCam, peak_position position);
 
@@ -7786,6 +9038,8 @@ PEAK_API_STATUS peak_ROI_Offset_Set(peak_camera_handle hCam, peak_position posit
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ROI_Offset_Get(peak_camera_handle hCam, peak_position* position);
 
@@ -7811,6 +9065,8 @@ PEAK_API_STATUS peak_ROI_Offset_Get(peak_camera_handle hCam, peak_position* posi
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ROI_Size_GetRange(peak_camera_handle hCam, peak_size* minROISize, peak_size* maxROISize,
     peak_size* incROISize);
@@ -7837,6 +9093,8 @@ PEAK_API_STATUS peak_ROI_Size_GetRange(peak_camera_handle hCam, peak_size* minRO
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_ROI_Size_GetAccessStatus(peak_camera_handle hCam);
 
@@ -7857,6 +9115,8 @@ PEAK_API_ACCESS_STATUS peak_ROI_Size_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_ROI_Size_Set(peak_camera_handle hCam, peak_size size);
 
@@ -7876,6 +9136,8 @@ PEAK_API_STATUS peak_ROI_Size_Set(peak_camera_handle hCam, peak_size size);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ROI_Size_Get(peak_camera_handle hCam, peak_size* size);
 
@@ -7897,6 +9159,8 @@ PEAK_API_STATUS peak_ROI_Size_Get(peak_camera_handle hCam, peak_size* size);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ROI_Set(peak_camera_handle hCam, peak_roi roi);
 
@@ -7916,6 +9180,8 @@ PEAK_API_STATUS peak_ROI_Set(peak_camera_handle hCam, peak_roi roi);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_ROI_Get(peak_camera_handle hCam, peak_roi* roi);
 
@@ -7941,6 +9207,8 @@ PEAK_API_STATUS peak_ROI_Get(peak_camera_handle hCam, peak_roi* roi);
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Binning_GetAccessStatus(peak_camera_handle hCam);
 
@@ -7981,6 +9249,8 @@ PEAK_API_ACCESS_STATUS peak_Binning_GetAccessStatus(peak_camera_handle hCam);
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Binning_FactorX_GetList(peak_camera_handle hCam, uint32_t* binningFactorXList,
     size_t* binningFactorXCount);
@@ -8022,6 +9292,8 @@ PEAK_API_STATUS peak_Binning_FactorX_GetList(peak_camera_handle hCam, uint32_t* 
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Binning_FactorY_GetList(peak_camera_handle hCam, uint32_t* binningFactorYList,
     size_t* binningFactorYCount);
@@ -8050,6 +9322,8 @@ PEAK_API_STATUS peak_Binning_FactorY_GetList(peak_camera_handle hCam, uint32_t* 
  * 
  * \note For some camera models the factors for the x direction and the y direction are combined.
  *       For these cameras the specified binningFactorY is applied for both directions.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Binning_Set(peak_camera_handle hCam, uint32_t binningFactorX, uint32_t binningFactorY);
 
@@ -8070,6 +9344,8 @@ PEAK_API_STATUS peak_Binning_Set(peak_camera_handle hCam, uint32_t binningFactor
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Binning_Get(peak_camera_handle hCam, uint32_t* binningFactorX, uint32_t* binningFactorY);
 
@@ -8112,6 +9388,8 @@ typedef enum {
  * \li #PEAK_STATUS_CAMERA_NOT_FOUND    There is no camera with the specified ID.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_ACCESS_STATUS peak_BinningManual_GetAccessStatus(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine);
@@ -8154,6 +9432,8 @@ PEAK_API_ACCESS_STATUS peak_BinningManual_GetAccessStatus(peak_camera_handle hCa
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_BinningManual_FactorX_GetList(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t* binningFactorXList, size_t* binningFactorXCount);
@@ -8169,6 +9449,7 @@ PEAK_API_STATUS peak_BinningManual_FactorX_GetList(peak_camera_handle hCam,
  * This function implements the \ref principle_two_stage_query principle.
  *
  * \param[in] hCam                      The camera handle.
+ * \param[in] subsamplingEngine         The engine for the subsampling algorithm.
  * \param[out] binningFactorYList       Pointer to a user allocated array buffer to receive the binning factor list.
  *                                      If this parameter is NULL, \p binningFactorYCount will contain the current
  *                                      number of binning factors. \n
@@ -8195,6 +9476,8 @@ PEAK_API_STATUS peak_BinningManual_FactorX_GetList(peak_camera_handle hCam,
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_BinningManual_FactorY_GetList(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t* binningFactorYList, size_t* binningFactorYCount);
@@ -8221,6 +9504,8 @@ PEAK_API_STATUS peak_BinningManual_FactorY_GetList(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_BinningManual_Set(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t binningFactorX, uint32_t binningFactorY);
@@ -8243,6 +9528,8 @@ PEAK_API_STATUS peak_BinningManual_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_BinningManual_Get(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t *binningFactorX, uint32_t *binningFactorY);
@@ -8270,6 +9557,8 @@ PEAK_API_STATUS peak_BinningManual_Get(peak_camera_handle hCam,
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Decimation_GetAccessStatus(peak_camera_handle hCam);
 
@@ -8312,6 +9601,8 @@ PEAK_API_ACCESS_STATUS peak_Decimation_GetAccessStatus(peak_camera_handle hCam);
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Decimation_FactorX_GetList(peak_camera_handle hCam, uint32_t* decimationFactorXList,
     size_t* decimationFactorXCount);
@@ -8355,6 +9646,8 @@ PEAK_API_STATUS peak_Decimation_FactorX_GetList(peak_camera_handle hCam, uint32_
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Decimation_FactorY_GetList(peak_camera_handle hCam, uint32_t* decimationFactorYList,
     size_t* decimationFactorYCount);
@@ -8380,6 +9673,8 @@ PEAK_API_STATUS peak_Decimation_FactorY_GetList(peak_camera_handle hCam, uint32_
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Decimation_Set(peak_camera_handle hCam, uint32_t decimationFactorX, uint32_t decimationFactorY);
 
@@ -8400,6 +9695,8 @@ PEAK_API_STATUS peak_Decimation_Set(peak_camera_handle hCam, uint32_t decimation
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Decimation_Get(peak_camera_handle hCam, uint32_t* decimationFactorX, uint32_t* decimationFactorY);
 
@@ -8411,7 +9708,8 @@ PEAK_API_STATUS peak_Decimation_Get(peak_camera_handle hCam, uint32_t* decimatio
  *
  * This function implements the \ref principle_access_status_query principle.
  *
- * \param[in] hCam The camera handle.
+ * \param[in] hCam              The camera handle.
+ * \param[in] subsamplingEngine The engine for the subsampling algorithm.
  *
  * \return #PEAK_ACCESS_READWRITE       The decimation feature is readable and writeable.
  * \return #PEAK_ACCESS_READONLY        The decimation feature is readable only.
@@ -8426,6 +9724,8 @@ PEAK_API_STATUS peak_Decimation_Get(peak_camera_handle hCam, uint32_t* decimatio
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_ACCESS_STATUS peak_DecimationManual_GetAccessStatus(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine);
@@ -8441,6 +9741,7 @@ PEAK_API_ACCESS_STATUS peak_DecimationManual_GetAccessStatus(peak_camera_handle 
  * This function implements the \ref principle_two_stage_query principle.
  *
  * \param[in] hCam                          The camera handle.
+ * \param[in] subsamplingEngine             The engine for the subsampling algorithm.
  * \param[out] decimationFactorXList        Pointer to a user allocated array buffer to receive the
  *                                          decimation factor list.
  *                                          If this parameter is NULL, \p decimationFactorXCount will contain
@@ -8469,6 +9770,8 @@ PEAK_API_ACCESS_STATUS peak_DecimationManual_GetAccessStatus(peak_camera_handle 
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_DecimationManual_FactorX_GetList(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t* decimationFactorXList, size_t* decimationFactorXCount);
@@ -8484,6 +9787,7 @@ PEAK_API_STATUS peak_DecimationManual_FactorX_GetList(peak_camera_handle hCam,
  * This function implements the \ref principle_two_stage_query principle.
  *
  * \param[in] hCam                          The camera handle.
+ * \param[in] subsamplingEngine             The engine for the subsampling algorithm.
  * \param[out] decimationFactorYList        Pointer to a user allocated array buffer to receive
  *                                          the decimation factor list.
  *                                          If this parameter is NULL, \p decimationFactorYCount will contain
@@ -8512,6 +9816,8 @@ PEAK_API_STATUS peak_DecimationManual_FactorX_GetList(peak_camera_handle hCam,
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_DecimationManual_FactorY_GetList(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t* decimationFactorYList, size_t* decimationFactorYCount);
@@ -8538,6 +9844,8 @@ PEAK_API_STATUS peak_DecimationManual_FactorY_GetList(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_DecimationManual_Set(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t decimationFactorX, uint32_t decimationFactorY);
@@ -8560,6 +9868,8 @@ PEAK_API_STATUS peak_DecimationManual_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_DecimationManual_Get(peak_camera_handle hCam,
     peak_subsampling_engine subsamplingEngine, uint32_t *decimationFactorX, uint32_t *decimationFactorY);
@@ -8587,6 +9897,8 @@ PEAK_API_STATUS peak_DecimationManual_Get(peak_camera_handle hCam,
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_ACCESS_STATUS peak_Scaling_GetAccessStatus(peak_camera_handle hCam);
 
@@ -8609,6 +9921,8 @@ PEAK_API_ACCESS_STATUS peak_Scaling_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_Scaling_FactorX_GetRange(peak_camera_handle hCam, double* minScalingFactorX,
     double* maxScalingFactorX, double* incScalingFactorX);
@@ -8632,6 +9946,8 @@ PEAK_API_STATUS peak_Scaling_FactorX_GetRange(peak_camera_handle hCam, double* m
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_Scaling_FactorY_GetRange(peak_camera_handle hCam, double* minScalingFactorY,
     double* maxScalingFactorY, double* incScalingFactorY);
@@ -8660,6 +9976,8 @@ PEAK_API_STATUS peak_Scaling_FactorY_GetRange(peak_camera_handle hCam, double* m
  *
  * \note For some camera models the factors for the x direction and the y direction are combined.
  *       For these cameras the specified scalingFactorY is applied for both directions.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_Scaling_Set(peak_camera_handle hCam, double scalingFactorX, double scalingFactorY);
 
@@ -8680,6 +9998,8 @@ PEAK_API_STATUS peak_Scaling_Set(peak_camera_handle hCam, double scalingFactorX,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_Scaling_Get(peak_camera_handle hCam, double* scalingFactorX, double* scalingFactorY);
 
@@ -8706,6 +10026,8 @@ PEAK_API_STATUS peak_Scaling_Get(peak_camera_handle hCam, double* scalingFactorX
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Mirror_LeftRight_GetAccessStatus(peak_camera_handle hCam);
 
@@ -8724,6 +10046,8 @@ PEAK_API_ACCESS_STATUS peak_Mirror_LeftRight_GetAccessStatus(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Mirror_LeftRight_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -8739,6 +10063,8 @@ PEAK_API_STATUS peak_Mirror_LeftRight_Enable(peak_camera_handle hCam, peak_bool 
  *
  * \return #PEAK_TRUE   The left-right mirroring feature is currently enabled.
  * \return #PEAK_FALSE  The left-right mirroring feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Mirror_LeftRight_IsEnabled(peak_camera_handle hCam);
 
@@ -8765,6 +10091,8 @@ PEAK_API_BOOL peak_Mirror_LeftRight_IsEnabled(peak_camera_handle hCam);
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_Mirror_UpDown_GetAccessStatus(peak_camera_handle hCam);
 
@@ -8783,6 +10111,8 @@ PEAK_API_ACCESS_STATUS peak_Mirror_UpDown_GetAccessStatus(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_Mirror_UpDown_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -8798,6 +10128,8 @@ PEAK_API_STATUS peak_Mirror_UpDown_Enable(peak_camera_handle hCam, peak_bool ena
  *
  * \return #PEAK_TRUE   The up-down mirroring feature is currently enabled.
  * \return #PEAK_FALSE  The up-down mirroring feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_Mirror_UpDown_IsEnabled(peak_camera_handle hCam);
 
@@ -8855,6 +10187,8 @@ typedef enum
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.1
  */
 PEAK_API_ACCESS_STATUS peak_CameraMemory_Area_GetAccessStatus(peak_camera_handle hCam,
     peak_camera_memory_area cameraMemoryArea);
@@ -8897,6 +10231,8 @@ PEAK_API_ACCESS_STATUS peak_CameraMemory_Area_GetAccessStatus(peak_camera_handle
  *       list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.1
  */
 PEAK_API_STATUS peak_CameraMemory_Area_GetList(peak_camera_handle hCam,
     peak_camera_memory_area* cameraMemoryAreaList, size_t* cameraMemoryAreaCount);
@@ -8922,6 +10258,8 @@ PEAK_API_STATUS peak_CameraMemory_Area_GetList(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.1
  */
 PEAK_API_STATUS peak_CameraMemory_Area_Size_Get(peak_camera_handle hCam,
     peak_camera_memory_area cameraMemoryArea, size_t* cameraMemoryAreaSize);
@@ -8945,6 +10283,8 @@ PEAK_API_STATUS peak_CameraMemory_Area_Size_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.1
  */
 PEAK_API_STATUS peak_CameraMemory_Area_Data_Clear(peak_camera_handle hCam,
     peak_camera_memory_area cameraMemoryArea);
@@ -8979,6 +10319,8 @@ PEAK_API_STATUS peak_CameraMemory_Area_Data_Clear(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.1
  */
 PEAK_API_STATUS peak_CameraMemory_Area_Data_Write(peak_camera_handle hCam,
     peak_camera_memory_area cameraMemoryArea, const uint8_t* data, size_t dataSize);
@@ -9011,6 +10353,8 @@ PEAK_API_STATUS peak_CameraMemory_Area_Data_Write(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.1
  */
 PEAK_API_STATUS peak_CameraMemory_Area_Data_Read(peak_camera_handle hCam,
     peak_camera_memory_area cameraMemoryArea, uint8_t* data, size_t dataSize);
@@ -9050,6 +10394,8 @@ PEAK_API_STATUS peak_CameraMemory_Area_Data_Read(peak_camera_handle hCam,
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_EnableWriteAccess(peak_camera_handle hCam, peak_bool enabled);
 
@@ -9067,6 +10413,8 @@ PEAK_API_STATUS peak_GFA_EnableWriteAccess(peak_camera_handle hCam, peak_bool en
  * \return #PEAK_FALSE  The GFA write access is currently disabled or the query failed.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_GFA_IsWriteAccessEnabled(peak_camera_handle hCam);
 
@@ -9134,6 +10482,8 @@ typedef enum
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_GFA_Feature_GetAccessStatus(peak_camera_handle hCam, peak_gfa_module module,
     const char* featureName);
@@ -9152,6 +10502,8 @@ PEAK_API_ACCESS_STATUS peak_GFA_Feature_GetAccessStatus(peak_camera_handle hCam,
  *
  * \return #PEAK_TRUE   The valid values are organized as a range. Use #peak_GFA_Float_GetRange.
  * \return #PEAK_FALSE  The valid values are organized as a list. Use #peak_GFA_Float_GetList.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_GFA_Float_HasRange(peak_camera_handle hCam, peak_gfa_module module, const char* floatFeatureName);
 
@@ -9187,6 +10539,8 @@ PEAK_API_BOOL peak_GFA_Float_HasRange(peak_camera_handle hCam, peak_gfa_module m
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Float_GetRange(peak_camera_handle hCam, peak_gfa_module module, const char* floatFeatureName,
     double* minFloatValue, double* maxFloatValue, double* incFloatValue);
@@ -9234,6 +10588,8 @@ PEAK_API_STATUS peak_GFA_Float_GetRange(peak_camera_handle hCam, peak_gfa_module
  * \note Consider that the float value list might change between the size query call and the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Float_GetList(peak_camera_handle hCam, peak_gfa_module module, const char* floatFeatureName,
     double* floatList, size_t* floatCount);
@@ -9267,6 +10623,8 @@ PEAK_API_STATUS peak_GFA_Float_GetList(peak_camera_handle hCam, peak_gfa_module 
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Float_Set(peak_camera_handle hCam, peak_gfa_module module, const char* floatFeatureName,
     double floatValue);
@@ -9294,6 +10652,8 @@ PEAK_API_STATUS peak_GFA_Float_Set(peak_camera_handle hCam, peak_gfa_module modu
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Float_Get(peak_camera_handle hCam, peak_gfa_module module, const char* floatFeatureName,
     double* floatValue);
@@ -9312,6 +10672,8 @@ PEAK_API_STATUS peak_GFA_Float_Get(peak_camera_handle hCam, peak_gfa_module modu
  *
  * \return #PEAK_TRUE   The valid values are organized as a range. Use #peak_GFA_Integer_GetRange.
  * \return #PEAK_FALSE  The valid values are organized as a list. Use #peak_GFA_Integer_GetList.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_GFA_Integer_HasRange(peak_camera_handle hCam, peak_gfa_module module,
     const char* integerFeatureName);
@@ -9348,6 +10710,8 @@ PEAK_API_BOOL peak_GFA_Integer_HasRange(peak_camera_handle hCam, peak_gfa_module
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Integer_GetRange(peak_camera_handle hCam, peak_gfa_module module,
     const char* integerFeatureName, int64_t* minIntegerValue, int64_t* maxIntegerValue, int64_t* incIntegerValue);
@@ -9397,6 +10761,8 @@ PEAK_API_STATUS peak_GFA_Integer_GetRange(peak_camera_handle hCam, peak_gfa_modu
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Integer_GetList(peak_camera_handle hCam, peak_gfa_module module,
     const char* integerFeatureName, int64_t* integerList, size_t* integerCount);
@@ -9430,6 +10796,8 @@ PEAK_API_STATUS peak_GFA_Integer_GetList(peak_camera_handle hCam, peak_gfa_modul
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Integer_Set(peak_camera_handle hCam, peak_gfa_module module, const char* integerFeatureName,
     int64_t integerValue);
@@ -9457,6 +10825,8 @@ PEAK_API_STATUS peak_GFA_Integer_Set(peak_camera_handle hCam, peak_gfa_module mo
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Integer_Get(peak_camera_handle hCam, peak_gfa_module module, const char* integerFeatureName,
     int64_t* integerValue);
@@ -9489,6 +10859,8 @@ PEAK_API_STATUS peak_GFA_Integer_Get(peak_camera_handle hCam, peak_gfa_module mo
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Boolean_Set(peak_camera_handle hCam, peak_gfa_module module, const char* booleanFeatureName,
     peak_bool booleanValue);
@@ -9516,6 +10888,8 @@ PEAK_API_STATUS peak_GFA_Boolean_Set(peak_camera_handle hCam, peak_gfa_module mo
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Boolean_Get(peak_camera_handle hCam, peak_gfa_module module, const char* booleanFeatureName,
     peak_bool* booleanValue);
@@ -9547,6 +10921,8 @@ PEAK_API_STATUS peak_GFA_Boolean_Get(peak_camera_handle hCam, peak_gfa_module mo
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_String_Set(peak_camera_handle hCam, peak_gfa_module module, const char* stringFeatureName,
     const char* stringValue);
@@ -9594,6 +10970,8 @@ PEAK_API_STATUS peak_GFA_String_Set(peak_camera_handle hCam, peak_gfa_module mod
  * \note Consider that the string value might change between the size query call and the value query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_String_Get(peak_camera_handle hCam, peak_gfa_module module, const char* stringFeatureName,
     char* stringValue, size_t* stringValueSize);
@@ -9623,6 +11001,8 @@ PEAK_API_STATUS peak_GFA_String_Get(peak_camera_handle hCam, peak_gfa_module mod
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Command_Execute(peak_camera_handle hCam, peak_gfa_module module,
     const char* commandFeatureName);
@@ -9658,6 +11038,8 @@ PEAK_API_STATUS peak_GFA_Command_Execute(peak_camera_handle hCam, peak_gfa_modul
  *       If the applications control flow depends on the command execution to be done before it proceeds it should
  *       call this function with a reasonable timeout and take action for the case that the wait times out.
  *       A pending call to this function can not be aborted.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Command_WaitForDone(peak_camera_handle hCam, peak_gfa_module module,
     const char* commandFeatureName, uint32_t timeout_ms);
@@ -9725,6 +11107,8 @@ PEAK_API_STATUS peak_GFA_Command_WaitForDone(peak_camera_handle hCam, peak_gfa_m
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Enumeration_GetList(peak_camera_handle hCam, peak_gfa_module module,
     const char* enumerationFeatureName, peak_gfa_enumeration_entry* enumerationEntryList,
@@ -9763,6 +11147,8 @@ PEAK_API_STATUS peak_GFA_Enumeration_GetList(peak_camera_handle hCam, peak_gfa_m
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_GFA_EnumerationEntry_GetAccessStatus(peak_camera_handle hCam, peak_gfa_module module,
     const char* enumerationFeatureName, const peak_gfa_enumeration_entry* enumerationEntry);
@@ -9798,6 +11184,8 @@ PEAK_API_ACCESS_STATUS peak_GFA_EnumerationEntry_GetAccessStatus(peak_camera_han
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue(peak_camera_handle hCam,
     peak_gfa_module module, const char* enumerationFeatureName, const char* enumerationEntrySymbolicValue);
@@ -9832,6 +11220,8 @@ PEAK_API_ACCESS_STATUS peak_GFA_EnumerationEntry_GetAccessStatusBySymbolicValue(
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
 *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_ACCESS_STATUS peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue(peak_camera_handle hCam,
     peak_gfa_module module, const char* enumerationFeatureName, int64_t enumerationEntryIntegerValue);
@@ -9868,6 +11258,8 @@ PEAK_API_ACCESS_STATUS peak_GFA_EnumerationEntry_GetAccessStatusByIntegerValue(p
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Enumeration_Set(peak_camera_handle hCam, peak_gfa_module module,
     const char* enumerationFeatureName, const peak_gfa_enumeration_entry* enumerationEntry);
@@ -9902,6 +11294,8 @@ PEAK_API_STATUS peak_GFA_Enumeration_Set(peak_camera_handle hCam, peak_gfa_modul
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Enumeration_SetBySymbolicValue(peak_camera_handle hCam, peak_gfa_module module,
     const char* enumerationFeatureName, const char* enumerationEntrySymbolicValue);
@@ -9935,6 +11329,8 @@ PEAK_API_STATUS peak_GFA_Enumeration_SetBySymbolicValue(peak_camera_handle hCam,
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Enumeration_SetByIntegerValue(peak_camera_handle hCam, peak_gfa_module module,
     const char* enumerationFeatureName, int64_t enumerationEntryIntegerValue);
@@ -9962,6 +11358,8 @@ PEAK_API_STATUS peak_GFA_Enumeration_SetByIntegerValue(peak_camera_handle hCam, 
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Enumeration_Get(peak_camera_handle hCam, peak_gfa_module module,
     const char* enumerationFeatureName, peak_gfa_enumeration_entry* enumerationEntry);
@@ -9995,6 +11393,8 @@ PEAK_API_STATUS peak_GFA_Enumeration_Get(peak_camera_handle hCam, peak_gfa_modul
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Register_Set(peak_camera_handle hCam, peak_gfa_module module, const char* registerFeatureName,
     const uint8_t* registerValue, size_t registerValueSize);
@@ -10037,6 +11437,8 @@ PEAK_API_STATUS peak_GFA_Register_Set(peak_camera_handle hCam, peak_gfa_module m
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Register_Get(peak_camera_handle hCam, peak_gfa_module module, const char* registerFeatureName,
     uint8_t* registerValue, size_t* registerValueSize);
@@ -10069,6 +11471,8 @@ PEAK_API_STATUS peak_GFA_Register_Get(peak_camera_handle hCam, peak_gfa_module m
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Data_Write(peak_camera_handle hCam, peak_gfa_module module, uint64_t address,
     const uint8_t* data, size_t dataSize);
@@ -10096,6 +11500,8 @@ PEAK_API_STATUS peak_GFA_Data_Write(peak_camera_handle hCam, peak_gfa_module mod
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * For a description of the generic feature access concept see \ref concept_generic_feature_access.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_GFA_Data_Read(peak_camera_handle hCam, peak_gfa_module module, uint64_t address, uint8_t* data,
     size_t dataSize);
@@ -10135,6 +11541,8 @@ PEAK_API_STATUS peak_GFA_Data_Read(peak_camera_handle hCam, peak_gfa_module modu
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_PixelFormat_GetList(peak_camera_handle hCam, peak_pixel_format inputPixelFormat,
     peak_pixel_format* outputPixelFormatList, size_t* outputPixelFormatCount);
@@ -10161,6 +11569,8 @@ PEAK_API_STATUS peak_IPL_PixelFormat_GetList(peak_camera_handle hCam, peak_pixel
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_PixelFormat_Set(peak_camera_handle hCam, peak_pixel_format pixelFormat);
 
@@ -10178,6 +11588,8 @@ PEAK_API_STATUS peak_IPL_PixelFormat_Set(peak_camera_handle hCam, peak_pixel_for
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_PixelFormat_Get(peak_camera_handle hCam, peak_pixel_format* pixelFormat);
 
@@ -10198,6 +11610,8 @@ PEAK_API_STATUS peak_IPL_PixelFormat_Get(peak_camera_handle hCam, peak_pixel_for
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Gain_GetRange(peak_camera_handle hCam, peak_gain_channel gainChannel, double* minGain,
     double* maxGain, double* incGain);
@@ -10220,6 +11634,8 @@ PEAK_API_STATUS peak_IPL_Gain_GetRange(peak_camera_handle hCam, peak_gain_channe
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Gain_Set(peak_camera_handle hCam, peak_gain_channel gainChannel, double gain);
 
@@ -10240,6 +11656,8 @@ PEAK_API_STATUS peak_IPL_Gain_Set(peak_camera_handle hCam, peak_gain_channel gai
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Gain_Get(peak_camera_handle hCam, peak_gain_channel gainChannel, double* gain);
 
@@ -10259,6 +11677,8 @@ PEAK_API_STATUS peak_IPL_Gain_Get(peak_camera_handle hCam, peak_gain_channel gai
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Gamma_GetRange(peak_camera_handle hCam, double* minGamma, double* maxGamma, double* incGamma);
 
@@ -10277,6 +11697,8 @@ PEAK_API_STATUS peak_IPL_Gamma_GetRange(peak_camera_handle hCam, double* minGamm
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Gamma_Set(peak_camera_handle hCam, double gamma);
 
@@ -10294,12 +11716,14 @@ PEAK_API_STATUS peak_IPL_Gamma_Set(peak_camera_handle hCam, double gamma);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Gamma_Get(peak_camera_handle hCam, double* gamma);
 
 /*!
  * \ingroup host_color_correction
- * \brief Sets the cost color correction matrix.
+ * \brief Sets the host color correction matrix.
  *
  * Writes the desired image color correction matrix.
  *
@@ -10310,6 +11734,8 @@ PEAK_API_STATUS peak_IPL_Gamma_Get(peak_camera_handle hCam, double* gamma);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_ColorCorrection_Matrix_Set(peak_camera_handle hCam, peak_matrix colorCorrectionMatrix);
 
@@ -10327,6 +11753,8 @@ PEAK_API_STATUS peak_IPL_ColorCorrection_Matrix_Set(peak_camera_handle hCam, pea
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_ColorCorrection_Matrix_Get(peak_camera_handle hCam, peak_matrix* colorCorrectionMatrix);
 
@@ -10344,6 +11772,8 @@ PEAK_API_STATUS peak_IPL_ColorCorrection_Matrix_Get(peak_camera_handle hCam, pea
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_Get(peak_camera_handle hCam, double* saturation);
 
@@ -10362,6 +11792,8 @@ PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_Set(peak_camera_handle hCam, double saturation);
 
@@ -10382,8 +11814,243 @@ PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_GetRange(peak_camera_handle hCam, double* minSaturation, double* maxSaturation, double* incSaturation);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Enumeration that defines the available chromatic adaption algorithms.
+ *
+ * The algorithms use a CAT (chromatic adaptation transform) matrix for chromatic adaption.
+ * There are various available CATs describing the transformation.
+ *
+ * \since 1.14
+ */
+typedef enum
+{
+    /*! \brief Invalid chromatic adaption algorithm
+     *
+     * Use this value for the initialization of variables of type peak_chromatic_adaption_algorithm.
+     */
+    PEAK_CHROMATIC_ADAPTION_ALGORITHM_INVALID   = 0x00,
+
+    /*! The legacy algorithm */
+    PEAK_CHROMATIC_ADAPTION_ALGORITHM_LEGACY   = 0x01,
+
+    /*! The Bradford CAT matrix algorithm. This is the default. */
+    PEAK_CHROMATIC_ADAPTION_ALGORITHM_BRADFORD = 0x02
+} peak_chromatic_adaption_algorithm;
+
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Enumeration that defines the available color spaces.
+ *
+ * A color space is a specific implementation of a color model, mapping colors to a defined range of values.
+ * For example, sRGB is a standardized color space based on the RGB color model, but it also defines color primaries,
+ * the white point, and gamma to ensure consistent color representation across various platforms and devices.
+ *
+ * \since 1.14
+ */
+typedef enum
+{
+    /*! \brief Invalid color space
+     *
+     * Use this value for the initialization of variables of type peak_chromatic_adaption_color_space.
+     */
+    PEAK_CHROMATIC_ADAPTION_COLOR_SPACE_INVALID       = 0x00,
+
+    //! sRGB (standard RGB): standard illuminant D50 (5000 K), gamma 2.2.
+    PEAK_CHROMATIC_ADAPTION_COLOR_SPACE_SRGB_D50      = 0x01,
+
+    //! sRGB (standard RGB): standard illuminant D65 (6500 K), gamma 2.2.
+    PEAK_CHROMATIC_ADAPTION_COLOR_SPACE_SRGB_D65      = 0x02,
+
+    //! CIE-RGB: standard illuminant E (equal energy distribution), gamma 2.2.
+    PEAK_CHROMATIC_ADAPTION_COLOR_SPACE_CIE_RGB_E     = 0x03,
+
+    //! ECI-RGB: standard illuminant D50 (5000 K), gamma 1.8.
+    PEAK_CHROMATIC_ADAPTION_COLOR_SPACE_ECI_RGB_D50   = 0x04,
+
+    //! Adobe RGB: standard illuminant D65 (6500 K), gamma 2.2.
+    PEAK_CHROMATIC_ADAPTION_COLOR_SPACE_ADOBE_RGB_D65 = 0x05
+} peak_chromatic_adaption_color_space;
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Get the target color space
+ *
+ * There are many available color spaces.
+ * The implemented color spaces are listed in the enum \ref peak_chromatic_adaption_color_space.
+ *
+ * \param[in]  hCam                  The camera handle.
+ * \param[out] colorSpace            Pointer to a variable which will receive the current color space.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p colorSpace is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Get(peak_camera_handle hCam,
+    peak_chromatic_adaption_color_space* colorSpace);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Set the target color space
+ *
+ * The available color spaces are listed in the enum \ref peak_chromatic_adaption_color_space.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[in] colorSpace            The color space to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS         Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER \p colorSpace is not a valid enum value of peak_chromatic_adaption_color_space.
+ * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorSpace_Set(peak_camera_handle hCam,
+    peak_chromatic_adaption_color_space colorSpace);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Get the current algorithm used for chromatic adaption
+ *
+ * The implemented algorithms are listed in the enum \ref peak_chromatic_adaption_algorithm.
+ *
+ * \param[in]  hCam                  The camera handle.
+ * \param[out] algorithm             Pointer to a variable which will receive the current algorithm.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p algorithm is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Get(peak_camera_handle hCam,
+    peak_chromatic_adaption_algorithm* algorithm);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Set the algorithm used for chromatic adaption
+ *
+ * The available color spaces are listed in the enum \ref peak_chromatic_adaption_algorithm.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[in] algorithm             The algorithm to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS         Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER \p algorithm is not a valid enum value of peak_chromatic_adaption_algorithm.
+ * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_Algorithm_Set(peak_camera_handle hCam,
+    peak_chromatic_adaption_algorithm algorithm);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Get the current color temperature
+ *
+ * \param[in]  hCam                  The camera handle.
+ * \param[out] colorTemperature      Pointer to a variable which will receive the current color temperature in Kelvin.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p colorTemperature is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Get(
+    peak_camera_handle hCam, uint32_t* colorTemperature);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Set the used color temperature used for chromatic adaption
+ *
+ * The usable range depends on the current combination of target color space and algorithm.
+ * If one of them is changed the range should be rechecked with \ref peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange.
+ *
+ * \param[in] hCam                  The camera handle.
+ * \param[in] colorTemperature      The color temperature in Kelvin to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS         Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_OUT_OF_RANGE    \p colorTemperature value is out of range.
+ *                                      Check the range of valid values via #peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange.
+ * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_Set(
+    peak_camera_handle hCam, uint32_t colorTemperature);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Returns the allowed temperature range for the current combination of color space and algorithm.
+ *
+ * \param[in] hCam                      The camera handle.
+ * \param[out] minColorTemperature      The minimum color temperature value.
+ * \param[out] maxColorTemperature      The maximum color temperature value.
+ * \param[out] incColorTemperature      The color temperature value increment.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minColorTemperature, \p maxColorTemperature, and
+ *                                          \p incColorTemperature is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_ColorTemperature_GetRange(
+    peak_camera_handle hCam, uint32_t* minColorTemperature, uint32_t* maxColorTemperature, uint32_t* incColorTemperature);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Enable/Disable the host chromatic adaption
+ *
+ * \param[in] hCam      The camera handle.
+ * \param[in] enable    The desired enabled status. #PEAK_TRUE for enabled, #PEAK_FALSE for disabled.
+ *
+ * \return #PEAK_STATUS_SUCCESS         Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.14
+ */
+PEAK_API_STATUS peak_IPL_ColorCorrection_ChromaticAdaption_Enable(peak_camera_handle hCam,
+    peak_bool enable);
+
+/*!
+ * \ingroup host_chromatic_adaption
+ * \brief Get the enabled status of the chromatic adaption
+ *
+ * This function implements the \ref principle_enabled_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_TRUE   The chromatic adaption is currently enabled.
+ * \return #PEAK_FALSE  The chromatic adaption is currently disabled or the query failed.
+ *
+ * \since 1.14
+ */
+PEAK_API_BOOL peak_IPL_ColorCorrection_ChromaticAdaption_IsEnabled(peak_camera_handle hCam);
 
 /*!
  * \ingroup host_color_correction
@@ -10398,6 +12065,8 @@ PEAK_API_STATUS peak_IPL_ColorCorrection_Saturation_GetRange(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_ColorCorrection_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -10413,6 +12082,8 @@ PEAK_API_STATUS peak_IPL_ColorCorrection_Enable(peak_camera_handle hCam, peak_bo
  *
  * \return #PEAK_TRUE   The color correction feature is currently enabled.
  * \return #PEAK_FALSE  The color correction feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IPL_ColorCorrection_IsEnabled(peak_camera_handle hCam);
 
@@ -10433,6 +12104,8 @@ PEAK_API_BOOL peak_IPL_ColorCorrection_IsEnabled(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Target_GetRange(peak_camera_handle hCam, uint32_t* minAutoBrightnessTarget,
     uint32_t* maxAutoBrightnessTarget, uint32_t* incAutoBrightnessTarget);
@@ -10452,6 +12125,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Target_GetRange(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Target_Set(peak_camera_handle hCam, uint32_t autoBrightnessTarget);
 
@@ -10469,6 +12144,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Target_Set(peak_camera_handle hCam, uint
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Target_Get(peak_camera_handle hCam, uint32_t* autoBrightnessTarget);
 
@@ -10490,6 +12167,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Target_Get(peak_camera_handle hCam, uint
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_TargetTolerance_GetRange(peak_camera_handle hCam,
     uint32_t* minAutoBrightnessTargetTolerance, uint32_t* maxAutoBrightnessTargetTolerance,
@@ -10511,6 +12190,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_TargetTolerance_GetRange(peak_camera_han
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_TargetTolerance_Set(peak_camera_handle hCam,
     uint32_t autoBrightnessTargetTolerance);
@@ -10529,6 +12210,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_TargetTolerance_Set(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_TargetTolerance_Get(peak_camera_handle hCam,
     uint32_t* autoBrightnessTargetTolerance);
@@ -10551,6 +12234,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_TargetTolerance_Get(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_TargetPercentile_GetRange(peak_camera_handle hCam,
     double* minAutoBrightnessTargetPercentile, double* maxAutoBrightnessTargetPercentile,
@@ -10572,6 +12257,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_TargetPercentile_GetRange(peak_camera_ha
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_TargetPercentile_Set(peak_camera_handle hCam,
     double autoBrightnessTargetPercentile);
@@ -10590,6 +12277,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_TargetPercentile_Set(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_TargetPercentile_Get(peak_camera_handle hCam,
     double* autoBrightnessTargetPercentile);
@@ -10609,6 +12298,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_TargetPercentile_Get(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Mode_Set(peak_camera_handle hCam,
     peak_auto_feature_roi_mode autoBrightnessROIMode);
@@ -10627,6 +12318,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Mode_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Mode_Get(peak_camera_handle hCam,
     peak_auto_feature_roi_mode* autoBrightnessROIMode);
@@ -10651,6 +12344,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Mode_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Offset_GetRange(peak_camera_handle hCam,
     peak_position* minAutoBrightnessROIOffset, peak_position* maxAutoBrightnessROIOffset,
@@ -10676,6 +12371,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Offset_GetRange(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Size_GetRange(peak_camera_handle hCam,
     peak_size* minAutoBrightnessROISize, peak_size* maxAutoBrightnessROISize, peak_size* incAutoBrightnessROISize);
@@ -10703,6 +12400,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Size_GetRange(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Set(peak_camera_handle hCam, peak_roi autoBrightnessROI);
 
@@ -10720,6 +12419,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Set(peak_camera_handle hCam, peak_ro
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Get(peak_camera_handle hCam, peak_roi* autoBrightnessROI);
 
@@ -10738,6 +12439,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ROI_Get(peak_camera_handle hCam, peak_ro
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Exposure_Mode_Set(peak_camera_handle hCam,
     peak_auto_feature_mode autoExposureMode);
@@ -10756,6 +12459,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Exposure_Mode_Set(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Exposure_Mode_Get(peak_camera_handle hCam,
     peak_auto_feature_mode* autoExposureMode);
@@ -10787,6 +12492,8 @@ peak_double_limit;
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ExposureLimit_Get(peak_camera_handle hCam, peak_double_limit* exposureLimit);
 
@@ -10802,6 +12509,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ExposureLimit_Get(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_ExposureLimit_Set(peak_camera_handle hCam, peak_double_limit exposureLimit);
 
@@ -10821,6 +12530,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_ExposureLimit_Set(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Gain_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 
@@ -10838,6 +12549,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Gain_Mode_Set(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Gain_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoGainMode);
 
@@ -10857,6 +12570,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Gain_Mode_Get(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalog_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 
@@ -10874,6 +12589,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalog_Mode_Set(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalog_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoGainMode);
 
@@ -10893,6 +12610,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalog_Mode_Get(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigital_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 
@@ -10910,6 +12629,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigital_Mode_Set(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigital_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoGainMode);
 
@@ -10928,6 +12649,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigital_Mode_Get(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombined_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 
@@ -10945,6 +12668,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombined_Mode_Set(peak_camera_handle
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombined_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoGainMode);
 
@@ -10964,6 +12689,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombined_Mode_Get(peak_camera_handle
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainHost_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoGainMode);
 
@@ -10981,6 +12708,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainHost_Mode_Set(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainHost_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoGainMode);
 
@@ -10999,6 +12728,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainHost_Mode_Get(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Algorithm_Set(peak_camera_handle hCam, peak_auto_feature_brightness_algorithm algorithm);
 
@@ -11016,6 +12747,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Algorithm_Set(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_Algorithm_Get(peak_camera_handle hCam, peak_auto_feature_brightness_algorithm* algorithm);
 
@@ -11033,6 +12766,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_Algorithm_Get(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_AverageLast_Get(peak_camera_handle hCam, uint32_t* lastAverage);
 
@@ -11055,6 +12790,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_AverageLast_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_VALUE_ADJUSTED      At least one value of the limit is out of range. The limit was adjusted accordingly.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainLimit_Set(peak_camera_handle hCam, peak_double_limit gainLimit);
 
@@ -11070,6 +12807,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainLimit_Set(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainLimit_Get(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11088,6 +12827,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainLimit_Get(peak_camera_handle hCam, p
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainLimit_GetRange(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11110,6 +12851,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainLimit_GetRange(peak_camera_handle hC
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_VALUE_ADJUSTED      At least one value of the limit is out of range. The limit was adjusted accordingly.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalogLimit_Set(peak_camera_handle hCam, peak_double_limit gainLimit);
 
@@ -11125,6 +12868,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalogLimit_Set(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalogLimit_Get(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11142,6 +12887,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalogLimit_Get(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalogLimit_GetRange(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11164,6 +12911,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainAnalogLimit_GetRange(peak_camera_han
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_VALUE_ADJUSTED      At least one value of the limit is out of range. The limit was adjusted accordingly.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigitalLimit_Set(peak_camera_handle hCam, peak_double_limit gainLimit);
 
@@ -11179,6 +12928,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigitalLimit_Set(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigitalLimit_Get(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11196,6 +12947,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigitalLimit_Get(peak_camera_handle 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigitalLimit_GetRange(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11218,6 +12971,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainDigitalLimit_GetRange(peak_camera_ha
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_VALUE_ADJUSTED      At least one value of the limit is out of range. The limit was adjusted accordingly.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombinedLimit_Set(peak_camera_handle hCam, peak_double_limit gainLimit);
 
@@ -11233,6 +12988,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombinedLimit_Set(peak_camera_handle
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombinedLimit_Get(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11250,6 +13007,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombinedLimit_Get(peak_camera_handle
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombinedLimit_GetRange(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11272,6 +13031,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainCombinedLimit_GetRange(peak_camera_h
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_VALUE_ADJUSTED      At least one value of the limit is out of range. The limit was adjusted accordingly.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainHostLimit_Set(peak_camera_handle hCam, peak_double_limit gainLimit);
 
@@ -11287,6 +13048,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainHostLimit_Set(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainHostLimit_Get(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11304,6 +13067,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainHostLimit_Get(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_GainHostLimit_GetRange(peak_camera_handle hCam, peak_double_limit* gainLimit);
 
@@ -11318,6 +13083,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_GainHostLimit_GetRange(peak_camera_handl
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_SkipFrames_Set(peak_camera_handle hCam, uint32_t skipFrames);
 
@@ -11333,6 +13100,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_SkipFrames_Set(peak_camera_handle hCam, 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_SkipFrames_Get(peak_camera_handle hCam, uint32_t* skipFrames);
 
@@ -11351,6 +13120,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_SkipFrames_Get(peak_camera_handle hCam, 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoBrightness_SkipFrames_GetRange(peak_camera_handle hCam,
     uint32_t* skipFramesMin, uint32_t* skipFramesMax, uint32_t* skipFramesInc);
@@ -11370,6 +13141,8 @@ PEAK_API_STATUS peak_IPL_AutoBrightness_SkipFrames_GetRange(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Mode_Set(peak_camera_handle hCam,
     peak_auto_feature_roi_mode autoWhiteBalanceROIMode);
@@ -11388,6 +13161,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Mode_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Mode_Get(peak_camera_handle hCam,
     peak_auto_feature_roi_mode* autoWhiteBalanceROIMode);
@@ -11412,6 +13187,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Mode_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange(peak_camera_handle hCam,
     peak_position* minAutoWhiteBalanceROIOffset, peak_position* maxAutoWhiteBalanceROIOffset,
@@ -11437,6 +13214,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Offset_GetRange(peak_camera_handle
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Size_GetRange(peak_camera_handle hCam,
     peak_size* minAutoWhiteBalanceROISize, peak_size* maxAutoWhiteBalanceROISize,
@@ -11467,6 +13246,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Size_GetRange(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Set(peak_camera_handle hCam, peak_roi autoWhiteBalanceROI);
 
@@ -11484,6 +13265,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Set(peak_camera_handle hCam, peak_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Get(peak_camera_handle hCam, peak_roi* autoWhiteBalanceROI);
 
@@ -11502,6 +13285,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_ROI_Get(peak_camera_handle hCam, peak_
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoWhiteBalanceMode);
 
@@ -11519,6 +13304,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_Mode_Set(peak_camera_handle hCam, peak
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_Mode_Get(peak_camera_handle hCam,
     peak_auto_feature_mode* autoWhiteBalanceMode);
@@ -11535,6 +13322,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_Mode_Get(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_SkipFrames_Set(peak_camera_handle hCam, uint32_t skipFrames);
 
@@ -11550,6 +13339,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_SkipFrames_Set(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_SkipFrames_Get(peak_camera_handle hCam, uint32_t* skipFrames);
 
@@ -11568,6 +13359,8 @@ PEAK_API_STATUS peak_IPL_AutoWhiteBalance_SkipFrames_Get(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.7
  */
 PEAK_API_STATUS peak_IPL_AutoWhiteBalance_SkipFrames_GetRange(peak_camera_handle hCam,
     uint32_t* skipFramesMin, uint32_t* skipFramesMax, uint32_t* skipFramesInc);
@@ -11635,6 +13428,8 @@ typedef struct
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_ACCESS_STATUS peak_IPL_AutoFocus_GetAccessStatus(peak_camera_handle hCam);
 
@@ -11657,6 +13452,8 @@ PEAK_API_ACCESS_STATUS peak_IPL_AutoFocus_GetAccessStatus(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_ROI_Set(peak_camera_handle hCam, const peak_focus_roi* autoFocusROIList,
     size_t autoFocusROICount);
@@ -11691,6 +13488,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_ROI_Set(peak_camera_handle hCam, const peak_f
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_ROI_Get(peak_camera_handle hCam, peak_focus_roi* autoFocusROIList,
     size_t* autoFocusROICount);
@@ -11710,6 +13509,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_ROI_Get(peak_camera_handle hCam, peak_focus_r
  *                                          Check #peak_auto_feature_mode.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Mode_Set(peak_camera_handle hCam, peak_auto_feature_mode autoFocusMode);
 
@@ -11727,6 +13528,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_Mode_Set(peak_camera_handle hCam, peak_auto_f
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p autoFocusMode is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Mode_Get(peak_camera_handle hCam, peak_auto_feature_mode* autoFocusMode);
 
@@ -11789,6 +13592,8 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_SearchAlgorithm_Set(peak_camera_handle hCam,
     peak_auto_focus_search_algorithm searchAlgorithm);
@@ -11809,6 +13614,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_SearchAlgorithm_Set(peak_camera_handle hCam,
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_SearchAlgorithm_Get(peak_camera_handle hCam,
     peak_auto_focus_search_algorithm* searchAlgorithm);
@@ -11871,6 +13678,8 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_SharpnessAlgorithm_Set(peak_camera_handle hCam,
     peak_sharpness_algorithm sharpnessAlgorithm);
@@ -11891,6 +13700,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_SharpnessAlgorithm_Set(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_SharpnessAlgorithm_Get(peak_camera_handle hCam,
     peak_sharpness_algorithm* sharpnessAlgorithm);
@@ -11913,6 +13724,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_SharpnessAlgorithm_Get(peak_camera_handle hCa
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Range_Set(peak_camera_handle hCam, uint32_t rangeBegin, uint32_t rangeEnd);
 
@@ -11933,6 +13746,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_Range_Set(peak_camera_handle hCam, uint32_t r
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Range_Get(peak_camera_handle hCam, uint32_t* rangeBegin, uint32_t* rangeEnd);
 
@@ -11953,6 +13768,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_Range_Get(peak_camera_handle hCam, uint32_t* 
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Hysteresis_Set(peak_camera_handle hCam, uint8_t hysteresis);
 
@@ -11972,6 +13789,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_Hysteresis_Set(peak_camera_handle hCam, uint8
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Hysteresis_Get(peak_camera_handle hCam, uint8_t* hysteresis);
 
@@ -11994,6 +13813,8 @@ PEAK_API_STATUS peak_IPL_AutoFocus_Hysteresis_Get(peak_camera_handle hCam, uint8
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.3
  */
 PEAK_API_STATUS peak_IPL_AutoFocus_Hysteresis_GetRange(peak_camera_handle hCam, uint8_t* minHysteresis,
     uint8_t* maxHysteresis, uint8_t* incHysteresis);
@@ -12058,6 +13879,8 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_HotpixelCorrection_Sensitivity_Set(peak_camera_handle hCam,
     peak_hotpixel_correction_sensitivity hotpixelCorrectionSensitivity);
@@ -12076,6 +13899,8 @@ PEAK_API_STATUS peak_IPL_HotpixelCorrection_Sensitivity_Set(peak_camera_handle h
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_HotpixelCorrection_Sensitivity_Get(peak_camera_handle hCam,
     peak_hotpixel_correction_sensitivity* hotpixelCorrectionSensitivity);
@@ -12113,6 +13938,8 @@ PEAK_API_STATUS peak_IPL_HotpixelCorrection_Sensitivity_Get(peak_camera_handle h
  *       the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_HotpixelCorrection_GetList(peak_camera_handle hCam, peak_position* hotpixelList,
     size_t* hotpixelCount);
@@ -12135,6 +13962,8 @@ PEAK_API_STATUS peak_IPL_HotpixelCorrection_GetList(peak_camera_handle hCam, pea
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_HotpixelCorrection_SetList(peak_camera_handle hCam, const peak_position* hotpixelList,
     size_t hotpixelCount);
@@ -12155,6 +13984,8 @@ PEAK_API_STATUS peak_IPL_HotpixelCorrection_SetList(peak_camera_handle hCam, con
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_HotpixelCorrection_ResetList(peak_camera_handle hCam);
 
@@ -12172,6 +14003,8 @@ PEAK_API_STATUS peak_IPL_HotpixelCorrection_ResetList(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_HotpixelCorrection_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -12187,6 +14020,8 @@ PEAK_API_STATUS peak_IPL_HotpixelCorrection_Enable(peak_camera_handle hCam, peak
  *
  * \return #PEAK_TRUE   The host hotpixel correction feature is currently enabled.
  * \return #PEAK_FALSE  The host hotpixel correction feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IPL_HotpixelCorrection_IsEnabled(peak_camera_handle hCam);
 
@@ -12204,6 +14039,8 @@ PEAK_API_BOOL peak_IPL_HotpixelCorrection_IsEnabled(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Mirror_UpDown_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -12219,6 +14056,8 @@ PEAK_API_STATUS peak_IPL_Mirror_UpDown_Enable(peak_camera_handle hCam, peak_bool
  *
  * \return #PEAK_TRUE   The up-down mirroring feature is currently enabled.
  * \return #PEAK_FALSE  The up-down mirroring feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IPL_Mirror_UpDown_IsEnabled(peak_camera_handle hCam);
 
@@ -12236,6 +14075,8 @@ PEAK_API_BOOL peak_IPL_Mirror_UpDown_IsEnabled(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_Mirror_LeftRight_Enable(peak_camera_handle hCam, peak_bool enabled);
 
@@ -12251,6 +14092,8 @@ PEAK_API_STATUS peak_IPL_Mirror_LeftRight_Enable(peak_camera_handle hCam, peak_b
  *
  * \return #PEAK_TRUE   The left-right mirroring feature is currently enabled.
  * \return #PEAK_FALSE  The left-right mirroring feature is currently disabled or the query failed.
+ *
+ * \since 1.0
  */
 PEAK_API_BOOL peak_IPL_Mirror_LeftRight_IsEnabled(peak_camera_handle hCam);
 
@@ -12274,8 +14117,11 @@ PEAK_API_BOOL peak_IPL_Mirror_LeftRight_IsEnabled(peak_camera_handle hCam);
  *                                              information.
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p hResultFrame is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE          \p hFrame and/or \p hCam are invalid handles.
+ * \return #PEAK_STATUS_NOT_SUPPORTED           \p hFrame has an unsupported pixel format.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_ProcessFrame(peak_camera_handle hCam, peak_frame_handle hFrame,
     peak_frame_handle* hResultFrame);
@@ -12303,10 +14149,35 @@ PEAK_API_STATUS peak_IPL_ProcessFrame(peak_camera_handle hCam, peak_frame_handle
  * \return #PEAK_STATUS_BUFFER_TOO_SMALL        The image processing pipeline is configured for debayering, which
  *                                              can't be done in-place.
  * \return #PEAK_STATUS_INVALID_HANDLE          \p hFrame and/or \p hCam are invalid handles.
+ * \return #PEAK_STATUS_NOT_SUPPORTED           \p hFrame has an unsupported pixel format.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.0
  */
 PEAK_API_STATUS peak_IPL_ProcessFrameInplace(peak_camera_handle hCam, peak_frame_handle hFrame);
+
+/*!
+ * \ingroup host_features
+ * \brief Reads an image file from the disk and returns the peak_frame_handle for it.
+ *
+ * The supported file extensions for the image file include png, bmp, jpg and tiff.
+ * If the frame is no longer needed it needs to be released by a call to peak_Frame_Release.
+ *
+ * \param[in]  hCam      The camera handle.
+ * \param[in]  path      The path to the image file on the disk.
+ * \param[out] hFrame    Handle to the frame.
+ *
+ * \return #PEAK_STATUS_SUCCESS                 Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_HANDLE          \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_INVALID_PARAMETER       \p path or \p hFrame are invalid pointer.
+ * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
+ * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_ReadImage(
+    peak_camera_handle hCam, const char* path, peak_frame_handle* hFrame);
 
 /*!
  * \ingroup host_edge_enhancement
@@ -12322,6 +14193,8 @@ PEAK_API_STATUS peak_IPL_ProcessFrameInplace(peak_camera_handle hCam, peak_frame
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_IPL_EdgeEnhancement_Enable(peak_camera_handle hCam, peak_bool enable);
 
@@ -12337,6 +14210,8 @@ PEAK_API_STATUS peak_IPL_EdgeEnhancement_Enable(peak_camera_handle hCam, peak_bo
  *
  * \return #PEAK_TRUE   The edge enhancement feature is currently enabled.
  * \return #PEAK_FALSE  The edge enhancement feature is currently disabled or the query failed.
+ *
+ * \since 1.5
  */
 PEAK_API_BOOL peak_IPL_EdgeEnhancement_IsEnabled(peak_camera_handle hCam);
 
@@ -12356,6 +14231,8 @@ PEAK_API_BOOL peak_IPL_EdgeEnhancement_IsEnabled(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_Set(peak_camera_handle hCam, uint32_t factor);
 
@@ -12373,6 +14250,8 @@ PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_Set(peak_camera_handle hCam, uin
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_Get(peak_camera_handle hCam, uint32_t* factor);
 
@@ -12390,6 +14269,8 @@ PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_Get(peak_camera_handle hCam, uin
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_GetDefault(peak_camera_handle hCam, uint32_t* defaultFactor);
 
@@ -12409,6 +14290,8 @@ PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_GetDefault(peak_camera_handle hC
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_GetRange(peak_camera_handle hCam,
   uint32_t* minFactor, uint32_t* maxFactor, uint32_t* incFactor);
@@ -12430,8 +14313,11 @@ PEAK_API_STATUS peak_IPL_EdgeEnhancement_Factor_GetRange(peak_camera_handle hCam
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p roi is out of range, \p algorithm is invalid or
  *                                                  \p calculated_value is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
+ * \return #PEAK_STATUS_NOT_SUPPORTED       \p hFrame has an unsupported pixel format.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_IPL_Sharpness_Measure(peak_frame_handle hFrame, peak_roi roi,
     peak_sharpness_algorithm sharpnessAlgorithm, double* calculatedValue);
@@ -12462,8 +14348,239 @@ PEAK_API_STATUS peak_IPL_Sharpness_Measure(peak_frame_handle hFrame, peak_roi ro
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Sharpness_GetList(peak_sharpness_algorithm sharpnessAlgorithm, peak_pixel_format* pixelFormatList, size_t* pixelFormatSize);
+
+
+/*!
+ * \ingroup host_rotation_angles
+ * \brief No rotation
+ */
+#define PEAK_ROTATION_ANGLE_0 (0)
+
+/*!
+ * \ingroup host_rotation_angles
+ * \brief Rotation clockwise by 180 degree
+ */
+#define PEAK_ROTATION_ANGLE_180 (180)
+
+/*!
+ * \ingroup host_rotation_angles
+ * \brief Rotation clockwise by 90 degree
+ */
+#define PEAK_ROTATION_ANGLE_CLOCKWISE_90 (-90)
+
+/*!
+ * \ingroup host_rotation_angles
+ * \brief Rotation clockwise by 270 degree
+ */
+#define PEAK_ROTATION_ANGLE_CLOCKWISE_270 (-270)
+
+/*!
+ * \ingroup host_rotation_angles
+ * \brief Rotation counterclockwise by 90 degree
+ */
+#define PEAK_ROTATION_ANGLE_COUNTERCLOCKWISE_90 (90)
+
+/*!
+ * \ingroup host_rotation_angles
+ * \brief Rotation counterclockwise by 270 degree
+ */
+#define PEAK_ROTATION_ANGLE_COUNTERCLOCKWISE_270 (270)
+
+/*!
+ * \ingroup host_rotation
+ * \brief Sets the rotation in the image processing pipeline
+ *
+ * Rotates the image with the specified rotation angle.
+ * Only values of \ref host_rotation_angles are supported right now.
+ *
+ * \param[in] hCam          The camera handle.
+ * \param[in] rotationAngle The desired absolut rotation angle. See \ref host_rotation_angles.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p rotationAngle is an invalid parameter.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Rotation_Angle_Set(peak_camera_handle hCam, int32_t rotationAngle);
+
+/*!
+ * \ingroup host_rotation
+ * \brief Reads the rotation angle
+ *
+ * Reads the rotation angle from the image processing pipline.
+ *
+ * \param[in] hCam            The camera handle.
+ * \param[in] rotationAngle   The current rotation angle. See \ref host_rotation_angles.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p rotationAngle is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Rotation_Angle_Get(peak_camera_handle hCam, int32_t* rotationAngle);
+
+/*!
+ * \ingroup histogram
+ * \brief peak histogram channel info
+ *
+ * Describes the histogram bin for a specific channel
+ */
+typedef struct
+{
+    /*! \brief The sum of all pixel values of the channel */
+    uint64_t pixelSum;
+
+    /*! \brief The count of all pixels for the channel */
+    uint64_t pixelCount;
+
+    /*! \brief The maximum size of the bin for the channel. For a 8-Bit format this is 255, for a 10-Bit format 1023 etc.
+     * Can be used to initialize the array for \ref peak_IPL_Histogram_Channel_GetBinArray as the array size. */
+    size_t binSize;
+
+    /*! \brief Reserved for future use */
+    uint8_t reserved[64];
+} peak_histogram_channel_info;
+
+/*!
+ * \ingroup histogram
+ * \brief The handle type for a histogram
+ */
+typedef struct peak_histogram* peak_histogram_handle;
+
+/*!
+ * \ingroup histogram
+ * \brief Calculates the histogram for the given peak_frame_handle.
+ *
+ *  A call to this function may take some time. If a continuous processing of the histogram is needed,
+ *  an extra thread calling this function may be preferred.
+ *  The handle returned by \p hHistogram needs to be released after use by a call to peak_IPL_Histogram_Release.
+ *
+ * \remark Will not work for packed formats
+ *
+ * \param[in]  hFrame               The frame handle.
+ * \param[out] hHistogram           The handle to the resulting histogram.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p hHistogram is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hFrame is an invalid frame handle.
+ * \return #PEAK_STATUS_NOT_SUPPORTED       \p hFrame has an unsupported pixel format.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Histogram_ProcessFrame(peak_frame_handle hFrame,
+    peak_histogram_handle* hHistogram);
+
+/*!
+ * \ingroup histogram
+ * \brief Releases the histogram after use.
+ *
+ * Releases the peak_histogram_handle acquired by calling peak_IPL_Histogram_Process.
+ * After the call, the histogram handle is invalid. Further use of it will fail.
+ *
+ * \param[in] hHistogram           The handle to the histogram to release.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hHistogram is an invalid frame handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Histogram_Release(peak_histogram_handle hHistogram);
+
+/*!
+ * \ingroup histogram
+ * \brief Get the number of channels in the histogram
+ *
+ * This function returns the number of channels present in the histogram.
+ * The number of channels relates to the supplied peak_pixel_format.
+ * For example PEAK_PIXEL_FORMAT_MONO8 is a mono format, so it has only one channel
+ * whereas PEAK_PIXEL_FORMAT_RGB8 has 3 channels for R, G, B in that order.
+ *
+ * \param[in]  hHistogram           The handle to the histogram.
+ * \param[out] numChannels          The number of channels in the histogram.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p numChannels is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hHistogram is an invalid handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Histogram_Channel_GetCount(peak_histogram_handle hHistogram, size_t* numChannels);
+
+/*!
+ * \ingroup histogram
+ * \brief Get the channel info for a channel in the histogram
+ *
+ * This function fill will the peak_histogram_channel_info for the supplied channel number.
+ * The \p channelInfo will contain the number of pixels,
+ * the sum of all pixels of a channel and the size of the bin array in counts of uint64_t.
+ *
+ * \param[in]  hHistogram        The handle to the histogram.
+ * \param[in]  channel           The number of the channel to retrieve the channelInfo for.
+ * \param[out] channelInfo       The channel channelInfo for the channel in the histogram.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p channelInfo is an invalid pointer.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p channel number is out of range.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hHistogram is an invalid frame handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Histogram_Channel_GetInfo(peak_histogram_handle hHistogram, size_t channel, peak_histogram_channel_info* channelInfo);
+
+/*!
+ * \ingroup histogram
+ * \brief Get the bin array for a channel in the histogram
+ *
+*  The histogram bin array represents the distribution of values of an image.
+ * Depending on the bit depth the array size varies, e.g. for 8 bit it is 0...255, for 10 bit 0...1024 and so on.
+ * The index represents the pixel value found and the value for a given index refers to the number of pixels that hold this value.
+ *
+ * Example:
+ * Given an 1 Bit image of [0, 1, 1, 1] the histogram is of size 2 (2^numBits) with the values [1, 3].
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in]     hHistogram      The handle to the histogram.
+ * \param[in]     channel         The number of the channel to retrieve the bin array for.
+ * \param[out]    binArray        Pointer to a user allocated array buffer to receive the bin array of the channel.
+ *                                    If this parameter is NULL, \p binArraySize will contain the
+ *                                    size of the bin array. \n
+ *                                    The required size of \p binArray in bytes is
+ *                                    \p binArraySize x sizeof(uint64_t).
+ * \param[in,out] binArraySize    \li \p binArray equal NULL: \n
+ *                                      out: minimal size \p binArray must be to hold the bin array in size of uint64_t \n
+ *                                \li \p binArray unequal NULL: \n
+ *                                      in: size of \p binArray in counts of uint64_t. In bytes this is `SizeInBytes / sizeof(uint64_t) \n
+ *                                      out: filled number of uint64_t in \p binArray
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p info is an invalid pointer.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p channel number is out of range.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p binArray is too small. The needed number of bytes is supplied in \p binArraySize .
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hHistogram is an invalid frame handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_IPL_Histogram_Channel_GetBinArray(peak_histogram_handle hHistogram, size_t channel, uint64_t* binArray, size_t* binArraySize);
 
 /*!
  * \ingroup video
@@ -12530,6 +14647,8 @@ typedef enum
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       A file with the given file name already exists or can not be locked.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Open(peak_video_handle* hVideo, const char* fileName,
     peak_video_container container, peak_video_encoder encoder);
@@ -12546,6 +14665,8 @@ PEAK_API_STATUS peak_VideoWriter_Open(peak_video_handle* hVideo, const char* fil
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
  *
  * \note The video handle is no longer valid after the function has returned.
+ *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Close(peak_video_handle hVideo);
 
@@ -12559,10 +14680,12 @@ PEAK_API_STATUS peak_VideoWriter_Close(peak_video_handle hVideo);
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hVideo is an invalid video handle or \p hFrame is an invalid frame handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_NOT_SUPPORTED       \p hFrame has an unsupported pixel format.
  * \return #PEAK_STATUS_INVALID_PARAMETER   The configured container or encoder are not valid for the given frame.
  * \return #PEAK_STATUS_BUSY                The internal image queue is full.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_AddFrame(peak_video_handle hVideo, peak_frame_handle hFrame);
 
@@ -12593,6 +14716,8 @@ PEAK_API_STATUS peak_VideoWriter_AddFrame(peak_video_handle hVideo, peak_frame_h
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p encoder is an invalid container or \p encoderCount is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Container_GetEncoderList(peak_video_container container,
     peak_video_encoder* encoderList, size_t* encoderCount);
@@ -12633,6 +14758,8 @@ PEAK_API_STATUS peak_VideoWriter_Container_GetEncoderList(peak_video_container c
  * \note Consider that the pixel format list might change between the size query call and the list query call. \n
  *       This may be the case if the camera configuration or the camera status have changed in the time between
  *       the two function calls.
+ *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Encoder_GetPixelFormatList(peak_video_encoder encoder,
     peak_pixel_format* pixelFormatList, size_t* pixelFormatCount);
@@ -12664,6 +14791,8 @@ PEAK_API_STATUS peak_VideoWriter_Encoder_GetPixelFormatList(peak_video_encoder e
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p encoder is an invalid encoder or \p containerCount is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Encoder_GetContainerList(peak_video_encoder encoder,
     peak_video_container* containerList, size_t* containerCount);
@@ -12702,6 +14831,7 @@ typedef struct
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_GetInfo(peak_video_handle hVideo, peak_video_info* videoInfo);
 
@@ -12719,7 +14849,7 @@ typedef enum
      */
     PEAK_VIDEO_CONTAINER_OPTION_INVALID = 0x0,
 
-    /*! \brief Framerate container option
+    /*! \brief Frame rate container option
      *
      * Use this option to set or retrieve the frame rate of the avi container. Given value must be an double.
      */
@@ -12765,6 +14895,7 @@ typedef enum
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Container_Option_Set(peak_video_handle hVideo,
     peak_video_container_option containerOption, const void* value, size_t count);
@@ -12786,6 +14917,7 @@ PEAK_API_STATUS peak_VideoWriter_Container_Option_Set(peak_video_handle hVideo,
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Container_Option_Get(peak_video_handle hVideo,
     peak_video_container_option containerOption, void* value, size_t count, size_t* outCount);
@@ -12806,6 +14938,7 @@ PEAK_API_STATUS peak_VideoWriter_Container_Option_Get(peak_video_handle hVideo,
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Encoder_Option_Set(peak_video_handle hVideo,
     peak_video_encoder_option encoderOption, const void* value, size_t count);
@@ -12827,6 +14960,7 @@ PEAK_API_STATUS peak_VideoWriter_Encoder_Option_Set(peak_video_handle hVideo,
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_Encoder_Option_Get(peak_video_handle hVideo,
     peak_video_encoder_option encoderOption, void* value, size_t count, size_t* outCount);
@@ -12844,6 +14978,7 @@ PEAK_API_STATUS peak_VideoWriter_Encoder_Option_Get(peak_video_handle hVideo,
  * \return #PEAK_STATUS_TIMEOUT             The wait timeout has elapsed.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.2
  */
 PEAK_API_STATUS peak_VideoWriter_WaitUntilQueueEmpty(peak_video_handle hVideo, int32_t timeout_ms);
 
@@ -13034,6 +15169,7 @@ typedef struct
  * \return #PEAK_STATUS_OUT_OF_MEMORY       The library is out of memory.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_CNN_Open(const char* path, peak_inference_handle* hInference);
 
@@ -13048,6 +15184,7 @@ PEAK_API_STATUS peak_Inference_CNN_Open(const char* path, peak_inference_handle*
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_CNN_Close(peak_inference_handle hInference);
 
@@ -13063,10 +15200,12 @@ PEAK_API_STATUS peak_Inference_CNN_Close(peak_inference_handle hInference);
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p resultHandle is an invalid pointer.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hInference or \p hFrame is an invalid handle.
+ * \return #PEAK_STATUS_NOT_SUPPORTED       \p hFrame has an unsupported pixel format.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_OUT_OF_MEMORY       The library is out of memory.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_CNN_ProcessFrame(peak_inference_handle hInference, peak_frame_handle hFrame,
     peak_inference_result_handle* hInferenceHandle);
@@ -13084,6 +15223,7 @@ PEAK_API_STATUS peak_Inference_CNN_ProcessFrame(peak_inference_handle hInference
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_CNN_Info_Get(peak_inference_handle hInference, peak_inference_info* info);
 
@@ -13100,6 +15240,7 @@ PEAK_API_STATUS peak_Inference_CNN_Info_Get(peak_inference_handle hInference, pe
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_Result_Get(peak_inference_result_handle hInferenceHandle,
     peak_inference_result_data* result);
@@ -13116,6 +15257,8 @@ PEAK_API_STATUS peak_Inference_Result_Get(peak_inference_result_handle hInferenc
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
  * \note The result handle is no longer valid after the function has returned.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_Result_Release(peak_inference_result_handle hInferenceHandle);
 
@@ -13146,6 +15289,7 @@ PEAK_API_STATUS peak_Inference_Result_Release(peak_inference_result_handle hInfe
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_Result_Classification_GetList(peak_inference_result_handle hInferenceHandle,
     peak_inference_result_classification* resultList, size_t* resultCount);
@@ -13177,6 +15321,7 @@ PEAK_API_STATUS peak_Inference_Result_Classification_GetList(peak_inference_resu
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_Result_Detection_GetList(peak_inference_result_handle hInferenceHandle,
     peak_inference_result_detection* resultList, size_t* resultCount);
@@ -13206,6 +15351,7 @@ typedef struct
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_Statistics_Get(peak_inference_handle hInference, peak_inference_statistics* statistics);
 
@@ -13220,6 +15366,7 @@ PEAK_API_STATUS peak_Inference_Statistics_Get(peak_inference_handle hInference, 
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_Statistics_Reset(peak_inference_handle hInference);
 
@@ -13236,6 +15383,7 @@ PEAK_API_STATUS peak_Inference_Statistics_Reset(peak_inference_handle hInference
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_ConfidenceThreshold_Get(peak_inference_handle hInference, uint32_t* threshold);
 
@@ -13254,6 +15402,7 @@ PEAK_API_STATUS peak_Inference_ConfidenceThreshold_Get(peak_inference_handle hIn
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_ConfidenceThreshold_GetRange(peak_inference_handle hInference, uint32_t* minThreshold,
     uint32_t* maxThreshold, uint32_t* incThreshold);
@@ -13271,13 +15420,14 @@ PEAK_API_STATUS peak_Inference_ConfidenceThreshold_GetRange(peak_inference_handl
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Inference_ConfidenceThreshold_Set(peak_inference_handle hInference, uint32_t threshold);
 
 /*!
  * \ingroup messagequeue_queue
  * \brief peak queue mode
- * Changes the behaviour of the queue
+ * Changes the behavior of the queue
  */
 typedef enum
 {
@@ -13813,6 +15963,8 @@ typedef struct peak_message* peak_message_handle;
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hMessageQueue is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Create(peak_message_queue_handle* hMessageQueue);
 
@@ -13828,6 +15980,8 @@ PEAK_API_STATUS peak_MessageQueue_Create(peak_message_queue_handle* hMessageQueu
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hMessageQueue is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Destroy(peak_message_queue_handle hMessageQueue);
 
@@ -13835,7 +15989,7 @@ PEAK_API_STATUS peak_MessageQueue_Destroy(peak_message_queue_handle hMessageQueu
  * \ingroup messagequeue_queue
  * \brief  Enable a message type for a message queue
  *
- * Note the different behaviour for the different message type categories for \p hCam.
+ * Note the different behavior for the different message type categories for \p hCam.
  *
  * For System messages supply #PEAK_INVALID_HANDLE as camera handle.
  * For Camera and AutoFeature types supply a valid #peak_camera_handle.
@@ -13852,6 +16006,8 @@ PEAK_API_STATUS peak_MessageQueue_Destroy(peak_message_queue_handle hMessageQueu
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_EnableMessage(peak_message_queue_handle hMessageQueue,
     peak_camera_handle hCam, peak_message_type messageType);
@@ -13859,7 +16015,7 @@ PEAK_API_STATUS peak_MessageQueue_EnableMessage(peak_message_queue_handle hMessa
  * \ingroup messagequeue_queue
  * \brief Disable a message type for a message queue
  *
- * Note the different behaviour for the different message type categories for \p hCam.
+ * Note the different behavior for the different message type categories for \p hCam.
  *
  * For System messages supply #PEAK_INVALID_HANDLE as camera handle.
  * For Camera and AutoFeature types supply a valid #peak_camera_handle.
@@ -13876,6 +16032,8 @@ PEAK_API_STATUS peak_MessageQueue_EnableMessage(peak_message_queue_handle hMessa
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_DisableMessage(peak_message_queue_handle hMessageQueue,
     peak_camera_handle hCam, peak_message_type messageType);
@@ -13884,7 +16042,7 @@ PEAK_API_STATUS peak_MessageQueue_DisableMessage(peak_message_queue_handle hMess
  * \ingroup messagequeue_queue
  * \brief Enable a list of message types at once
  *
- * Note the different behaviour for the different message type categories for \p hCam.
+ * Note the different behavior for the different message type categories for \p hCam.
  *
  * For System messages supply #PEAK_INVALID_HANDLE as camera handle.
  * For Camera and AutoFeature types supply a valid #peak_camera_handle.
@@ -13902,6 +16060,8 @@ PEAK_API_STATUS peak_MessageQueue_DisableMessage(peak_message_queue_handle hMess
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_EnableMessageList(peak_message_queue_handle hMessageQueue,
     peak_camera_handle hCam, const peak_message_type* messageTypesArray, size_t messageTypesArraySize);
@@ -13910,7 +16070,7 @@ PEAK_API_STATUS peak_MessageQueue_EnableMessageList(peak_message_queue_handle hM
  * \ingroup messagequeue_queue
  * \brief Disable a list of message types at once
  *
- * Note the different behaviour for the different message type categories for \p hCam.
+ * Note the different behavior for the different message type categories for \p hCam.
  *
  * For System messages supply #PEAK_INVALID_HANDLE as camera handle.
  * For Camera and AutoFeature types supply a valid #peak_camera_handle.
@@ -13928,6 +16088,8 @@ PEAK_API_STATUS peak_MessageQueue_EnableMessageList(peak_message_queue_handle hM
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_DisableMessageList(peak_message_queue_handle hMessageQueue,
     peak_camera_handle hCam, const peak_message_type* messageTypesArray, size_t messageTypesArraySize);
@@ -13962,6 +16124,8 @@ PEAK_API_STATUS peak_MessageQueue_DisableMessageList(peak_message_queue_handle h
  * \note Consider that the list might change between the size query call and the list query call if message types are enabled or disabled between the two calls.
  *       To eliminate this issue you may want to use an array for \p messageTypesArray which is large enough to hold
  *       all possibly types and to spare the size query call.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_EnabledMessages_GetList(peak_message_queue_handle hMessageQueue,
     peak_message_type* messageTypesArray, size_t* messageTypesArraySize);
@@ -13985,6 +16149,8 @@ PEAK_API_STATUS peak_MessageQueue_EnabledMessages_GetList(peak_message_queue_han
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_SetMode(peak_message_queue_handle hMessageQueue,
     peak_message_queue_mode queueMode);
@@ -14004,6 +16170,8 @@ PEAK_API_STATUS peak_MessageQueue_SetMode(peak_message_queue_handle hMessageQueu
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p queueMode is an invalid mode.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_GetMode(peak_message_queue_handle hMessageQueue,
     peak_message_queue_mode* queueMode);
@@ -14021,6 +16189,8 @@ PEAK_API_STATUS peak_MessageQueue_GetMode(peak_message_queue_handle hMessageQueu
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Start(peak_message_queue_handle hMessageQueue);
 
@@ -14040,6 +16210,8 @@ PEAK_API_STATUS peak_MessageQueue_Start(peak_message_queue_handle hMessageQueue)
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Stop(peak_message_queue_handle hMessageQueue);
 
@@ -14053,6 +16225,8 @@ PEAK_API_STATUS peak_MessageQueue_Stop(peak_message_queue_handle hMessageQueue);
  *
  * \return #PEAK_TRUE           Queue is started.
  * \return #PEAK_FALSE          Queue is stopped or the query failed.
+ *
+ * \since 1.5
  */
 PEAK_API_BOOL peak_MessageQueue_IsStarted(peak_message_queue_handle hMessageQueue);
 
@@ -14083,6 +16257,8 @@ PEAK_API_BOOL peak_MessageQueue_IsStarted(peak_message_queue_handle hMessageQueu
  * \return #PEAK_STATUS_NO_DATA             No data received.
  * \return #PEAK_STATUS_TIMEOUT             The timeout was reached with no message.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_WaitForMessage(peak_message_queue_handle hMessageQueue,
     uint32_t timeout_ms, peak_message_handle* hMessage);
@@ -14100,6 +16276,8 @@ PEAK_API_STATUS peak_MessageQueue_WaitForMessage(peak_message_queue_handle hMess
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hMessageQueue is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Flush(peak_message_queue_handle hMessageQueue);
 
@@ -14109,7 +16287,7 @@ PEAK_API_STATUS peak_MessageQueue_Flush(peak_message_queue_handle hMessageQueue)
  *
  * System events are always supported, but camera events may differ between different models.
  *
- * Note the different behaviour for the different message type categories for \p hCam.
+ * Note the different behavior for the different message type categories for \p hCam.
  *
  * For Camera and AutoFeature types supply a valid #peak_camera_handle.
  *
@@ -14119,6 +16297,8 @@ PEAK_API_STATUS peak_MessageQueue_Flush(peak_message_queue_handle hMessageQueue)
  *
  * \return #PEAK_TRUE           Message type is supported.
  * \return #PEAK_FALSE          Message type is not supported or the query failed.
+ *
+ * \since 1.5
  */
 PEAK_API_BOOL peak_MessageQueue_IsMessageSupported(peak_message_queue_handle hMessageQueue,
   peak_camera_handle hCam, peak_message_type messageType);
@@ -14137,6 +16317,8 @@ PEAK_API_BOOL peak_MessageQueue_IsMessageSupported(peak_message_queue_handle hMe
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p messageQueueInfo is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Statistics_Get(peak_message_queue_handle hMessageQueue,
     peak_message_queue_statistics_info* messageQueueInfo);
@@ -14153,6 +16335,8 @@ PEAK_API_STATUS peak_MessageQueue_Statistics_Get(peak_message_queue_handle hMess
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hMessageQueue is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_Statistics_Reset(peak_message_queue_handle hMessageQueue);
 
@@ -14177,6 +16361,8 @@ PEAK_API_STATUS peak_MessageQueue_Statistics_Reset(peak_message_queue_handle hMe
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ACCESS_DENIED       The queue is not stopped.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_MaxQueueSize_Set(peak_message_queue_handle hMessageQueue,
     size_t messageQueueMaxSize);
@@ -14195,6 +16381,8 @@ PEAK_API_STATUS peak_MessageQueue_MaxQueueSize_Set(peak_message_queue_handle hMe
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p messageQueueMaxSize is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_MessageQueue_MaxQueueSize_Get(peak_message_queue_handle hMessageQueue,
     size_t* messageQueueMaxSize);
@@ -14211,6 +16399,8 @@ PEAK_API_STATUS peak_MessageQueue_MaxQueueSize_Get(peak_message_queue_handle hMe
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hMessage is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Release(peak_message_handle hMessage);
 
@@ -14228,6 +16418,8 @@ PEAK_API_STATUS peak_Message_Release(peak_message_handle hMessage);
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p messageInfo is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_GetInfo(peak_message_handle hMessage,
     peak_message_info* messageInfo);
@@ -14246,6 +16438,8 @@ PEAK_API_STATUS peak_Message_GetInfo(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p messageType is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Type_Get(peak_message_handle hMessage,
     peak_message_type* messageType);
@@ -14265,6 +16459,8 @@ PEAK_API_STATUS peak_Message_Type_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p hCam is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_CameraHandle_Get(peak_message_handle hMessage,
     peak_camera_handle* hCam);
@@ -14283,6 +16479,8 @@ PEAK_API_STATUS peak_Message_CameraHandle_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p messageID is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_ID_Get(peak_message_handle hMessage, uint64_t* messageID);
 
@@ -14301,6 +16499,8 @@ PEAK_API_STATUS peak_Message_ID_Get(peak_message_handle hMessage, uint64_t* mess
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p hostTimestamp_ns is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_HostTimestamp_Get(peak_message_handle hMessage,
     uint64_t* hostTimestamp_ns);
@@ -14334,6 +16534,8 @@ PEAK_API_STATUS peak_Message_HostTimestamp_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p messageType is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_Type_Get(peak_message_handle hMessage,
     peak_message_data_type* messageType);
@@ -14361,6 +16563,8 @@ PEAK_API_STATUS peak_Message_Data_Type_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_RemoteDevice_Get(peak_message_handle hMessage,
     peak_message_data_remote_device* message);
@@ -14381,6 +16585,8 @@ PEAK_API_STATUS peak_Message_Data_RemoteDevice_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_RemoteDeviceError_Get(peak_message_handle hMessage,
     peak_message_data_remote_device_error* message);
@@ -14401,6 +16607,8 @@ PEAK_API_STATUS peak_Message_Data_RemoteDeviceError_Get(peak_message_handle hMes
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_RemoteDeviceDropped_Get(peak_message_handle hMessage,
     peak_message_data_remote_device_dropped* message);
@@ -14421,6 +16629,8 @@ PEAK_API_STATUS peak_Message_Data_RemoteDeviceDropped_Get(peak_message_handle hM
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_RemoteDeviceFrame_Get(peak_message_handle hMessage,
     peak_message_data_remote_device_frame* message);
@@ -14441,6 +16651,8 @@ PEAK_API_STATUS peak_Message_Data_RemoteDeviceFrame_Get(peak_message_handle hMes
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_RemoteDeviceTemperature_Get(peak_message_handle hMessage,
     peak_message_data_remote_device_temperature* message);
@@ -14461,6 +16673,8 @@ PEAK_API_STATUS peak_Message_Data_RemoteDeviceTemperature_Get(peak_message_handl
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_AutoFocusData_Get(peak_message_handle hMessage,
     peak_message_data_autofocus* message);
@@ -14481,6 +16695,8 @@ PEAK_API_STATUS peak_Message_Data_AutoFocusData_Get(peak_message_handle hMessage
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_DeviceFound_Get(peak_message_handle hMessage,
     peak_message_data_device_found* message);
@@ -14501,6 +16717,8 @@ PEAK_API_STATUS peak_Message_Data_DeviceFound_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_PARAMETER       \p message is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_DeviceLost_Get(peak_message_handle hMessage,
     peak_message_data_device_lost* message);
@@ -14519,6 +16737,8 @@ PEAK_API_STATUS peak_Message_Data_DeviceLost_Get(peak_message_handle hMessage,
  * \return #PEAK_STATUS_INVALID_CONFIGURATION   The message type does not support this call.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_Message_Data_DeviceReconnected_Get(peak_message_handle hMessage,
     peak_message_data_device_reconnected* message);
@@ -14537,6 +16757,8 @@ PEAK_API_STATUS peak_Message_Data_DeviceReconnected_Get(peak_message_handle hMes
  * \return #PEAK_STATUS_INVALID_CONFIGURATION   The message type does not support this call.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_Message_Data_DeviceDisconnected_Get(peak_message_handle hMessage,
     peak_message_data_device_disconnected* message);
@@ -14555,6 +16777,8 @@ PEAK_API_STATUS peak_Message_Data_DeviceDisconnected_Get(peak_message_handle hMe
  * \return #PEAK_STATUS_INVALID_CONFIGURATION   The message type does not support this call.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_Message_Data_FirmwareUpdate_Get(peak_message_handle hMessage,
     peak_message_data_firmware_update* message);
@@ -14578,6 +16802,8 @@ typedef struct peak_i2c* peak_i2c_handle;
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p hI2C is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Create(peak_camera_handle hCam, peak_i2c_handle* hI2C);
 
@@ -14594,6 +16820,8 @@ PEAK_API_STATUS peak_I2C_Create(peak_camera_handle hCam, peak_i2c_handle* hI2C);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Destroy(peak_i2c_handle hI2C);
 
@@ -14621,6 +16849,8 @@ PEAK_API_STATUS peak_I2C_Destroy(peak_i2c_handle hI2C);
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_ACCESS_STATUS peak_I2C_GetAccessStatus(peak_i2c_handle hI2C);
 
@@ -14683,6 +16913,8 @@ typedef enum
  * \note Consider that the i2c mode list might change between the size query call and the list query call. \n
  *       This may be the case if the i2c mode, the camera configuration, or the camera status have changed in the
  *       time between the two function calls.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Mode_GetList(peak_i2c_handle hI2C, peak_i2c_mode* modeList, size_t* modeListSize);
 
@@ -14706,6 +16938,8 @@ PEAK_API_STATUS peak_I2C_Mode_GetList(peak_i2c_handle hI2C, peak_i2c_mode* modeL
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Mode_Set(peak_i2c_handle hI2C, peak_i2c_mode mode);
 
@@ -14727,6 +16961,8 @@ PEAK_API_STATUS peak_I2C_Mode_Set(peak_i2c_handle hI2C, peak_i2c_mode mode);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Mode_Get(peak_i2c_handle hI2C, peak_i2c_mode* mode);
 
@@ -14756,6 +16992,8 @@ PEAK_API_STATUS peak_I2C_Mode_Get(peak_i2c_handle hI2C, peak_i2c_mode* mode);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_DeviceAddress_GetRange(peak_i2c_handle hI2C, uint32_t* minAddress, uint32_t* maxAddress);
 
@@ -14780,6 +17018,8 @@ PEAK_API_STATUS peak_I2C_DeviceAddress_GetRange(peak_i2c_handle hI2C, uint32_t* 
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_DeviceAddress_Set(peak_i2c_handle hI2C, uint32_t address);
 
@@ -14801,6 +17041,8 @@ PEAK_API_STATUS peak_I2C_DeviceAddress_Set(peak_i2c_handle hI2C, uint32_t addres
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_DeviceAddress_Get(peak_i2c_handle hI2C, uint32_t* address);
 
@@ -14854,6 +17096,8 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Length_GetList(peak_i2c_handle hI2C,
     peak_i2c_register_address_length* i2cLengthList, size_t* i2cLengthCount);
@@ -14874,6 +17118,8 @@ PEAK_API_STATUS peak_I2C_RegisterAddress_Length_GetList(peak_i2c_handle hI2C,
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Length_Set(peak_i2c_handle hI2C, peak_i2c_register_address_length length);
 
@@ -14895,6 +17141,8 @@ PEAK_API_STATUS peak_I2C_RegisterAddress_Length_Set(peak_i2c_handle hI2C, peak_i
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Length_Get(peak_i2c_handle hI2C, peak_i2c_register_address_length* length);
 
@@ -14942,6 +17190,8 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Endianness_Set(peak_i2c_handle hI2C, peak_endianness endianness);
 
@@ -14963,6 +17213,8 @@ PEAK_API_STATUS peak_I2C_RegisterAddress_Endianness_Set(peak_i2c_handle hI2C, pe
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Endianness_Get(peak_i2c_handle hI2C, peak_endianness* endianness);
 
@@ -14990,6 +17242,8 @@ PEAK_API_STATUS peak_I2C_RegisterAddress_Endianness_Get(peak_i2c_handle hI2C, pe
  * 
  * \note The i2c register address must match the set length of the i2c register address (see #peak_i2c_register_address_length
  *       and #peak_I2C_RegisterAddress_Length_Set
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Set(peak_i2c_handle hI2C, uint32_t address);
 
@@ -15011,6 +17265,8 @@ PEAK_API_STATUS peak_I2C_RegisterAddress_Set(peak_i2c_handle hI2C, uint32_t addr
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_RegisterAddress_Get(peak_i2c_handle hI2C, uint32_t* address);
 
@@ -15036,6 +17292,8 @@ PEAK_API_STATUS peak_I2C_RegisterAddress_Get(peak_i2c_handle hI2C, uint32_t* add
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_AckPolling_Enable(peak_i2c_handle hI2C, peak_bool enabled);
 
@@ -15051,6 +17309,8 @@ PEAK_API_STATUS peak_I2C_AckPolling_Enable(peak_i2c_handle hI2C, peak_bool enabl
  *
  * \return #PEAK_TRUE   The i2c ack polling is currently enabled.
  * \return #PEAK_FALSE  The i2c ack polling is currently disabled or the query failed.
+ *
+ * \since 1.5
  */
 PEAK_API_BOOL peak_I2C_AckPolling_IsEnabled(peak_i2c_handle hI2C);
 
@@ -15078,6 +17338,8 @@ PEAK_API_BOOL peak_I2C_AckPolling_IsEnabled(peak_i2c_handle hI2C);
  * \li #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.6
  */
 PEAK_API_ACCESS_STATUS peak_I2C_AckPolling_Timeout_GetAccessStatus(peak_i2c_handle hI2C);
 
@@ -15104,6 +17366,8 @@ PEAK_API_ACCESS_STATUS peak_I2C_AckPolling_Timeout_GetAccessStatus(peak_i2c_hand
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_AckPolling_Timeout_GetRange(peak_i2c_handle hI2C, uint32_t* minTimeout_ms, uint32_t* maxTimeout_ms, uint32_t* incTimeout_ms);
 
@@ -15126,6 +17390,8 @@ PEAK_API_STATUS peak_I2C_AckPolling_Timeout_GetRange(peak_i2c_handle hI2C, uint3
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_AckPolling_Timeout_Set(peak_i2c_handle hI2C, uint32_t timeout_ms);
 
@@ -15147,6 +17413,8 @@ PEAK_API_STATUS peak_I2C_AckPolling_Timeout_Set(peak_i2c_handle hI2C, uint32_t t
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_AckPolling_Timeout_Get(peak_i2c_handle hI2C, uint32_t* timeout_ms);
 
@@ -15180,6 +17448,8 @@ PEAK_API_STATUS peak_I2C_AckPolling_Timeout_Get(peak_i2c_handle hI2C, uint32_t* 
  * \return #PEAK_STATUS_WARNING_OPERATION   The write operation failed. 
  *                                          Check the operation status via #peak_I2C_OperationStatus_Get.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Data_Write(peak_i2c_handle hI2C, const uint8_t* data, size_t dataSize);
 
@@ -15202,6 +17472,8 @@ PEAK_API_STATUS peak_I2C_Data_Write(peak_i2c_handle hI2C, const uint8_t* data, s
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Data_Read(peak_i2c_handle hI2C, size_t maxDataSize, uint8_t* data, size_t* dataSize);
 
@@ -15223,6 +17495,8 @@ PEAK_API_STATUS peak_I2C_Data_Read(peak_i2c_handle hI2C, size_t maxDataSize, uin
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_Data_MaxSize_Get(peak_i2c_handle hI2C, size_t* maxDataSize);
 
@@ -15270,6 +17544,8 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hI2C is an invalid i2c handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.5
  */
 PEAK_API_STATUS peak_I2C_OperationStatus_Get(peak_i2c_handle hI2C, peak_i2c_operation_status* operationStatus);
 
@@ -15291,6 +17567,8 @@ typedef struct peak_imagewriter* peak_imagewriter_handle;
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p hImageWriter is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_ImageWriter_Create(peak_imagewriter_handle* hImageWriter);
 
@@ -15307,6 +17585,8 @@ PEAK_API_STATUS peak_IPL_ImageWriter_Create(peak_imagewriter_handle* hImageWrite
  * \return #PEAK_STATUS_INVALID_PARAMETER   \p hImageWriter is an invalid pointer.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_ImageWriter_Destroy(peak_imagewriter_handle hImageWriter);
 
@@ -15321,10 +17601,14 @@ PEAK_API_STATUS peak_IPL_ImageWriter_Destroy(peak_imagewriter_handle hImageWrite
  * \param[in] fileName              The given file name to use as an utf-8 encoded string
  *
  * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
- * \return #PEAK_STATUS_INVALID_PARAMETER   \p filePath is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p fileName is an invalid pointer or invalid file extension.
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hImageWriter  or \p hFrame is an invalid handle.
+ * \return #PEAK_STATUS_NOT_SUPPORTED       \p hFrame has an unsupported pixel format for this file format.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_IO                  Errors during file access e.g. no permissions on this file.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_ImageWriter_Save(peak_imagewriter_handle hImageWriter, peak_frame_handle hFrame, const char* fileName);
 
@@ -15339,7 +17623,7 @@ typedef enum
 {
     /*! \brief Invalid image file format
      *
-     * Use this value for the initialization of variables of type papientitiy_imagefile_format.
+     * Use this value for the initialization of variables of type peak_imagefile_format.
      */
     PEAK_IMAGEFILE_FORMAT_INVALID = 0,
 
@@ -15378,7 +17662,7 @@ typedef enum
      */
     PEAK_IMAGEFILE_FORMAT_RAW
 
-} papientitiy_imagefile_format;
+} peak_imagefile_format, PEAK_DEPRECATED_MSG(papientitiy_imagefile_format, "use peak_imagefile_format");
 
 /*!
  * \ingroup imagewriter
@@ -15394,8 +17678,10 @@ typedef enum
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hImageWriter is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
-PEAK_API_STATUS peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format imageFormat);
+PEAK_API_STATUS peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWriter, peak_imagefile_format imageFormat);
 
 /*!
  * \ingroup imagewriter
@@ -15411,8 +17697,10 @@ PEAK_API_STATUS peak_IPL_ImageWriter_Format_Set(peak_imagewriter_handle hImageWr
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hImageWriter is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
-PEAK_API_STATUS peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWriter, papientitiy_imagefile_format* imageFormat);
+PEAK_API_STATUS peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWriter, peak_imagefile_format* imageFormat);
 
 /*!
  * \ingroup imagewriter
@@ -15428,6 +17716,8 @@ PEAK_API_STATUS peak_IPL_ImageWriter_Format_Get(peak_imagewriter_handle hImageWr
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hImageWriter is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_ImageWriter_Compression_Set(peak_imagewriter_handle hImageWriter, uint32_t compression);
 
@@ -15445,6 +17735,8 @@ PEAK_API_STATUS peak_IPL_ImageWriter_Compression_Set(peak_imagewriter_handle hIm
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hImageWriter is an invalid handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_IPL_ImageWriter_Compression_Get(peak_imagewriter_handle hImageWriter, uint32_t* compression);
 
@@ -15477,6 +17769,7 @@ PEAK_API_STATUS peak_IPL_ImageWriter_Compression_Get(peak_imagewriter_handle hIm
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Binning_FactorX_GetList(peak_camera_handle hCam, uint32_t* binningFactorXList,
     size_t* binningFactorXCount);
@@ -15509,6 +17802,8 @@ PEAK_API_STATUS peak_IPL_Binning_FactorX_GetList(peak_camera_handle hCam, uint32
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Binning_FactorY_GetList(peak_camera_handle hCam, uint32_t* binningFactorYList,
     size_t* binningFactorYCount);
@@ -15535,6 +17830,8 @@ PEAK_API_STATUS peak_IPL_Binning_FactorY_GetList(peak_camera_handle hCam, uint32
  * 
  * \note For some camera models the factors for the x direction and the y direction are combined.
  *       For these cameras the specified binningFactorY is applied for both directions.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Binning_Set(peak_camera_handle hCam, uint32_t binningFactorX, uint32_t binningFactorY);
 
@@ -15553,6 +17850,8 @@ PEAK_API_STATUS peak_IPL_Binning_Set(peak_camera_handle hCam, uint32_t binningFa
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Binning_Get(peak_camera_handle hCam, uint32_t* binningFactorX, uint32_t* binningFactorY);
 
@@ -15587,6 +17886,7 @@ PEAK_API_STATUS peak_IPL_Binning_Get(peak_camera_handle hCam, uint32_t* binningF
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Decimation_FactorX_GetList(peak_camera_handle hCam, uint32_t* decimationFactorXList,
     size_t* decimationFactorXCount);
@@ -15622,6 +17922,7 @@ PEAK_API_STATUS peak_IPL_Decimation_FactorX_GetList(peak_camera_handle hCam, uin
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
  *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Decimation_FactorY_GetList(peak_camera_handle hCam, uint32_t* decimationFactorYList,
     size_t* decimationFactorYCount);
@@ -15645,6 +17946,8 @@ PEAK_API_STATUS peak_IPL_Decimation_FactorY_GetList(peak_camera_handle hCam, uin
  * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Decimation_Set(peak_camera_handle hCam, uint32_t decimationFactorX, uint32_t decimationFactorY);
 
@@ -15663,6 +17966,8 @@ PEAK_API_STATUS peak_IPL_Decimation_Set(peak_camera_handle hCam, uint32_t decima
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.10
  */
 PEAK_API_STATUS peak_IPL_Decimation_Get(peak_camera_handle hCam, uint32_t* decimationFactorX, uint32_t* decimationFactorY);
 
@@ -15691,6 +17996,8 @@ PEAK_API_STATUS peak_IPL_Decimation_Get(peak_camera_handle hCam, uint32_t* decim
  * \return #PEAK_STATUS_BUFFER_TOO_SMALL        \p cameraList is not able to hold the required amount of items.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_FirmwareUpdate_CompatibleCameraList_Get(const char* gufFileName, peak_camera_descriptor* cameraList, size_t* cameraCount);
 
@@ -15717,6 +18024,8 @@ PEAK_API_STATUS peak_FirmwareUpdate_CompatibleCameraList_Get(const char* gufFile
  * \return #PEAK_STATUS_IO                      An IO error occurred during the firmware upload.
  * \return #PEAK_STATUS_NOT_INITIALIZED         The library is not initialized.
  * \return #PEAK_STATUS_ERROR                   An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_FirmwareUpdate_Execute(peak_camera_id cameraID, const char* gufFileName);
 
@@ -15800,6 +18109,8 @@ typedef enum {
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_TestPattern_GetAccessStatus(peak_camera_handle hCam);
 
@@ -15822,6 +18133,8 @@ PEAK_API_ACCESS_STATUS peak_TestPattern_GetAccessStatus(peak_camera_handle hCam)
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_TestPattern_Set(peak_camera_handle hCam, peak_test_pattern pattern);
 
@@ -15842,6 +18155,8 @@ PEAK_API_STATUS peak_TestPattern_Set(peak_camera_handle hCam, peak_test_pattern 
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_TestPattern_Get(peak_camera_handle hCam, peak_test_pattern* pattern);
 
@@ -15877,6 +18192,8 @@ PEAK_API_STATUS peak_TestPattern_Get(peak_camera_handle hCam, peak_test_pattern*
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_TestPattern_GetList(peak_camera_handle hCam, peak_test_pattern* testPatternList,
     size_t* testPatternCount);
@@ -15956,6 +18273,8 @@ typedef enum {
  * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
  * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
  * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_ACCESS_STATUS peak_LED_GetAccessStatus(peak_camera_handle hCam);
 
@@ -15991,6 +18310,8 @@ PEAK_API_ACCESS_STATUS peak_LED_GetAccessStatus(peak_camera_handle hCam);
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_LED_Target_GetList(peak_camera_handle hCam, peak_led_target* targetList, size_t* targetCount);
 
@@ -16027,6 +18348,8 @@ PEAK_API_STATUS peak_LED_Target_GetList(peak_camera_handle hCam, peak_led_target
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_LED_Mode_GetList(peak_camera_handle hCam, peak_led_target target, peak_led_mode* modeList, size_t* ledModeCount);
 
@@ -16052,6 +18375,8 @@ PEAK_API_STATUS peak_LED_Mode_GetList(peak_camera_handle hCam, peak_led_target t
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_LED_Set(peak_camera_handle hCam, peak_led_target target, peak_led_mode mode);
 
@@ -16073,9 +18398,1573 @@ PEAK_API_STATUS peak_LED_Set(peak_camera_handle hCam, peak_led_target target, pe
  * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
  * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
  * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.9
  */
 PEAK_API_STATUS peak_LED_Get(peak_camera_handle hCam, peak_led_target target, peak_led_mode* mode);
 
+/*!
+ * \ingroup blacklevel
+ * \brief Query black level auto access status
+ *
+ * Provides the current access status for the black level auto feature.
+ * Depending on the camera model the access status of black level auto may change.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The black level auto feature is readable and writeable.
+ * \return #PEAK_ACCESS_GFA_LOCK        The black level auto feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The black level auto feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The black level auto feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_BlackLevel_Auto_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup blacklevel
+ * \brief Set the black level auto enable state
+ *
+ * Sets the auto black level to active / inactive.
+ *
+ * Depending on the camera model the access status of black level auto may change.
+ * Check with peak_BlackLevel_Auto_GetAccessStatus.
+ *
+ * \param[in] hCam          The camera handle.
+ * \param[in] enable        The auto state to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The black level auto property is not available for read access.
+ *                                          Check the access status of the black level Auto via
+ *                                          #peak_BlackLevel_Auto_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_BlackLevel_Auto_Enable(peak_camera_handle hCam, peak_bool enable);
+
+/*!
+ * \ingroup blacklevel
+ * \brief Get the black level auto enable state
+ *
+ * Queries whether the black level auto feature is currently enabled or disabled.
+ *
+ * This function implements the \ref principle_enabled_status_query principle.
+ *
+ * \param[in] hCam          The camera handle.
+ *
+ * \return #PEAK_TRUE   The black level auto feature is currently enabled.
+ * \return #PEAK_FALSE  The black level auto feature is currently disabled or the query failed.
+ *
+ * \since 1.11
+ */
+PEAK_API_BOOL peak_BlackLevel_Auto_IsEnabled(peak_camera_handle hCam);
+
+/*!
+ * \ingroup blacklevel
+ * \brief Query black level offset access status
+ *
+ * Provides the current access status for the black level offset feature.
+ * Depending on the camera model the access status of the black level offset may change.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The black level offset feature is readable and writeable.
+ * \return #PEAK_ACCESS_GFA_LOCK        The black level offset feature is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The black level offset feature is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The black level offset feature is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_BlackLevel_Offset_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup blacklevel
+ * \brief Set the black level offset
+ *
+ * The offset may change when changing the pixel format of the camera.
+ * If peak_BlackLevel_Auto_IsEnabled is PEAK_TRUE, the value might not be changeable.
+ * This can be verified by a call to peak_BlackLevel_Offset_GetAccessStatus.
+ *
+ * \param[in] hCam         The camera handle.
+ * \param[in] offset       The black level offset to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The black level offset property is not available for read access.
+ *                                          Check the access status of the black level offset via
+ *                                          #peak_BlackLevel_Offset_GetAccessStatus.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p offset is out of range.
+ *                                          Check the range of valid values via #peak_BlackLevel_Offset_GetRange.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_BlackLevel_Offset_Set(peak_camera_handle hCam, double offset);
+
+/*!
+ * \ingroup blacklevel
+ * \brief Get the current black level offset
+ *
+ * The offset may change when changing the pixel format of the camera.
+ *
+ * \param[in]  hCam         The camera handle.
+ * \param[out] offset       The current black level value.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The black level offset property is not available for read access.
+ *                                          Check the access status of the black level offset via
+ *                                          #peak_BlackLevel_Offset_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p *offset is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_BlackLevel_Offset_Get(peak_camera_handle hCam, double* offset);
+
+/*!
+ * \ingroup blacklevel
+ * \brief Get the range for the black level offset
+ *
+ * Query the possible range for the black level offset. The range may change after a pixel format change,
+ * so it is advised to read it again before setting a new value with #peak_BlackLevel_Offset_Set.
+ *
+ * \param[in]  hCam       The camera handle.
+ * \param[out] min        The minimum black level offset.
+ * \param[out] max        The maximum black level offset.
+ * \param[out] inc        The increment black level offset.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The black level offset property is not available for read access.
+ *                                          Check the access status of the black level offset via
+ *                                          #peak_BlackLevel_Offset_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p *min, \p *max or \p *inc is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_BlackLevel_Offset_GetRange(peak_camera_handle hCam, double* min, double* max, double* inc);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Query the link speed access status
+ *
+ * Provides the current access status for the link speed control.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The link speed control is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The link speed control is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The link speed control is not accessible because the 
+ *                                      GFA write access is enabled.
+ * \return #PEAK_ACCESS_NONE            The link speed control is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The link speed control is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_Bandwidth_LinkSpeed_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 10 Mbit/s link speed for Ethernet
+ */
+#define PEAK_LINKSPEED_ETH_10M             1250000
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 100 Mbit/s link speed for Ethernet
+ */
+#define PEAK_LINKSPEED_ETH_100M           12500000
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 480 Mbit/s link speed for USB2 High Speed
+ */
+#define PEAK_LINKSPEED_USB2_HIGH_SPEED     60000000
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 1 Gbit/s link speed for Ethernet
+ */
+#define PEAK_LINKSPEED_ETH_1G             125000000
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 5 Gbit/s link speed for Ethernet
+ */
+#define PEAK_LINKSPEED_ETH_5G            625000000
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 10 Gbit/s link speed for Ethernet
+ */
+#define PEAK_LINKSPEED_ETH_10G           1250000000
+
+/*!
+ * \ingroup bandwidth_link_constants
+ * \brief 4 Gbit/s link speed for USB3 SuperSpeed
+ */
+#define PEAK_LINKSPEED_USB3_SUPER_SPEED   500000000
+
+/*!
+ * \ingroup bandwidth
+ * \brief Get the link speed
+ *
+ * Read the maximum data transfer rate negotiated between the camera and the network after connection.
+ * For a list of possible values see \ref bandwidth_link_constants.
+ *
+ * This value is informative only and shouldn't be set with #peak_Bandwidth_ThroughputLimit_Set
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[out] linkSpeed_Bps   The link speed in bytes per second.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The link speed control is not available for read access.
+ *                                          Check the access status via #peak_Bandwidth_LinkSpeed_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p linkSpeed_Bps is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_Bandwidth_LinkSpeed_Get(peak_camera_handle hCam, int64_t* linkSpeed_Bps);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Query the throughput limit access status
+ *
+ * Provides the current access status for the throughput limit control.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The throughput limit control is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The throughput limit control is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The throughput limit control is not accessible because the GFA write access is
+ *                                      enabled.
+ * \return #PEAK_ACCESS_NONE            The throughput limit control is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The throughput limit control is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_Bandwidth_ThroughputLimit_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Get the current range of valid throughput limit values
+ *
+ * Queries the range of valid values for the throughput limit control.
+ *
+ * The range of valid throughput limit values may depend on the camera configuration and the camera status.
+ *
+ * \param[in] hCam                       The camera handle.
+ * \param[out] minThroughputLimit_Bps    The minimum throughput limit in bytes per second.
+ * \param[out] maxThroughputLimit_Bps    The maximum throughput limit in bytes per second.
+ * \param[out] incThroughputLimit_Bps    The throughput limit increment in bytes per second.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The throughput limit control is not accessible.
+ *                                          Check the access status via #peak_Bandwidth_ThroughputLimit_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minThroughputLimit_Bps, \p maxThroughputLimit_Bps, and
+ *                                          \p incThroughputLimit_Bps is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_Bandwidth_ThroughputLimit_GetRange(peak_camera_handle hCam, int64_t* minThroughputLimit_Bps,
+   int64_t* maxThroughputLimit_Bps, int64_t* incThroughputLimit_Bps);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Set the throughput limit
+ *
+ * Sets the upper limit for the bandwidth used for data sent from the camera.
+ * The possible range can be retrieved by calling #peak_Bandwidth_ThroughputLimit_GetRange.
+ *
+ * \param[in] hCam                   The camera handle.
+ * \param[in] throughputLimit_Bps    The throughput limit to set in bytes per second.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_VALUE_ADJUSTED      Value was automatically adjusted.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p throughputLimit_Bps is out of range.
+ *                                          Check the range of valid values via #peak_Bandwidth_ThroughputLimit_GetRange.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The throughput limit control is not available for write access.
+ *                                          Check the access status via #peak_Bandwidth_ThroughputLimit_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_Bandwidth_ThroughputLimit_Set(peak_camera_handle hCam, int64_t throughputLimit_Bps);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Get the throughput limit
+ *
+ * Gets the current upper limit to the bandwidth for data sent from the camera.
+ *
+ * \param[in] hCam                   The camera handle.
+ * \param[out] throughputLimit_Bps   The throughput limit in bytes per second.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The throughput limit control is not available for read access.
+ *                                          Check the access status via #peak_Bandwidth_ThroughputLimit_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p throughputLimit_Bps is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_Bandwidth_ThroughputLimit_Get(peak_camera_handle hCam, int64_t* throughputLimit_Bps);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Query the throughput frame rate limit access status
+ *
+ * Provides the current access status for the throughput frame rate limit control.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The throughput frame rate limit control is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The throughput frame rate limit control is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The throughput frame rate limit control is not accessible because the
+ *                                      GFA write access is enabled.
+ * \return #PEAK_ACCESS_NONE            The throughput frame rate limit control is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The throughput frame rate limit control is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Get the throughput frame rate limit
+ *
+ * Specifies the maximum frame rate achievable with the bandwidth set by ThroughputLimit.
+ *
+ * \param[in] hCam                          The camera handle.
+ * \param[out] throughputFrameRateLimit_fps The throughput frame rate limit in frames per second.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The throughput frame rate limit control is not available for read access.
+ *                                          Check the access status via #peak_Bandwidth_ThroughputFrameRateLimit_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p throughputFrameRateLimit_Bps is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_Bandwidth_ThroughputFrameRateLimit_Get(peak_camera_handle hCam, double* throughputFrameRateLimit_fps);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Query the throughput calculated access status
+ *
+ * Provides the current access status for the throughput calculated control.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The throughput calculated control is readable and writeable.
+ * \return #PEAK_ACCESS_READONLY        The throughput calculated control is readable only.
+ * \return #PEAK_ACCESS_GFA_LOCK        The throughput calculated control is not accessible because the 
+ *                                      GFA write access is enabled.
+ * \return #PEAK_ACCESS_NONE            The throughput calculated control is not accessible.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The throughput calculated control is not supported.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                      Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \li #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \li #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_Bandwidth_ThroughputCalculated_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup bandwidth
+ * \brief Get the throughput calculated
+ *
+ * The calculated theoretical bandwidth for the data stream based on current settings,
+ * but actual bandwidth is limited by the ThroughputLimit.
+ *
+ * \param[in] hCam                        The camera handle.
+ * \param[out] throughputCalculated_Bps   The throughput calculated in bytes per second.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The throughput calculated control is not available for read access.
+ *                                          Check the access status via #peak_Bandwidth_ThroughputCalculated_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p throughputCalculated_Bps is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_STATUS peak_Bandwidth_ThroughputCalculated_Get(peak_camera_handle hCam, int64_t* throughputCalculated_Bps);
+
+/*!
+ * \ingroup ipo
+ * \brief  Query the IPO access status
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] interfaceTech interface technology to which the setting refers.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The feature is available for read access and for write access.
+ * \return #PEAK_ACCESS_READONLY        The feature is supported but not available for change.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The feature is not supported.
+ * \return #PEAK_ACCESS_NONE            The feature is not available.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                          Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.11
+ */
+PEAK_API_ACCESS_STATUS peak_IPO_GetAccessStatus(peak_interface_technology interfaceTech);
+
+/*!
+ * \ingroup ipo
+ * \brief Indicates whether the IPO performance thread is enabled or disabled for the specified specified interface technology.
+ *
+ * The IPO Thread will start as soon as any image acquisition on the #peak_interface_technology is active.
+ *
+ * \param[in] interfaceTech interface technology to which the setting refers.
+ *
+ * \return #PEAK_TRUE   The IPO thread is currently enabled.
+ * \return #PEAK_FALSE  The IPO thread is currently disabled or the query failed.
+ *
+ * \since 1.11
+ */
+PEAK_API_BOOL peak_IPO_IsEnabled(peak_interface_technology interfaceTech);
+
+/*!
+ * \ingroup ipo
+ * \brief Control whether the IPO thread is enabled or disabled
+ *
+ * \param[in] interfaceTech  Interface technology to which the setting refers.
+ * \param[in] enabled        The desired enabled status. #PEAK_TRUE for enabled, #PEAK_FALSE for disabled.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The IPO thread feature is not accessible for read.
+ *                                          Check the access status via #peak_IPO_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p interfaceTech is an invalid interface technology.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ */
+PEAK_API_STATUS peak_IPO_Enable(peak_interface_technology interfaceTech, peak_bool enabled);
+
+/*!
+ * \ingroup host_digital_black
+ * \brief Get the current range of valid host digital black values
+ *
+ * \note Digital black values are represented as factors relative to the range defined
+ * by the bit depth of the processed pixel format, with 1.0 indicating the maximum
+ * possible pixel value for that bit depth.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[out] minDigitalBlack The minimum digital black value.
+ * \param[out] maxDigitalBlack The maximum digital black value.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   At least one of \p minDigitalBlack or \p maxDigitalBlack is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_DigitalBlack_GetRange(peak_camera_handle hCam, double* minDigitalBlack, double* maxDigitalBlack);
+
+/*!
+ * \ingroup host_digital_black
+ * \brief Set the host digital black value
+ *
+ * \note Digital black values are represented as factors relative to the range defined
+ * by the bit depth of the processed pixel format, with 1.0 indicating the maximum
+ * possible pixel value for that bit depth.
+ *
+ * \param[in] hCam         The camera handle.
+ * \param[in] digitalBlack The digital black value to set.
+ *
+ * \return #PEAK_STATUS_SUCCESS         Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_OUT_OF_RANGE    \p digital black value is out of range.
+ *                                      Check the range of valid values via #peak_IPL_DigitalBlack_GetRange.
+ * \return #PEAK_STATUS_INVALID_HANDLE  \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED The library is not initialized.
+ * \return #PEAK_STATUS_ERROR           An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_DigitalBlack_Set(peak_camera_handle hCam, double digitalBlack);
+
+/*!
+ * \ingroup host_digital_black
+ * \brief Get the host digital black value
+ *
+ * \note Digital black values are represented as factors relative to the range defined
+ * by the bit depth of the processed pixel format, with 1.0 indicating the maximum
+ * possible pixel value for that bit depth.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[out] digitalBlack    The digital black value.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p digitalBlack is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_DigitalBlack_Get(peak_camera_handle hCam, double* digitalBlack);
+
+/*!
+ * \ingroup host_lut
+ * \brief Enumeration for specifying which LUT should be used for LUT configuration.
+ *
+ * \since 1.12
+ */
+typedef enum {
+    /*! Operate on the 8 bit LUT */
+    PEAK_LUT_8BIT = 0,
+
+    /*! Operate on the 10 bit LUT */
+    PEAK_LUT_10BIT = 1,
+
+    /*! Operate on the 12 bit LUT */
+    PEAK_LUT_12BIT = 2,
+}peak_lut_selector;
+
+
+/*!
+ * \ingroup host_lut
+ * \brief Enumeration for specifying which channel/channels should be modified when configuring the LUT.
+ *
+ * \since 1.12
+ */
+typedef enum {
+    /*! Only operate on the red channel */
+    PEAK_LUT_CHANNEL_RED = 0,
+
+    /*! Only operate on the green channel */
+    PEAK_LUT_CHANNEL_GREEN = 1,
+
+    /*! Only operate on the blue channel */
+    PEAK_LUT_CHANNEL_BLUE = 2,
+
+    /*! Operate on all channels simultaniously */
+    PEAK_LUT_CHANNEL_ALL = 3,
+}peak_lut_channel;
+
+/*!
+ * \ingroup host_lut
+ * \brief Enumeration for available LUT presets that can be applied.
+ *
+ * \since 1.12
+ */
+typedef enum {
+    /*!
+     * This is the default LUT which does not change any pixel values. Each input pixel value will be converted
+     * to the exact output pixel value. When choosing this preset no calculations will be performed.
+     */
+    PEAK_LUT_PRESET_IDENTITY = 0,
+
+    /*!
+     * This LUT inverts all pixel values. The highest pixel value will be converted to the lowest one and
+     * vice versa.
+     */
+    PEAK_LUT_PRESET_INVERSE = 1,
+
+    /*!
+     * This LUT creates a custom color mapping where the red, green, and blue channels gradually change across
+     * different ranges, producing a smooth transition from dark to light. It adjusts each color channel in a
+     * pattern that could be used for unique color grading or effects.
+     */
+    PEAK_LUT_PRESET_JET = 2,
+
+    /*!
+     * This LUT creates a color transition where the red channel gradually increases, the green channel
+     * increases after the red, and finally, the blue channel increases in the last section. It results
+     * in a smooth shift from red to green and then to blue, producing a color gradient effect across the RGB channels.
+     */
+    PEAK_LUT_PRESET_HOT = 3,
+
+    /*!
+     * This LUT creates a rainbow effect by smoothly transitioning the red, green, and blue channels
+     * through specific color ranges. It produces a gradual shift from red to green to blue, and then
+     * cycles back through the colors to create a full spectrum effect.
+     */
+    PEAK_LUT_PRESET_RAINBOW = 4,
+
+    /*!
+     * This LUT will only allow red pixels to be shown. This is achieved by converting all pixel values
+     * of any other channel to 0.
+     */
+    PEAK_LUT_PRESET_ONLY_RED = 5,
+
+    /*!
+     * This LUT will only allow green pixels to be shown. This is achieved by converting all pixel values
+     * of any other channel to 0.
+     */
+    PEAK_LUT_PRESET_ONLY_GREEN = 6,
+
+    /*!
+     * This LUT will only allow blue pixels to be shown. This is achieved by converting all pixel values
+     * of any other channel to 0.
+     */
+    PEAK_LUT_PRESET_ONLY_BLUE = 7,
+
+    /*!
+    * This LUT will multiply each pixel value by 2 resulting in a gain like adjustment.
+    */
+    PEAK_LUT_PRESET_DIGITAL_GAIN2 = 8,
+
+     /*!
+     * This LUT will apply a digital black function. See \ref host_digital_black for more information.
+     */
+    PEAK_LUT_PRESET_DIGITAL_BLACK_25_PERCENT = 9,
+
+     /*!
+     * This LUT converts the image to black and white by clamping pixel values below the midpoint to 0 (black)
+     * and those above to the maximum value (white).
+     */
+    PEAK_LUT_PRESET_BINARIZE = 10,
+}peak_lut_preset;
+
+/*!
+ * \ingroup host_lut
+ * \brief Enable/disable whether the LUT should be applied to the subsequent image.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[in] enabled          #PEAK_TRUE if the LUT should be applied to the subsequent image, otherwise
+ *                             #PEAK_FALSE
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_LUT_Enable(peak_camera_handle hCam, peak_bool enabled);
+
+/*!
+ * \ingroup host_lut
+ * \brief Query whether LUT processing is enabled. If enabled, the LUT will be applied to the subsequent image.
+ *
+ * \param[in] hCam    The camera handle.
+ *
+ * \return #peak_bool  #PEAK_TRUE if the LUT processing is enabled, otherwise #PEAK_FALSE.
+ *
+ * \since 1.12
+ */
+PEAK_API_BOOL peak_IPL_LUT_IsEnabled(peak_camera_handle hCam);
+
+/*!
+ * \ingroup host_lut
+ * \brief Applies the given preset to the specified LUT.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[in] selector         Indicates the specific LUT for the operation.
+ * \param[in] preset           The preset which should be applied to the selected LUT. See \ref peak_lut_preset
+ *                             for details about the predefined LUTs.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p selector or \p preset is an invalid value.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_LUT_Preset_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_preset preset);
+
+/*!
+ * \ingroup host_lut
+ * \brief Sets a single LUT value for a given selector and channel at an offset.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[in] selector         Indicates the specific LUT for the operation.
+ * \param[in] channel          Indicates the channel to which the operation should be applied.
+ * \param[in] index            The index specifying the location where the value should be written.
+ * \param[in] value            The value which should be written. The value must be in the range between
+ *                             0 and the maximum pixel value for the given bit depth. The bit depth depends on the
+ *                             specified \p selector.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p selector or \p channel is an invalid value
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p index or \p value is out of range.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_LUT_Value_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t value);
+
+/*!
+ * \ingroup host_lut
+ * \brief Reads a single LUT value for a given selector and channel at an offset.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[in] selector         Indicates the specific LUT for the operation.
+ * \param[in] channel          Indicates the channel to read the value from. This value must not be
+ *                             #PEAK_LUT_CHANNEL_ALL.
+ * \param[in] index            The index specifying the location where the value should be read.
+ * \param[out] value           Pointer to where the value is read to. The value is in the range between 0 and the
+ *                             maximum pixel value for the given bit depth. The bit depth depends on the specified
+ *                             \p selector.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p selector or \p channel is an invalid value or
+ *                                                  \p value is an invalid pointer.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p index is out of range.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_LUT_Value_Get(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t index, uint32_t* value);
+
+/*!
+ * \ingroup host_lut
+ * \brief Sets all LUT values for a given selector and channel.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[in] selector         Indicates the specific LUT for the operation.
+ * \param[in] channel          Indicates the channel to which the operation should be applied.
+ * \param[in] values           A pointer to where the LUT values are stores. Each value must be in the range between
+ *                             0 and the maximum pixel value for the given bit depth. The bit depth depends on the
+ *                             specified \p selector.
+ * \param[in] size             The number of LUT values that are stored at \p values. This value must align with the
+ *                             number of possible pixel values based on the specified \p selector.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p selector or \p channel is an invalid value or
+ *                                                  \p values is an invalid pointer.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        any value of \p values or \p size is out of range.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_LUT_ValueList_Set(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t* values, size_t size);
+
+/*!
+ * \ingroup host_lut
+ * \brief Reads all LUT values for a given selector and channel
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam             The camera handle.
+ * \param[in] selector         Indicates the specific LUT for the operation.
+ * \param[in] channel          Indicates the channel to read the values from. This value must not be
+ *                             #PEAK_LUT_CHANNEL_ALL.
+ * \param[out] values          Pointer where the LUT values should be read to. Each value is in the range between 0
+ *                             and the maximum pixel value for the given bit depth. The bit depth depends on the
+ *                             specified \p selector.
+ *                             If this parameter is NULL, \p size will contain the current
+ *                             number of LUT values. \n
+ *                             \p values must be able to hold at least \p size elements.
+ * \param[in, out] size        \li \p values equal NULL: \n
+ *                                 out: number of elements \p values should be able to hold.
+ *                             \li \p values unequal NULL: \n
+ *                                 in: number of elements \p values holds. This value must align with the number of
+ *                                 possible pixel values based on the specified selector.\n
+ *                                 out: number of elements read to \p values
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p selector or \p channel is an invalid value or
+ *                                                  \p values or \p size is an invalid pointer.
+ * \return #PEAK_STATUS_OUT_OF_RANGE        \p size is out of range.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.12
+ */
+PEAK_API_STATUS peak_IPL_LUT_ValueList_Get(peak_camera_handle hCam, peak_lut_selector selector, peak_lut_channel channel, uint32_t* values, size_t* size);
+
+/*!
+ * \ingroup chunks
+ * \brief Enumeration for chunk types.
+ *
+ * \since 1.13
+ */
+typedef enum
+{
+    /*! \brief Invalid chunk type
+     *
+     * Use this value to initialize variables of type peak_chunks_type.
+     */
+    PEAK_CHUNKS_TYPE_INVALID = 0,
+
+    /*! Chunk type frame info, with the data type \ref peak_chunks_frame_info */
+    PEAK_CHUNKS_TYPE_FRAME_INFO = 1,
+
+    /*! Chunk type exposure, with the data type \ref peak_chunks_exposure */
+    PEAK_CHUNKS_TYPE_EXPOSURE = 2,
+
+    /*! Chunk type gain, with the data type \ref peak_chunks_gain */
+    PEAK_CHUNKS_TYPE_GAIN = 3,
+
+    /*! Chunk type sequencer, with the data type \ref peak_chunks_sequencer */
+    PEAK_CHUNKS_TYPE_SEQUENCER = 4,
+
+    /*! Chunk type sequencer, with the data type \ref peak_chunks_sequencer */
+    PEAK_CHUNKS_TYPE_TIMESTAMP = 5,
+
+    /*! Chunk type exposure trigger, with the data type \ref peak_chunks_exposure_trigger */
+    PEAK_CHUNKS_TYPE_EXPOSURE_TRIGGER = 6,
+
+    /*! Chunk type usable roi, with the data type \ref peak_chunks_usable_roi */
+    PEAK_CHUNKS_TYPE_USABLE_ROI = 7,
+
+    /*! Chunk type line status, with the data type \ref peak_chunks_line_status */
+    PEAK_CHUNKS_TYPE_LINE_STATUS = 8,
+
+    /*! Chunk type auto feature status, with the data type \ref peak_chunks_autofeature */
+    PEAK_CHUNKS_TYPE_AUTO_FEATURE_STATUS = 9,
+
+    /*! Chunk type ptp status, with the data type \ref peak_chunks_ptp_status */
+    PEAK_CHUNKS_TYPE_PTP_STATUS = 10
+} peak_chunks_type;
+
+/*!
+ * \ingroup chunks
+ * \brief  Query the chunks access status
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The feature is available for read access and for write access.
+ * \return #PEAK_ACCESS_READONLY        The feature is supported but not available for change.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The feature is not supported.
+ * \return #PEAK_ACCESS_NONE            The feature is not available.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                          Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_ACCESS_STATUS peak_Chunks_GetAccessStatus(peak_camera_handle hCam);
+
+/*!
+ * \ingroup chunks
+ * \brief Control whether the chunk transmission is enabled or disabled.
+ *
+ * This controls whether the frame includes chunks or not.
+ * It must be enabled to use any chunk type. Each type that is to be transmitted must be enabled individually by
+ * calling #peak_Chunks_Type_Enable.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[in] enabled The desired enabled status. #PEAK_TRUE for enabled, #PEAK_FALSE for disabled.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       Chunks are not available. Check the access status via #peak_Chunks_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Enable(peak_camera_handle hCam, peak_bool enabled);
+
+/*!
+ * \ingroup chunks
+ * \brief Indicates whether chunks are enabled or disabled.
+ *
+ * \param[in] hCam    The camera handle.
+ *
+ * \return #PEAK_TRUE   Chunks are currently enabled.
+ * \return #PEAK_FALSE  Chunks are currently disabled or the query failed.
+ *
+ * \since 1.13
+ */
+PEAK_API_BOOL peak_Chunks_IsEnabled(peak_camera_handle hCam);
+
+/*!
+ * \ingroup chunks
+ * \brief Control whether the chunks auto update is enabled or disabled
+ *
+ * This changes the behavior when the chunks are updated:
+ * * When auto update is enabled, the chunks are updated with each call to \ref peak_Acquisition_WaitForFrame.
+ * * When auto update is disabled, the chunks must be updated by calling \ref peak_Chunks_Update.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[in] enabled The desired auto update status. #PEAK_TRUE for enabled, #PEAK_FALSE for disabled.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       Chunks are not available. Check the access status via #peak_Chunks_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_AutoUpdate_Enable(peak_camera_handle hCam, peak_bool enabled);
+
+/*!
+ * \ingroup chunks
+ * \brief Indicates whether the chunks auto update is enabled or disabled.
+ *
+ * When auto update is enabled, the chunks are updated with each call to \ref peak_Acquisition_WaitForFrame.
+ * When auto update is disabled, the chunks must be updated by calling \ref peak_Chunks_Update.
+ *
+ * \param[in] hCam    The camera handle.
+ *
+ * \return #PEAK_TRUE   The chunks auto update feature is currently enabled.
+ * \return #PEAK_FALSE  The chunks auto update feature is currently disabled or the query failed.
+ *
+ * \since 1.13
+ */
+PEAK_API_BOOL peak_Chunks_AutoUpdate_IsEnabled(peak_camera_handle hCam);
+
+/*!
+ * \ingroup chunks
+ * \brief Update the chunk data from the frame
+ *
+ * Use this function when auto update is disabled and the chunk data needs to be updated.
+ * When the frame includes no chunk data, this function call will fail.
+ *
+ * \note If you use #peak_Chunks_Update while auto update is enabled, the chunk data for this frame is only
+ *       available until the next frame is received with #peak_Acquisition_WaitForFrame.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[in] hFrame  The frame with the chunk data to update.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p hFrame is not a valid frame.
+ * \return #PEAK_STATUS_NO_DATA             \p hFrame has no chunk data.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Update(peak_camera_handle hCam, peak_frame_handle hFrame);
+
+/*!
+ * \ingroup chunks
+ * \brief  Query the chunk type's access status
+ *
+ * Use this function to check if a specific chunk type is supported.
+ * For a list of supported types, see #peak_Chunks_Type_Supported_GetList.
+ *
+ * This function implements the \ref principle_access_status_query principle.
+ *
+ * \param[in] hCam The camera handle.
+ * \param[in] type The chunk type to check.
+ *
+ * \return #PEAK_ACCESS_READWRITE       The feature is available for read access and for write access.
+ * \return #PEAK_ACCESS_READONLY        The feature is supported but not available for change.
+ * \return #PEAK_ACCESS_NOT_SUPPORTED   The feature is not supported.
+ * \return #PEAK_ACCESS_NONE            The feature is not available.
+ * \return #PEAK_ACCESS_INVALID         The function failed.
+ *                                          Call #peak_Library_GetLastError to get the error code and description.
+ *
+ * If the function indicates an error by returning #PEAK_ACCESS_INVALID, these are the possible errors:
+ * \li #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \li #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_ACCESS_STATUS peak_Chunks_Type_GetAccessStatus(peak_camera_handle hCam, peak_chunks_type type);
+
+/*!
+ * \ingroup chunks
+ * \brief Control whether a specific chunk type is enabled or disabled
+ *
+ * When a chunk type is enabled, it will be transmitted if chunks are generally enabled through #peak_Chunks_Enable.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[in] type    The chunk type to enable or disable.
+ * \param[in] enabled The desired chunk enabled status. #PEAK_TRUE for enabled, #PEAK_FALSE for disabled.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_ACCESS_DENIED       Chunks are not available. Check the access status via #peak_Chunks_GetAccessStatus.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p type is not a valid type.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Type_Enable(peak_camera_handle hCam, peak_chunks_type type, peak_bool enabled);
+
+/*!
+ * \ingroup chunks
+ * \brief Indicates whether a specific chunk type is enabled or disabled.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[in] type    The chunk type to check.
+ *
+ * \return #PEAK_TRUE   The chunk type specified in \p type is enabled.
+ * \return #PEAK_FALSE  The chunk type specified in \p type is disabled or the query failed.
+ *
+ * \since 1.13
+ */
+PEAK_API_BOOL peak_Chunks_Type_IsEnabled(peak_camera_handle hCam, peak_chunks_type type);
+
+/*!
+ * \ingroup chunks
+ * \brief Get the list of supported chunk types.
+ *
+ * The list of supported chunk types depends on the camera and interface technology.
+ *
+ * This function implements the \ref principle_two_stage_query principle.
+ *
+ * \param[in] hCam                      The camera handle.
+ * \param[out] chunksTypesSupported     Pointer to a user allocated array buffer to receive the list of supported chunk types.
+ *                                          If this parameter is NULL, \p chunksTypesSize will contain the current
+ *                                          number of chunk types supported. \n
+ *                                          The required size of \p chunksTypesSupported in bytes is
+ *                                          \p chunksTypesSize x sizeof(peak_chunks_type).
+ * \param[in,out] chunksTypesSize       \li \p chunksTypesSupported equal NULL: \n
+ *                                          out: minimal number of chunk types \p chunksTypesSupported must be
+ *                                          large enough to hold \n
+ *                                      \li \p chunksTypesSupported unequal NULL: \n
+ *                                          in: number of chunk types \p chunksTypesSupported can hold \n
+ *                                          out: number of chunk types filled by the function
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; no error occurred.
+ * \return #PEAK_STATUS_BUFFER_TOO_SMALL    \p chunksTypesSupported is not NULL and the value of \p *chunksTypesSize is
+ *                                           too small to receive the expected amount of data.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The chunks feature is not supported
+ *                                           or the GFA write mode is enabled.
+ * \return #PEAK_STATUS_INVALID_PARAMETER   \p chunksTypesSize is an invalid pointer.
+ * \return #PEAK_STATUS_INVALID_HANDLE      \p hCam is an invalid camera handle.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library is not initialized.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Type_Supported_GetList(peak_camera_handle hCam, peak_chunks_type* chunksTypesSupported, size_t* chunksTypesSize);
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing frame information.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The pixel format for the frame. */
+    peak_pixel_format pixelFormat;
+    
+    /*! The region of interest (ROI) of the frame. */
+    peak_roi roi;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_frame_info;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing exposure information.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The exposure time in microseconds. */
+    double exposureTime_us;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_exposure;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing gain information.
+ * \note If a channel is not available it is signaled by a NaN value.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The analog master gain value. */
+    double analogMasterGain;
+    
+    /*! The digital master gain value. */
+    double digitalMasterGain;
+    
+    /*! The digital red gain value. */
+    double digitalRedGain;
+    
+    /*! The digital green gain value. */
+    double digitalGreenGain;
+    
+    /*! The digital blue gain value. */
+    double digitalBlueGain;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_gain;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing sequencer status.
+ * \since 1.13
+ */
+typedef struct {
+    /*! Index of the sequencer set used for image acquisition. This is 0 when sequencer mode is off.  */
+    int64_t sequencerSetActive;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_sequencer;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing timestamp information.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The timestamp of the frame. */
+    int64_t timestamp;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_timestamp;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing exposure trigger timestamp information.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The exposure trigger timestamp. */
+    int64_t timestamp;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_exposure_trigger;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing usable ROI (Region of Interest).
+ * \since 1.13
+ */
+typedef struct {
+    /*! The usable region of interest (ROI). */
+    peak_roi roi;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_usable_roi;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing line status information.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The status of all lines as a bitmask. Line0 is Bit0, Line1 is Bit1 etc. */
+    uint32_t lineStatusAll;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_line_status;
+
+/*!
+ * \ingroup chunks
+ * \brief Enumeration representing the status of an auto feature.
+ * \since 1.13
+ */
+typedef enum
+{
+   /*! The auto feature status is invalid. */
+   PEAK_AUTO_FEATURE_STATUS_INVALID = 0,
+
+   /*! The auto feature is off. */
+   PEAK_AUTO_FEATURE_STATUS_OFF = 1,
+ 
+   /*! The auto feature is done. */
+   PEAK_AUTO_FEATURE_STATUS_DONE = 2,
+ 
+   /*! The auto feature is active. */
+   PEAK_AUTO_FEATURE_STATUS_ACTIVE = 3,
+
+   /*! The auto feature is stuck. */
+   PEAK_AUTO_FEATURE_STATUS_STUCK = 4   
+} peak_auto_feature_status;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing the status of an auto feature.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The current status of the auto feature. */
+    peak_auto_feature_status status;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_autofeature_status;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing the status of multiple auto features.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The status of the auto-brightness feature. */
+    peak_chunks_autofeature_status autoBrightnessStatus;
+    
+    /*! The status of the auto-white balance feature. */
+    peak_chunks_autofeature_status autoWhiteBalanceStatus;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_autofeature;
+
+/*!
+ * \ingroup chunks
+ * \brief Enumeration representing the status of PTP (Precision Time Protocol).
+ * \since 1.13
+ */
+typedef enum
+{
+   /*! The PTP status is invalid. */
+   PEAK_PTP_STATUS_INVALID,
+
+   /*! PTP is initializing. */
+   PEAK_PTP_STATUS_INITIALIZING,
+
+   /*! An error occurred during synchronization to master. PTP is disabled. */
+   PEAK_PTP_STATUS_FAULTY,
+
+   /*! PTP is disabled. */
+   PEAK_PTP_STATUS_DISABLED,
+
+   /*! The camera is listening to messages from other PTP master devices. */
+   PEAK_PTP_STATUS_LISTENING,
+
+   /*! The camera is PTP pre-master device. */
+   PEAK_PTP_STATUS_PRE_MASTER,
+
+   /*! The camera is the PTP master. */
+   PEAK_PTP_STATUS_MASTER,
+
+   /*! The camera is in PTP passive state. */
+   PEAK_PTP_STATUS_PASSIVE,
+
+   /*! The camera is an uncalibrated PTP slave device. */
+   PEAK_PTP_STATUS_UNCALIBRATED,
+
+   /*! The camera is PTP slave device. */
+   PEAK_PTP_STATUS_SLAVE
+} peak_ptp_status;
+
+/*!
+ * \ingroup chunks
+ * \brief Structure representing the PTP status.
+ * \since 1.13
+ */
+typedef struct {
+    /*! The current PTP status. */
+    peak_ptp_status ptpStatus;
+    
+    /*! Reserved space for future use. */
+    uint8_t reserved[64];
+} peak_chunks_ptp_status;
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the frame information from chunk data, including pixel format and region of interest (ROI).
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_frame_info where the frame information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; frame information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_FrameInfo_Get(peak_camera_handle hCam, peak_chunks_frame_info* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the exposure information from chunk data.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_exposure where the exposure information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; exposure information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Exposure_Get(peak_camera_handle hCam, peak_chunks_exposure* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the gain information from chunk data, including analog master gain and digital gains for red, green,
+ * and blue channels.
+ *
+ * \note If a channel is not available, it is indicated by a NaN value.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_gain where the gain information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; gain information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Gain_Get(peak_camera_handle hCam, peak_chunks_gain* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the sequencer information from chunk data.
+ *
+ * This includes the active sequencer set for the frame.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_sequencer where the sequencer information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; sequencer information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Sequencer_Get(peak_camera_handle hCam, peak_chunks_sequencer* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the timestamp information from chunk data.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_timestamp where the timestamp information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; timestamp information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_Timestamp_Get(peak_camera_handle hCam, peak_chunks_timestamp* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the exposure trigger timestamp information from chunk data.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_exposure_trigger where the exposure trigger timestamp information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; exposure trigger timestamp information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_ExposureTrigger_Get(peak_camera_handle hCam, peak_chunks_exposure_trigger* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the usable region of interest (ROI) information from chunk data.
+ *
+ * This is used for some cameras where invalid pixel values are transmitted and need to be cut out.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_usable_roi where the usable ROI information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; usable ROI information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_UsableROI_Get(peak_camera_handle hCam, peak_chunks_usable_roi* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the status information of all lines from chunk data.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_line_status where the line status information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; line status information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_LineStatus_Get(peak_camera_handle hCam, peak_chunks_line_status* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the auto-feature information from chunk data.
+ *
+ * This includes the status of the auto brightness and the auto white balance features. If the camera
+ * does not support all auto features, the corresponding status will be #PEAK_AUTO_FEATURE_STATUS_INVALID.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_autofeature where the auto feature information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; auto-feature information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_AutoFeature_Get(peak_camera_handle hCam, peak_chunks_autofeature* data);
+
+/*!
+ * \ingroup chunks
+ * \brief Retrieves the Precision Time Protocol (PTP) status information from chunk data.
+ *
+ * \param[in] hCam    The camera handle.
+ * \param[out] data   Pointer of type \ref peak_chunks_ptp_status where the PTP status information will be stored.
+ *
+ * \return #PEAK_STATUS_SUCCESS             Operation was successful; PTP status information retrieved.
+ * \return #PEAK_STATUS_INVALID_HANDLE      The camera handle \p hCam is invalid.
+ * \return #PEAK_STATUS_NOT_INITIALIZED     The library has not been initialized.
+ * \return #PEAK_STATUS_NOT_IMPLEMENTED     The chunk type is not available.
+ *                                                      Check support with \ref peak_Chunks_Type_GetAccessStatus.
+ * \return #PEAK_STATUS_ACCESS_DENIED       The data for the chunk type is not readable.
+ *                                                      Check that the chunk mode is enabled, the chunk type is enabled
+ *                                                      and that the frame data is processed by either enabling auto
+ *                                                      update or a call to \ref peak_Chunks_Update.
+ * \return #PEAK_STATUS_ERROR               An unexpected internal error occurred.
+ *
+ * \since 1.13
+ */
+PEAK_API_STATUS peak_Chunks_PTPStatus_Get(peak_camera_handle hCam, peak_chunks_ptp_status* data);
 
 #ifdef __cplusplus
 } // extern "C"

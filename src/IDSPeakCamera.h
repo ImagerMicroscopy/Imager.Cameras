@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "ids_peak_comfort_c/ids_peak_comfort_c.h"
+#include "IDSPeakAPIWrapper.h"
 
 #include "BaseCameraClass.h"
 
@@ -22,9 +22,9 @@ public:
     IDSPeakCamera(const peak_camera_descriptor& camDescriptor);
     virtual ~IDSPeakCamera();
 
-    std::string getIdentifierStr() const override;
+    std::string getIdentifierStr() override;
 
-    double getFrameRate() const override;
+    double getFrameRate() override;
 
 private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
@@ -33,10 +33,10 @@ private:
     CameraProperty _getSetPixelClock(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
     CameraProperty _getSetGain(std::optional<CameraProperty> maybeValueToSet = std::optional<CameraProperty>());
 
-    std::pair<int, int> _getSizeOfRawImages() const override;
+    std::pair<int, int> _getSizeOfRawImages() override;
 
     void _setExposureTime(const double exposureTime);
-    double _getExposureTime() const;
+    double _getExposureTime();
     void _setImageCrop(const std::pair<int, int>& crop);
     std::pair<int, int> _getImageCrop();
 
@@ -48,6 +48,7 @@ private:
     void _derivedAbortAsyncAcquisition() override;
     NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
 
+    IDSPeakAPIWrapper _peakAPIWrapper;
     peak_camera_descriptor _camDescriptor;
     peak_camera_handle _camHandle;
     int _nextExpectedImageInSequenceIdx;

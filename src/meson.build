@@ -19,8 +19,7 @@ if (isWindows)
         abslibdir = join_paths(meson.source_root(), '../lib/win64')
 
         libNames = ['ippcoremt', 'ippimt', 'ippsmt', 'ippvmmt',
-                    'ids_peak_comfort_c', 'uEye_api_64','SeaBreeze',
-                    'atmcd64m']
+                    'uEye_api_64','SeaBreeze', 'atmcd64m']
 else
         incdirs = include_directories([
                         '../include',

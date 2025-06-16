@@ -1,7 +1,3 @@
-#include "SCConfigure.h"
-
-#ifdef WITH_IDS_PEAK
-
 #include "IDSPeakCamera.h"
 
 #include <algorithm>
@@ -17,18 +13,18 @@ IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
 {
     peak_status status = PEAK_STATUS_SUCCESS;
 
-    if(peak_Camera_GetAccessStatus(camDescriptor.cameraID) != PEAK_ACCESS_READWRITE) {
+    if(_peakAPIWrapper.peak_Camera_GetAccessStatus(camDescriptor.cameraID) != PEAK_ACCESS_READWRITE) {
         throw std::runtime_error("camera does not support read/write access");
     }
 
     peak_camera_handle camHandle = nullptr;
-    status = peak_Camera_Open(camDescriptor.cameraID, &camHandle);
+    status = _peakAPIWrapper.peak_Camera_Open(camDescriptor.cameraID, &camHandle);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't open IDS Peak camera");
     }
     _camHandle = camHandle;
 
-    status = peak_Camera_ResetToDefaultSettings(_camHandle);
+    status = _peakAPIWrapper.peak_Camera_ResetToDefaultSettings(_camHandle);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("couldn't reset IDS Peak camera to default settings");
     }
@@ -38,21 +34,17 @@ IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
 
 IDSPeakCamera::~IDSPeakCamera() {
     if (_camHandle != nullptr) {
-        peak_Camera_Close(_camHandle);
+        _peakAPIWrapper.peak_Camera_Close(_camHandle);
     }
 }
 
-std::string IDSPeakCamera::getIdentifierStr() const {
-    std::string id("IDS_");
-    id += _camDescriptor.modelName;
-    id += "_";
-    id += _camDescriptor.serialNumber;
-    return id;
+std::string IDSPeakCamera::getIdentifierStr() {
+    return std::format("IDS_{}_{}", _camDescriptor.modelName, _camDescriptor.serialNumber);
 }
 
-double IDSPeakCamera::getFrameRate() const {
+double IDSPeakCamera::getFrameRate() {
     double rate = 0.0;
-    peak_status status = peak_FrameRate_Get(_camHandle, &rate);
+    peak_status status = _peakAPIWrapper.peak_FrameRate_Get(_camHandle, &rate);
     if(PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak frame rate");
     }
@@ -109,14 +101,14 @@ CameraProperty IDSPeakCamera::_getSetPixelClock(std::optional<CameraProperty> ma
     peak_status status = PEAK_STATUS_SUCCESS;
 
     bool canAccess = false;
-    peak_access_status accessStatus = peak_PixelClock_GetAccessStatus(_camHandle);
+    peak_access_status accessStatus = _peakAPIWrapper.peak_PixelClock_GetAccessStatus(_camHandle);
     canAccess = (accessStatus == PEAK_ACCESS_READWRITE);
 
     bool hasRange = false;
     double minPixelClock_MHz, maxPixelClock_MHz, incPixelClock_MHz;
-    if (peak_PixelClock_HasRange(_camHandle) && canAccess) {
+    if (_peakAPIWrapper.peak_PixelClock_HasRange(_camHandle) && canAccess) {
         hasRange = true;
-        status = peak_PixelClock_GetRange(_camHandle, &minPixelClock_MHz, &maxPixelClock_MHz, &incPixelClock_MHz);
+        status = _peakAPIWrapper.peak_PixelClock_GetRange(_camHandle, &minPixelClock_MHz, &maxPixelClock_MHz, &incPixelClock_MHz);
         if (PEAK_ERROR(status)) {
             throw std::runtime_error("can't get IDS Peak pixel clock range");
         }
@@ -131,7 +123,7 @@ CameraProperty IDSPeakCamera::_getSetPixelClock(std::optional<CameraProperty> ma
             const std::string& setting = propToSet.getCurrentOption();
             clockToSet = atof(setting.c_str());
         }
-        status = peak_PixelClock_Set(_camHandle, clockToSet);
+        status = _peakAPIWrapper.peak_PixelClock_Set(_camHandle, clockToSet);
         if (PEAK_ERROR(status)) {
             throw std::runtime_error("can't set IDS Peak pixel clock");
         }
@@ -139,7 +131,7 @@ CameraProperty IDSPeakCamera::_getSetPixelClock(std::optional<CameraProperty> ma
 
     CameraProperty currentSetting(PropPixelClock, "Pixel clock (MHz)");
     double currentClock = 0.0;
-    status = peak_PixelClock_Get(_camHandle, &currentClock);
+    status = _peakAPIWrapper.peak_PixelClock_Get(_camHandle, &currentClock);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak pixel clock");
     }
@@ -153,7 +145,7 @@ CameraProperty IDSPeakCamera::_getSetPixelClock(std::optional<CameraProperty> ma
 
         size_t nVals = 100;
         std::vector<double> availableClocks(nVals);
-        status = peak_PixelClock_GetList(_camHandle, availableClocks.data(), &nVals);
+        status = _peakAPIWrapper.peak_PixelClock_GetList(_camHandle, availableClocks.data(), &nVals);
         if (PEAK_ERROR(status)) {
             throw std::runtime_error("can't get IDS Peak pixel clock list");
         }
@@ -180,7 +172,7 @@ CameraProperty IDSPeakCamera::_getSetGain(std::optional<CameraProperty> maybeVal
     peak_status status = PEAK_STATUS_SUCCESS;
 
     double minGain, maxGain, incGain;
-    status = peak_Gain_GetRange(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, 
+    status = _peakAPIWrapper.peak_Gain_GetRange(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED,
                                 &minGain, &maxGain, &incGain);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak gain range");
@@ -189,14 +181,14 @@ CameraProperty IDSPeakCamera::_getSetGain(std::optional<CameraProperty> maybeVal
     if (maybeValueToSet.has_value()) {
         const CameraProperty& propToSet = maybeValueToSet.value();
         double gainToSet = clamp(propToSet.getValue(), minGain, maxGain);
-        status = peak_Gain_Set(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, gainToSet);
+        status = _peakAPIWrapper.peak_Gain_Set(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, gainToSet);
         if (PEAK_ERROR(status)) {
             throw std::runtime_error("can't set IDS Peak gain");
         }
     }
 
     double currentGain = 0.0;
-    status = peak_Gain_Get(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, &currentGain);
+    status = _peakAPIWrapper.peak_Gain_Get(_camHandle, PEAK_GAIN_TYPE_ANALOG, PEAK_GAIN_CHANNEL_RED, &currentGain);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak gain");
     }
@@ -206,9 +198,9 @@ CameraProperty IDSPeakCamera::_getSetGain(std::optional<CameraProperty> maybeVal
     return prop;
 }
 
-std::pair<int, int> IDSPeakCamera::_getSizeOfRawImages() const {
+std::pair<int, int> IDSPeakCamera::_getSizeOfRawImages() {
     peak_size pSize;
-    peak_status status = peak_ROI_Size_Get(_camHandle, &pSize);
+    peak_status status = _peakAPIWrapper.peak_ROI_Size_Get(_camHandle, &pSize);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak ROI size");
     }
@@ -220,32 +212,32 @@ void IDSPeakCamera::_setExposureTime(const double exposureTime) {
     peak_status status = PEAK_STATUS_SUCCESS;
 
     double minFrameRate, maxFrameRate, frameRateStep;
-    status = peak_FrameRate_GetRange(_camHandle, &minFrameRate, &maxFrameRate, &frameRateStep);
+    status = _peakAPIWrapper.peak_FrameRate_GetRange(_camHandle, &minFrameRate, &maxFrameRate, &frameRateStep);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak rate");
     }
     double frameRate = clamp(1.0 / exposureTime, minFrameRate, maxFrameRate);
-    status = peak_FrameRate_Set(_camHandle, frameRate);
+    status = _peakAPIWrapper.peak_FrameRate_Set(_camHandle, frameRate);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't set IDS Peak frame rate");
     }
     
     double minExp, maxExp, expStep;
-    status = peak_ExposureTime_GetRange(_camHandle, &minExp, &maxExp, &expStep);
+    status = _peakAPIWrapper.peak_ExposureTime_GetRange(_camHandle, &minExp, &maxExp, &expStep);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't set query IDS Peak exposure range");
     }
 
     double exposureTime_us = clamp(exposureTime * 1.0e6, minExp, maxExp);
-    status = peak_ExposureTime_Set(_camHandle, exposureTime_us);
+    status = _peakAPIWrapper.peak_ExposureTime_Set(_camHandle, exposureTime_us);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't set IDS Peak exposure time");
     }
 }
 
-double IDSPeakCamera::_getExposureTime() const {
+double IDSPeakCamera::_getExposureTime() {
     double exposureTime = 0.0;
-    peak_status status = peak_ExposureTime_Get(_camHandle, &exposureTime);
+    peak_status status = _peakAPIWrapper.peak_ExposureTime_Get(_camHandle, &exposureTime);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get IDS Peak exposure time");
     }
@@ -266,7 +258,7 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> IDSPeakCamera::_derivedG
 
 void IDSPeakCamera::_derivedStartUnboundedAsyncAcquisition() {
     peak_status status = PEAK_STATUS_SUCCESS;
-    status = peak_Acquisition_Start(_camHandle, PEAK_INFINITE);
+    status = _peakAPIWrapper.peak_Acquisition_Start(_camHandle, PEAK_INFINITE);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get start IDS Peak async acquisition");
     }
@@ -275,7 +267,7 @@ void IDSPeakCamera::_derivedStartUnboundedAsyncAcquisition() {
 }
 
 void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
-    peak_status status = peak_Acquisition_Stop(_camHandle);
+    peak_status status = _peakAPIWrapper.peak_Acquisition_Stop(_camHandle);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't get stop IDS Peak async acquisition");
     }
@@ -283,7 +275,7 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
 
 BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
     peak_frame_handle peakFrameH = nullptr;
-    peak_status status = peak_Acquisition_WaitForFrame(_camHandle, timeoutMillis, &peakFrameH);
+    peak_status status = _peakAPIWrapper.peak_Acquisition_WaitForFrame(_camHandle, timeoutMillis, &peakFrameH);
     if (status == PEAK_STATUS_TIMEOUT) {
         return NoImageBeforeTimeout;
     }
@@ -291,13 +283,13 @@ BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int t
         throw std::runtime_error("can't wait for IDS Peak frame");
     }
 
-    if (!peak_Frame_IsComplete(peakFrameH)) {
-        peak_Frame_Release(_camHandle, peakFrameH);
+    if (!_peakAPIWrapper.peak_Frame_IsComplete(peakFrameH)) {
+        _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
         throw std::runtime_error("IDS Peak frame incomplete");
     }
 
     peak_frame_info frameInfo;
-    status = peak_Frame_GetInfo(peakFrameH, &frameInfo);
+    status = _peakAPIWrapper.peak_Frame_GetInfo(peakFrameH, &frameInfo);
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't read IDS Peak frame info");
     }
@@ -340,9 +332,7 @@ BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int t
             throw std::runtime_error("invalid bytes per pixel for IDS Peak");
     }
 
-    peak_Frame_Release(_camHandle, peakFrameH);
+    _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
     
     return NewImageCopied;
 }
-
-#endif
