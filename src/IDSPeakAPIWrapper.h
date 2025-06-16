@@ -16,7 +16,7 @@
 
 // Define PEAK_ERROR macro if not already defined (it's often in ids_peak_comfort_c.h)
 #ifndef PEAK_ERROR
-#define PEAK_ERROR(status) ((status) != PEAK_API_STATUS_SUCCESS)
+#define PEAK_ERROR(status) ((status) != peak_status_SUCCESS)
 #endif
 
 class IDSPeakAPIWrapper {
@@ -77,28 +77,28 @@ public:
     }
 
     // Explicit public wrapper methods (formerly PEAK_FN_IMPLEMENT_WRAPPER)
-    PEAK_API_STATUS peak_Library_Init() {
+    peak_status peak_Library_Init() {
         if (peak_Library_Init_ptr) {
             return peak_Library_Init_ptr();
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Library_Init");
     }
 
-    PEAK_API_STATUS peak_Library_Exit() {
+    peak_status peak_Library_Exit() {
         if (peak_Library_Exit_ptr) {
             return peak_Library_Exit_ptr();
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Library_Exit");
     }
 
-    PEAK_API_STATUS peak_CameraList_Update(size_t* cameraCount) {
+    peak_status peak_CameraList_Update(size_t* cameraCount) {
         if (peak_CameraList_Update_ptr) {
             return peak_CameraList_Update_ptr(cameraCount);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_CameraList_Update");
     }
 
-    PEAK_API_STATUS peak_CameraList_Get(peak_camera_descriptor* camDescriptors, size_t* numCameras) {
+    peak_status peak_CameraList_Get(peak_camera_descriptor* camDescriptors, size_t* numCameras) {
         if (peak_CameraList_Get_ptr) {
             return peak_CameraList_Get_ptr(camDescriptors, numCameras);
         }
@@ -113,7 +113,7 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Camera_GetAccessStatus");
     }
 
-    PEAK_API_STATUS peak_Camera_Open(peak_camera_id cameraID, peak_camera_handle* hCam) {
+    peak_status peak_Camera_Open(peak_camera_id cameraID, peak_camera_handle* hCam) {
         if (peak_Camera_Open_ptr) {
             return peak_Camera_Open_ptr(cameraID, hCam);
         }
@@ -121,21 +121,21 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Camera_Open");
     }
 
-    PEAK_API_STATUS peak_Camera_ResetToDefaultSettings(peak_camera_handle hCam) {
+    peak_status peak_Camera_ResetToDefaultSettings(peak_camera_handle hCam) {
         if (peak_Camera_ResetToDefaultSettings_ptr) {
             return peak_Camera_ResetToDefaultSettings_ptr(hCam);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Camera_ResetToDefaultSettings");
     }
 
-    PEAK_API_STATUS peak_Camera_Close(peak_camera_handle hCam) {
+    peak_status peak_Camera_Close(peak_camera_handle hCam) {
         if (peak_Camera_Close_ptr) {
             return peak_Camera_Close_ptr(hCam);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Camera_Close");
     }
 
-    PEAK_API_STATUS peak_FrameRate_Get(peak_camera_handle hCam, double* frameRate) {
+    peak_status peak_FrameRate_Get(peak_camera_handle hCam, double* frameRate) {
         if (peak_FrameRate_Get_ptr) {
             return peak_FrameRate_Get_ptr(hCam, frameRate);
         }
@@ -143,14 +143,14 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_FrameRate_Get");
     }
 
-    PEAK_API_STATUS peak_FrameRate_GetRange(peak_camera_handle hCam, double* minFrameRate, double* maxFrameRate, double* frameRateStep) {
+    peak_status peak_FrameRate_GetRange(peak_camera_handle hCam, double* minFrameRate, double* maxFrameRate, double* frameRateStep) {
         if (peak_FrameRate_GetRange_ptr) {
             return peak_FrameRate_GetRange_ptr(hCam, minFrameRate, maxFrameRate, frameRateStep);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_FrameRate_GetRange");
     }
 
-    PEAK_API_STATUS peak_FrameRate_Set(peak_camera_handle hCam, double frameRate) {
+    peak_status peak_FrameRate_Set(peak_camera_handle hCam, double frameRate) {
         if (peak_FrameRate_Set_ptr) {
             return peak_FrameRate_Set_ptr(hCam, frameRate);
         }
@@ -164,28 +164,28 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_PixelClock_GetAccessStatus");
     }
 
-    PEAK_API_BOOL peak_PixelClock_HasRange(peak_camera_handle hCam) {
+    peak_bool peak_PixelClock_HasRange(peak_camera_handle hCam) {
         if (peak_PixelClock_HasRange_ptr) {
             return peak_PixelClock_HasRange_ptr(hCam);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_PixelClock_HasRange");
     }
 
-    PEAK_API_STATUS peak_PixelClock_GetRange(peak_camera_handle hCam, double* minPixelClock_MHz, double* maxPixelClock_MHz, double* incPixelClock_MHz) {
+    peak_status peak_PixelClock_GetRange(peak_camera_handle hCam, double* minPixelClock_MHz, double* maxPixelClock_MHz, double* incPixelClock_MHz) {
         if (peak_PixelClock_GetRange_ptr) {
             return peak_PixelClock_GetRange_ptr(hCam, minPixelClock_MHz, maxPixelClock_MHz, incPixelClock_MHz);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_PixelClock_GetRange");
     }
 
-    PEAK_API_STATUS peak_PixelClock_Set(peak_camera_handle hCam, double pixelClock_MHz) {
+    peak_status peak_PixelClock_Set(peak_camera_handle hCam, double pixelClock_MHz) {
         if (peak_PixelClock_Set_ptr) {
             return peak_PixelClock_Set_ptr(hCam, pixelClock_MHz);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_PixelClock_Set");
     }
 
-    PEAK_API_STATUS peak_PixelClock_Get(peak_camera_handle hCam, double* pixelClock_MHz) {
+    peak_status peak_PixelClock_Get(peak_camera_handle hCam, double* pixelClock_MHz) {
         if (peak_PixelClock_Get_ptr) {
             return peak_PixelClock_Get_ptr(hCam, pixelClock_MHz);
         }
@@ -193,7 +193,7 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_PixelClock_Get");
     }
 
-    PEAK_API_STATUS peak_PixelClock_GetList(peak_camera_handle hCam, double* availableClocks, size_t* numClocks) {
+    peak_status peak_PixelClock_GetList(peak_camera_handle hCam, double* availableClocks, size_t* numClocks) {
         if (peak_PixelClock_GetList_ptr) {
             return peak_PixelClock_GetList_ptr(hCam, availableClocks, numClocks);
         }
@@ -201,91 +201,91 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_PixelClock_GetList");
     }
 
-    PEAK_API_STATUS peak_Gain_GetRange(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* minGain, double* maxGain, double* incGain) {
+    peak_status peak_Gain_GetRange(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* minGain, double* maxGain, double* incGain) {
         if (peak_Gain_GetRange_ptr) {
             return peak_Gain_GetRange_ptr(hCam, gainType, gainChannel, minGain, maxGain, incGain);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Gain_GetRange");
     }
 
-    PEAK_API_STATUS peak_Gain_Set(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double gain) {
+    peak_status peak_Gain_Set(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double gain) {
         if (peak_Gain_Set_ptr) {
             return peak_Gain_Set_ptr(hCam, gainType, gainChannel, gain);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Gain_Set");
     }
 
-    PEAK_API_STATUS peak_Gain_Get(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* gain) {
+    peak_status peak_Gain_Get(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* gain) {
         if (peak_Gain_Get_ptr) {
             return peak_Gain_Get_ptr(hCam, gainType, gainChannel, gain);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Gain_Get");
     }
 
-    PEAK_API_STATUS peak_ROI_Size_Get(peak_camera_handle hCam, peak_size* size) {
+    peak_status peak_ROI_Size_Get(peak_camera_handle hCam, peak_size* size) {
         if (peak_ROI_Size_Get_ptr) {
             return peak_ROI_Size_Get_ptr(hCam, size);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_ROI_Size_Get");
     }
 
-    PEAK_API_STATUS peak_ExposureTime_GetRange(peak_camera_handle hCam, double* minExp, double* maxExp, double* expStep) {
+    peak_status peak_ExposureTime_GetRange(peak_camera_handle hCam, double* minExp, double* maxExp, double* expStep) {
         if (peak_ExposureTime_GetRange_ptr) {
             return peak_ExposureTime_GetRange_ptr(hCam, minExp, maxExp, expStep);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_ExposureTime_GetRange");
     }
 
-    PEAK_API_STATUS peak_ExposureTime_Set(peak_camera_handle hCam, double exposureTime_us) {
+    peak_status peak_ExposureTime_Set(peak_camera_handle hCam, double exposureTime_us) {
         if (peak_ExposureTime_Set_ptr) {
             return peak_ExposureTime_Set_ptr(hCam, exposureTime_us);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_ExposureTime_Set");
     }
 
-    PEAK_API_STATUS peak_ExposureTime_Get(peak_camera_handle hCam, double* exposureTime_us) {
+    peak_status peak_ExposureTime_Get(peak_camera_handle hCam, double* exposureTime_us) {
         if (peak_ExposureTime_Get_ptr) {
             return peak_ExposureTime_Get_ptr(hCam, exposureTime_us);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_ExposureTime_Get");
     }
 
-    PEAK_API_STATUS peak_Acquisition_Start(peak_camera_handle hCam, int32_t numFrames) {
+    peak_status peak_Acquisition_Start(peak_camera_handle hCam, int32_t numFrames) {
         if (peak_Acquisition_Start_ptr) {
             return peak_Acquisition_Start_ptr(hCam, numFrames);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Acquisition_Start");
     }
 
-    PEAK_API_STATUS peak_Acquisition_Stop(peak_camera_handle hCam) {
+    peak_status peak_Acquisition_Stop(peak_camera_handle hCam) {
         if (peak_Acquisition_Stop_ptr) {
             return peak_Acquisition_Stop_ptr(hCam);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Acquisition_Stop");
     }
 
-    PEAK_API_STATUS peak_Acquisition_WaitForFrame(peak_camera_handle hCam, int32_t timeoutMs, peak_frame_handle* hFrame) {
+    peak_status peak_Acquisition_WaitForFrame(peak_camera_handle hCam, int32_t timeoutMs, peak_frame_handle* hFrame) {
         if (peak_Acquisition_WaitForFrame_ptr) {
             return peak_Acquisition_WaitForFrame_ptr(hCam, timeoutMs, hFrame);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Acquisition_WaitForFrame");
     }
 
-    PEAK_API_BOOL peak_Frame_IsComplete(peak_frame_handle hFrame) {
+    peak_bool peak_Frame_IsComplete(peak_frame_handle hFrame) {
         if (peak_Frame_IsComplete_ptr) {
             return peak_Frame_IsComplete_ptr(hFrame);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Frame_IsComplete");
     }
 
-    PEAK_API_STATUS peak_Frame_GetInfo(peak_frame_handle hFrame, peak_frame_info* info) {
+    peak_status peak_Frame_GetInfo(peak_frame_handle hFrame, peak_frame_info* info) {
         if (peak_Frame_GetInfo_ptr) {
             return peak_Frame_GetInfo_ptr(hFrame, info);
         }
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Frame_GetInfo");
     }
 
-    PEAK_API_STATUS peak_Frame_Release(peak_camera_handle hCam, peak_frame_handle hFrame) {
+    peak_status peak_Frame_Release(peak_camera_handle hCam, peak_frame_handle hFrame) {
         if (peak_Frame_Release_ptr) {
             return peak_Frame_Release_ptr(hCam, hFrame);
         }
@@ -305,102 +305,102 @@ private:
 
     // Explicitly declared function pointer typedefs and member variables
     // Library functions
-    using F_peak_Library_Init = PEAK_API_STATUS (PEAK_CALLCONV*)();
+    using F_peak_Library_Init = peak_status (PEAK_CALLCONV*)();
     F_peak_Library_Init peak_Library_Init_ptr;
 
-    using F_peak_Library_Exit = PEAK_API_STATUS (PEAK_CALLCONV*)();
+    using F_peak_Library_Exit = peak_status (PEAK_CALLCONV*)();
     F_peak_Library_Exit peak_Library_Exit_ptr;
 
-    using F_peak_CameraList_Update = PEAK_API_STATUS (PEAK_CALLCONV*)(size_t* cameraCount);
+    using F_peak_CameraList_Update = peak_status (PEAK_CALLCONV*)(size_t* cameraCount);
     F_peak_CameraList_Update peak_CameraList_Update_ptr;
 
-    using F_peak_CameraList_Get = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_descriptor* camDescriptors, size_t* numCameras);
+    using F_peak_CameraList_Get = peak_status (PEAK_CALLCONV*)(peak_camera_descriptor* camDescriptors, size_t* numCameras);
     F_peak_CameraList_Get peak_CameraList_Get_ptr;
 
     // Camera functions
     using F_peak_Camera_GetAccessStatus = peak_access_status (PEAK_CALLCONV*)(peak_camera_id cameraID);
     F_peak_Camera_GetAccessStatus peak_Camera_GetAccessStatus_ptr;
 
-    using F_peak_Camera_Open = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_id cameraID, peak_camera_handle* hCam);
+    using F_peak_Camera_Open = peak_status (PEAK_CALLCONV*)(peak_camera_id cameraID, peak_camera_handle* hCam);
     F_peak_Camera_Open peak_Camera_Open_ptr;
 
-    using F_peak_Camera_ResetToDefaultSettings = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_Camera_ResetToDefaultSettings = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
     F_peak_Camera_ResetToDefaultSettings peak_Camera_ResetToDefaultSettings_ptr;
 
-    using F_peak_Camera_Close = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_Camera_Close = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
     F_peak_Camera_Close peak_Camera_Close_ptr;
 
     // FrameRate functions
-    using F_peak_FrameRate_Get = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* frameRate);
+    using F_peak_FrameRate_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* frameRate);
     F_peak_FrameRate_Get peak_FrameRate_Get_ptr;
 
-    using F_peak_FrameRate_GetRange = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minFrameRate, double* maxFrameRate, double* frameRateStep);
+    using F_peak_FrameRate_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minFrameRate, double* maxFrameRate, double* frameRateStep);
     F_peak_FrameRate_GetRange peak_FrameRate_GetRange_ptr;
 
-    using F_peak_FrameRate_Set = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double frameRate);
+    using F_peak_FrameRate_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double frameRate);
     F_peak_FrameRate_Set peak_FrameRate_Set_ptr;
 
     // PixelClock functions
     using F_peak_PixelClock_GetAccessStatus = peak_access_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
     F_peak_PixelClock_GetAccessStatus peak_PixelClock_GetAccessStatus_ptr;
 
-    using F_peak_PixelClock_HasRange = PEAK_API_BOOL (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_PixelClock_HasRange = peak_bool (PEAK_CALLCONV*)(peak_camera_handle hCam);
     F_peak_PixelClock_HasRange peak_PixelClock_HasRange_ptr;
 
-    using F_peak_PixelClock_GetRange = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minPixelClock_MHz, double* maxPixelClock_MHz, double* incPixelClock_MHz);
+    using F_peak_PixelClock_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minPixelClock_MHz, double* maxPixelClock_MHz, double* incPixelClock_MHz);
     F_peak_PixelClock_GetRange peak_PixelClock_GetRange_ptr;
 
-    using F_peak_PixelClock_Set = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double pixelClock_MHz);
+    using F_peak_PixelClock_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double pixelClock_MHz);
     F_peak_PixelClock_Set peak_PixelClock_Set_ptr;
 
-    using F_peak_PixelClock_Get = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* pixelClock_MHz);
+    using F_peak_PixelClock_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* pixelClock_MHz);
     F_peak_PixelClock_Get peak_PixelClock_Get_ptr;
 
-    using F_peak_PixelClock_GetList = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* availableClocks, size_t* numClocks);
+    using F_peak_PixelClock_GetList = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* availableClocks, size_t* numClocks);
     F_peak_PixelClock_GetList peak_PixelClock_GetList_ptr;
 
     // Gain functions
-    using F_peak_Gain_GetRange = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* minGain, double* maxGain, double* incGain);
+    using F_peak_Gain_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* minGain, double* maxGain, double* incGain);
     F_peak_Gain_GetRange peak_Gain_GetRange_ptr;
 
-    using F_peak_Gain_Set = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double gain);
+    using F_peak_Gain_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double gain);
     F_peak_Gain_Set peak_Gain_Set_ptr;
 
-    using F_peak_Gain_Get = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* gain);
+    using F_peak_Gain_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* gain);
     F_peak_Gain_Get peak_Gain_Get_ptr;
 
     // ROI functions
-    using F_peak_ROI_Size_Get = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_size* size);
+    using F_peak_ROI_Size_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_size* size);
     F_peak_ROI_Size_Get peak_ROI_Size_Get_ptr;
 
     // ExposureTime functions
-    using F_peak_ExposureTime_GetRange = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minExp, double* maxExp, double* expStep);
+    using F_peak_ExposureTime_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minExp, double* maxExp, double* expStep);
     F_peak_ExposureTime_GetRange peak_ExposureTime_GetRange_ptr;
 
-    using F_peak_ExposureTime_Set = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double exposureTime_us);
+    using F_peak_ExposureTime_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double exposureTime_us);
     F_peak_ExposureTime_Set peak_ExposureTime_Set_ptr;
 
-    using F_peak_ExposureTime_Get = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, double* exposureTime_us);
+    using F_peak_ExposureTime_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* exposureTime_us);
     F_peak_ExposureTime_Get peak_ExposureTime_Get_ptr;
 
     // Acquisition functions
-    using F_peak_Acquisition_Start = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, int32_t numFrames);
+    using F_peak_Acquisition_Start = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, int32_t numFrames);
     F_peak_Acquisition_Start peak_Acquisition_Start_ptr;
 
-    using F_peak_Acquisition_Stop = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_Acquisition_Stop = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
     F_peak_Acquisition_Stop peak_Acquisition_Stop_ptr;
 
-    using F_peak_Acquisition_WaitForFrame = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, int32_t timeoutMs, peak_frame_handle* hFrame);
+    using F_peak_Acquisition_WaitForFrame = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, int32_t timeoutMs, peak_frame_handle* hFrame);
     F_peak_Acquisition_WaitForFrame peak_Acquisition_WaitForFrame_ptr;
 
     // Frame functions
-    using F_peak_Frame_IsComplete = PEAK_API_BOOL (PEAK_CALLCONV*)(peak_frame_handle hFrame);
+    using F_peak_Frame_IsComplete = peak_bool (PEAK_CALLCONV*)(peak_frame_handle hFrame);
     F_peak_Frame_IsComplete peak_Frame_IsComplete_ptr;
 
-    using F_peak_Frame_GetInfo = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_frame_handle hFrame, peak_frame_info* info);
+    using F_peak_Frame_GetInfo = peak_status (PEAK_CALLCONV*)(peak_frame_handle hFrame, peak_frame_info* info);
     F_peak_Frame_GetInfo peak_Frame_GetInfo_ptr;
 
-    using F_peak_Frame_Release = PEAK_API_STATUS (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_frame_handle hFrame);
+    using F_peak_Frame_Release = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_frame_handle hFrame);
     F_peak_Frame_Release peak_Frame_Release_ptr;
 
 
