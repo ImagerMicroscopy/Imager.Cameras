@@ -1,5 +1,5 @@
-#define COMPILING_SCCameraDLL_H
-#include "SCCameraDLL.h"
+#define COMPILING_IMAGERPLUGIN
+#include "SCCameraPlugin.h"
 #include "CameraManager.h"
 #include "BaseCameraClass.h"
 #include <memory>
@@ -19,6 +19,7 @@
 #include "ImageProcessingUtils.h"
 #include "SCPrinter.h"
 
+const char* gEquipmentName = "MyEquipment";        // adjust to the name of your equipment
 std::string gLastError = std::string();
 CameraManager* gCameraManager = nullptr;
 
@@ -30,9 +31,11 @@ int HandleExceptions(const std::function<void()>& func) {
     } catch (const std::exception& e) {
         Print(e.what());
         gLastError = e.what();
-        return GENERIC_ERROR; // Return error code
+        return -1; // Return error code
     }
 }
+
+int StoreStringListInBuffers(const std::vector<std::string>& stringList, char** stringBuffers, int nBuffers, int maxNBytesPerName);
 
 void StopCameraManager() {
     if (gCameraManager != nullptr) {
@@ -56,7 +59,7 @@ bool CameraManagerIsAvailable() {
 
 bool gHaveInit = false;
 
-int InitCameraDLL(void(*printer)(const char*)) {
+int InitImagerPlugin(void(*printer)(const char*)) {
     if (printer == nullptr) {
         return -1;
     }
@@ -70,34 +73,115 @@ int InitCameraDLL(void(*printer)(const char*)) {
         return 0;
     } else {
         Print("the camera manager is unavailable");
-        return GENERIC_ERROR;
+        return -1;
     }
 }
 
-void ShutdownCameraDLL() {
+void ShutdownImagerPlugin() {
     StopCameraManager();
     gHaveInit = false;
 }
 
-int ListConnectedCameraNames(char** namesPtr) {
-    if (!gHaveInit)
-        return NO_INIT;
+int ImagerPluginAPIVersion(int* version) {
+    *version = IMAGER_API_VERSION;
+    return 0;
+}
 
-    std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
-    for (size_t i = 0; i < std::min(cameraIdentifiers.size(), (size_t)MAX_CAMERAS); ++i) {
-        strncpy(namesPtr[i], cameraIdentifiers[i].c_str(), MAX_CAMERA_NAME_LENGTH);
-        namesPtr[i][MAX_CAMERA_NAME_LENGTH - 1] = 0; // Ensure null-termination
-    }
-    return cameraIdentifiers.size();
+int EquipmentName(char* name, int maxNBytesPerName) {
+    return HandleExceptions([&]() {
+        if (strlen(gEquipmentName) > maxNBytesPerName - 1) {
+            throw std::runtime_error("buffer too small to store the EquipmentName");
+        }
+        snprintf(name, maxNBytesPerName, "%s", gEquipmentName);
+    });
+}
+
+int ListAvailableLightSources(char **namesPtr, int nNames, int maxNBytesPerName, int *nNamesReturned) {
+    *nNamesReturned = 0;
+    return 0;
+}
+
+int ListAvailableChannels(char *lightSourceName, char **namesPtr, int nNames, int maxNBytesPerName,
+                          int *nNamesReturned, int *canControlPower, int *allowMultipleChannelsAtOnce) {
+    return -1;
+}
+
+int ActivateLightSource(char *lightSourceName, char **channelNames, double *illuminationPowers, int nChannels) {
+    return -1;
+}
+
+int DeactivateLightSource() {
+    return HandleExceptions([&]() {
+        // call a function you created
+    });
+}
+
+int ListDiscreteMovableComponents(char **namesPtr, int nNames, int maxNBytesPerName, int *nNamesReturned) {
+    *nNamesReturned = 0;
+    return 0;
+}
+
+int ListContinuouslyMovableComponents(char **namesPtr, int nNames, int maxNBytesPerName, int *nNamesReturned) {
+    *nNamesReturned = 0;
+    return 0;
+}
+
+int ListDiscreteMovableComponentSettings(char *discreteComponentName, char **namesPtr, int nNames,
+                                         int maxNBytesPerName, int *nNamesReturned) {
+    return -1;
+}
+
+int ListContinuouslyMovableComponentRange(char *discreteComponentName, double *minValue, double *maxValue,
+    double *increment) {
+        // set minValue, maxValue, and increment as appropriate
+    return -1;
+}
+
+int SetMovableComponents(int nDiscreteComponentNames, char **discreteComponentNames, char **discreteSettings,
+                         int nContinuousComponentNames, char **continuousComponentNames, double *continuousSettings) {
+    return -1;
+}
+
+int HasMotorizedStage(int *hasIt) {
+    *hasIt = 0;
+    return 0;
+}
+
+int MotorizedStageName(char *name, int maxNBytesPerName) {
+    return -1;
+}
+
+int SupportedStageAxes(int *x, int *y, int *z) {
+    return -1;
+}
+
+int GetStagePosition(double *x, double *y, double *z, int *usingHardwareAF, int *afOffset) {
+    return -1;
+}
+
+int SetStagePosition(double x, double y, double z, int usingHardwareAF, int afOffset) {
+    return -1;
+}
+
+int ListConnectedCameraNames(char **namesPtr, int nNames, int maxNBytesPerName, int *nNamesReturned) {
+    return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
+        std::vector<std::string> cameraIdentifiers = gCameraManager->getCameraIdentifiers();
+        *nNamesReturned = StoreStringListInBuffers(cameraIdentifiers, namesPtr, nNames, maxNBytesPerName);
+        if (*nNamesReturned != (int)cameraIdentifiers.size()) {
+            throw std::runtime_error("Can't return all camera names");
+        }
+    });
 }
 
 int GetCameraOptions(char* cameraName, char** encodedOptionsPtr) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
+
         *encodedOptionsPtr = nullptr;
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
@@ -120,12 +204,10 @@ void ReleaseOptionsData(char* data) {
 }
 
 int SetCameraOption(char* cameraName, char* encodedOption) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -134,12 +216,10 @@ int SetCameraOption(char* cameraName, char* encodedOption) {
 }
 
 int GetFrameRate(char* cameraName, double* frameRate) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -148,12 +228,10 @@ int GetFrameRate(char* cameraName, double* frameRate) {
 }
 
 int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHardwareTriggering) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -163,6 +241,9 @@ int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHard
 
 int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -195,12 +276,10 @@ std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 std::mutex gImagesInFlightMutex;
 
 int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* nCols) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -216,16 +295,19 @@ int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* n
 }
 
 int StartAsyncAcquisition(char* cameraName) {
-    return StartBoundedAsyncAcquisition(cameraName, std::numeric_limits<std::uint64_t>::max());
+    return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
+        StartBoundedAsyncAcquisition(cameraName, std::numeric_limits<std::uint64_t>::max());
+    });
 }
 
 int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquire) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -234,12 +316,10 @@ int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquir
 }
 
 int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16_t** imagePtr, int* nRows, int* nCols, double* timeStamp) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -262,12 +342,10 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16
 }
 
 void ReleaseImageData(uint16_t* imagePtr) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return;
-    }
-
     HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
         auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [=](const std::shared_ptr<std::uint16_t>& ptr) -> bool {
             return (ptr.get() == imagePtr);
@@ -280,12 +358,10 @@ void ReleaseImageData(uint16_t* imagePtr) {
 }
 
 int AbortAsyncAcquisition(char* cameraName) {
-    if (!gHaveInit) {
-        Print("didn't init SCCamera");
-        return NO_INIT;
-    }
-
     return HandleExceptions([&]() {
+        if (!gHaveInit) {
+            throw std::logic_error("The camera manager is unavailable");
+        }
         std::shared_ptr<BaseCameraClass> camPtr;
         std::string identifier(cameraName);
         camPtr = gCameraManager->getCamera(identifier);
@@ -300,3 +376,18 @@ void GetLastSCCamError(char* msgBuf, size_t bufSize) {
         msgBuf[nBytesToCopy] = 0;
     }
 }
+
+// A utility function to store a list of strings in buffers passed by Imager. Returns the number of items actually stored.
+int StoreStringListInBuffers(const std::vector<std::string>& stringList, char** stringBuffers, int nBuffers, int maxNBytesPerName) {
+    int nStrings = (int)stringList.size();
+    int nItemsToStore = std::min(nStrings, nBuffers);
+    for (int i = 0; i < nItemsToStore; ++i) {
+        const std::string& item = stringList.at(i);
+        if (item.size() > maxNBytesPerName - 1) {   // '-1' so the trailing nil can be stored
+            throw std::runtime_error("buffer too small to store item \"" + item + "\"");
+        }
+        snprintf(stringBuffers[i], maxNBytesPerName, "%s", item.c_str());
+    }
+    return nItemsToStore;
+}
+
