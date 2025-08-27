@@ -19,7 +19,7 @@
 #include "ImageProcessingUtils.h"
 #include "SCPrinter.h"
 
-const char* gEquipmentName = "MyEquipment";        // adjust to the name of your equipment
+const char* gEquipmentName = "SCCamera";        // adjust to the name of your equipment
 std::string gLastError = std::string();
 CameraManager* gCameraManager = nullptr;
 
@@ -183,9 +183,7 @@ int GetCameraOptions(char* cameraName, char** encodedOptionsPtr) {
         }
 
         *encodedOptionsPtr = nullptr;
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         std::vector<CameraProperty> properties = camPtr->getCameraProperties();
         std::vector<nlohmann::json> encodedProps;
         for (const auto& p : properties) {
@@ -208,9 +206,7 @@ int SetCameraOption(char* cameraName, char* encodedOption) {
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         camPtr->setCameraProperties({ CameraProperty::decodeFromJSONObject(nlohmann::json::parse(encodedOption)) });
     });
 }
@@ -220,9 +216,7 @@ int GetFrameRate(char* cameraName, double* frameRate) {
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         *frameRate = camPtr->getFrameRate();
     });
 }
@@ -232,9 +226,7 @@ int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHard
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         *isConfiguredForHardwareTriggering = camPtr->isConfiguredForHardwareTriggering();
     });
 }
@@ -244,9 +236,7 @@ int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
 
         std::vector<std::shared_ptr<ImageProcessingDescriptor>> ops;
         for (int i = 0; i < nOps; i += 1) {
@@ -280,9 +270,7 @@ int AcquireSingleImage(char* cameraName, uint16_t** imagePtr, int* nRows, int* n
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
 
         std::shared_ptr<std::uint16_t> imageData;
         std::tie(imageData, *nRows, *nCols) = camPtr->acquireSingleImage();
@@ -308,9 +296,7 @@ int StartBoundedAsyncAcquisition(char* cameraName, std::uint64_t nImagesToAcquir
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         camPtr->startAsyncAcquisition(BaseCameraClass::AcqFillAndStop, nImagesToAcquire);
     });
 }
@@ -320,9 +306,7 @@ int GetOldestImageAsyncAcquired(char* cameraName, uint32_t timeoutMillis, uint16
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         std::shared_ptr<std::uint16_t> imageData;
         std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> result = camPtr->getOldestImageAsyncAcquiredWithTimeout(timeoutMillis);
         if (result.has_value()) {
@@ -362,9 +346,7 @@ int AbortAsyncAcquisition(char* cameraName) {
         if (!gHaveInit) {
             throw std::logic_error("The camera manager is unavailable");
         }
-        std::shared_ptr<BaseCameraClass> camPtr;
-        std::string identifier(cameraName);
-        camPtr = gCameraManager->getCamera(identifier);
+        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
         camPtr->abortAsyncAcquisitionIfRunning();
     });
 }
