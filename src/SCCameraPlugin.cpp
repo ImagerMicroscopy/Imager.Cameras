@@ -59,7 +59,7 @@ bool CameraManagerIsAvailable() {
 
 bool gHaveInit = false;
 
-int InitImagerPlugin(void(*printer)(const char*)) {
+int InitImagerPlugin(char* configurationDirPath, void(*printer)(const char*)) {
     if (printer == nullptr) {
         return -1;
     }
