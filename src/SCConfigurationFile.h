@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 
 class SCConfigurationFile {
 public:
-    SCConfigurationFile(fs::path& configFileDirectory);
+    SCConfigurationFile(const fs::path& configFileDirectory);
     ~SCConfigurationFile() {;}
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> getProcessingOptionsForCamera(const std::string &cameraName);

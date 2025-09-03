@@ -17,6 +17,7 @@
 
 #include "CameraPropertiesEncoding.h"
 #include "ImageProcessingUtils.h"
+#include "SCConfigurationFile.h"
 #include "SCPrinter.h"
 
 const char* gEquipmentName = "SCCamera";        // adjust to the name of your equipment
@@ -44,17 +45,12 @@ void StopCameraManager() {
     }
 }
 
-bool StartCameraManager() {
-    return HandleExceptions([&]() {
-        if (gCameraManager == nullptr) {
-            gCameraManager = new CameraManager();
-            gCameraManager->discoverCameras();
-        }
-    }) == 0;
-}
-
-bool CameraManagerIsAvailable() {
-    return StartCameraManager();
+void StartCameraManager(const fs::path& configDirPath) {
+    if (gCameraManager == nullptr) {
+        SCConfigurationFile configFile(configDirPath);
+        gCameraManager = new CameraManager(configFile);
+        gCameraManager->discoverCameras();
+    }
 }
 
 bool gHaveInit = false;
@@ -63,18 +59,15 @@ int InitImagerPlugin(char* configurationDirPath, void(*printer)(const char*)) {
     if (printer == nullptr) {
         return -1;
     }
-    InitPrinter([=] (const std::string& str) -> void {
-        printer(str.c_str());
-    });
 
-    StartCameraManager();
-    if (CameraManagerIsAvailable()) {
+    return HandleExceptions([&]() {
+        InitPrinter([=] (const std::string& str) -> void {
+            printer(str.c_str());
+        });
+
+        StartCameraManager(configurationDirPath);
         gHaveInit = true;
-        return 0;
-    } else {
-        Print("the camera manager is unavailable");
-        return -1;
-    }
+    });
 }
 
 void ShutdownImagerPlugin() {

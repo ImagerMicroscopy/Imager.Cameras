@@ -4,13 +4,15 @@
 
 #include "toml.hpp"
 
-SCConfigurationFile::SCConfigurationFile(fs::path &configFileDirectory) {
+SCConfigurationFile::SCConfigurationFile(const fs::path &configFileDirectory) {
     _configFilePath = configFileDirectory / "SCCameraConfig.toml";
 
     if (!fs::exists(_configFilePath)) {
         std::ofstream file(_configFilePath, std::ios::trunc);
         file << _defaultConfigFileContents();
     }
+
+    _parseConfigFile();
 }
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> SCConfigurationFile::getProcessingOptionsForCamera(
@@ -30,8 +32,9 @@ std::string SCConfigurationFile::_defaultConfigFileContents() {
 # properties when the program starts.
 #
 
-[Camera Orientation]
-# Include orientation settings for as many cameras as you want. Specify the camera via the name with which
+[camera-orientation]
+
+# Include here orientation settings for as many cameras as you want. Specify the camera via the name with which
 # it shows up in Imager. The names of the supported operations are "RotateCW", "RotateCCW", "FlipHorizontal", "FlipVertical".
 # You can specify these names in an array. The operations will be applied on the images from left to right.
 # The actual visual effect of the operations may not be what you expect, depending on how the images are displayed.
@@ -48,15 +51,23 @@ std::string SCConfigurationFile::_defaultConfigFileContents() {
 
 void SCConfigurationFile::_parseConfigFile() {
     try {
+        // Open the file for reading
+        std::ifstream file(_configFilePath);
+
+        // Read the file contents into a string
+        std::string content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+        file.close();
+
         // Load the TOML file
-        const auto data = toml::parse(_configFilePath.string()); // Replace with the actual path to your TOML file
+        const auto data = toml::parse_file(_configFilePath.string()); // Replace with the actual path to your TOML file
 
         // Extract the "Camera Orientation" table
-        if (!data.contains("Camera Orientation")) {
-            throw std::runtime_error("The config file is missing the \"Camera Orientation\" section. (Delete the file to generate a new one on startup");
+        if (!data.contains("camera-orientation")) {
+            throw std::runtime_error("The config file is missing the \"camera-orientation\" section. (Delete the file to generate a new one on startup");
         }
 
-        const auto& cameraOrientationNode = data.at("Camera Orientation");
+        const auto& cameraOrientationNode = data.at("camera-orientation");
         const auto& cameraOrientation = cameraOrientationNode.as_table();
         // Iterate through each name and its associated transformations
         for (const auto& entry : *cameraOrientation) {

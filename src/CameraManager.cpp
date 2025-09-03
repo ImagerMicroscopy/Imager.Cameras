@@ -30,9 +30,6 @@
 
 #include "IDSPeakCameraHandler.h"
 
-CameraManager::CameraManager() {
-}
-
 CameraManager::~CameraManager() {
     CloseAndorSDK3Library();
     ClosePhotometricsLibrary();
@@ -127,6 +124,9 @@ void CameraManager::discoverCameras() {
     _availableCameras.emplace("DummyCam1", new DummyCamera());
     _availableCameras.emplace("DummyCam2", new DummyCamera());
 #endif
+
+
+    _applyCameraOrientationOptions();
 }
 
 std::vector<std::string> CameraManager::getCameraIdentifiers() const {
@@ -154,5 +154,12 @@ std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
 void CameraManager::abortRunningAcquisitions() {
     for (auto& it : _availableCameras) {
         it.second->abortAsyncAcquisitionIfRunning();
+    }
+}
+
+void CameraManager::_applyCameraOrientationOptions() {
+    for (const auto& [name, camera] : _availableCameras) {
+        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _configFile.getProcessingOptionsForCamera(name);
+        camera->setImageOrientationOps(imageProcessingDescriptors);
     }
 }
