@@ -390,7 +390,8 @@ void AndorSDK3Camera::_sendSoftwareTrigger() {
     _sendCommand("SoftwareTrigger");
 }
 
-std::vector<std::shared_ptr<ImageProcessingDescriptor>> AndorSDK3Camera::_derivedGetAdditionalImageProcessingDescriptors() {
+std::vector<std::shared_ptr<ImageProcessingDescriptor>>
+AndorSDK3Camera::_derivedGetAdditionalImageProcessingDescriptors() {
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> descriptors;
     if (_getSizeOfRawImages() != _cropSize) {
         descriptors.emplace_back(new IPDCrop(_cropSize.first, _cropSize.second));

@@ -15,15 +15,16 @@ public:
     SCConfigurationFile(fs::path& configFileDirectory);
     ~SCConfigurationFile() {;}
 
-    std::vector<ImageProcessingTypes> getProcessingOptionsForCamera(const std::string& cameraName);
+    std::vector<std::shared_ptr<ImageProcessingDescriptor>> getProcessingOptionsForCamera(const std::string &cameraName);
 
 private:
     static std::string _defaultConfigFileContents();
     void _parseConfigFile();
-    ImageProcessingTypes _processingTypeForSetting(std::string argument);
+
+    std::shared_ptr<ImageProcessingDescriptor> _processingTypeForSetting(std::string argument);
 
     fs::path _configFilePath;
-    std::map<std::string, std::vector<ImageProcessingTypes>>  _orientationOptions;
+    std::map<std::string, std::vector<std::shared_ptr<ImageProcessingDescriptor>>>  _orientationOptions;
 };
 
 

@@ -13,11 +13,12 @@ SCConfigurationFile::SCConfigurationFile(fs::path &configFileDirectory) {
     }
 }
 
-std::vector<ImageProcessingTypes> SCConfigurationFile::getProcessingOptionsForCamera(const std::string &cameraName) {
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> SCConfigurationFile::getProcessingOptionsForCamera(
+    const std::string &cameraName) {
     if (_orientationOptions.count(cameraName) > 0) {
         return _orientationOptions.at(cameraName);
     } else {
-        return std::vector<ImageProcessingTypes>();
+        return std::vector<std::shared_ptr<ImageProcessingDescriptor>>();
     }
 }
 
@@ -60,7 +61,7 @@ void SCConfigurationFile::_parseConfigFile() {
         // Iterate through each name and its associated transformations
         for (const auto& entry : *cameraOrientation) {
             const std::string cameraName = std::string(entry.first);
-            std::vector<ImageProcessingTypes> orientationOptions;
+            std::vector<std::shared_ptr<ImageProcessingDescriptor>> orientationOptions;
             // Check if the node is an array and iterate over its elements
             if (auto transformations = entry.second.as_array()) {
                 for (const auto& transformNode : *transformations) {
@@ -79,18 +80,16 @@ void SCConfigurationFile::_parseConfigFile() {
     }
 }
 
-ImageProcessingTypes SCConfigurationFile::_processingTypeForSetting(const std::string argument) {
-    std::vector<std::pair<std::string, ImageProcessingTypes>> processingOptions;
-    processingOptions = {{"RotateCW", kRotateCW},
-                         {"RotateCCW", kRotateCCW},
-                         {"FlipHorizontal", kFlipHorizontal},
-                         {"FlipVertical", kFlipVertical}};
-
-    for (const auto& [name, option] : processingOptions) {
-        if (argument == name) {
-            return option;
-        }
+std::shared_ptr<ImageProcessingDescriptor> SCConfigurationFile::_processingTypeForSetting(const std::string argument) {
+    if (argument == "RotateCW") {
+        return std::make_shared<IPDRotateCW>();
+    } else if (argument == "RotateCCW") {
+        return std::make_shared<IPDRotateCCW>();
+    } else if (argument == "FlipHorizontal") {
+        return std::make_shared<IPDFlipHorizontal>();
+    } else if (argument == "FlipVertical") {
+        return std::make_shared<IPDFlipVertical>();
+    } else {
+        throw std::runtime_error("Invalid orientation setting: " + argument);
     }
-
-    throw std::runtime_error("Invalid orientation setting: " + argument);
 }

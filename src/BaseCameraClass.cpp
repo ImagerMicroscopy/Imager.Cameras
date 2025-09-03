@@ -42,7 +42,7 @@ bool BaseCameraClass::isConfiguredForHardwareTriggering() {
     return _derivedIsConfiguredForHardwareTriggering();
 }
 
-void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops) {
+void BaseCameraClass::setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>> &ops) {
     _imageOrientationOps = ops;
 }
 
@@ -66,7 +66,7 @@ std::tuple<std::shared_ptr<uint16_t>, int, int> BaseCameraClass::acquireSingleIm
         _derivedAcquireSingleImage(imageData.get(), nPixels * sizeof(std::uint16_t));
 
         size_t nOutputRows, nOutputCols;
-        imageData = _processImage(imageSize.first, imageSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
+        imageData = ProcessImage(imageSize.first, imageSize.second, imageData, imageProcessingDescriptors, nOutputRows, nOutputCols);
         return std::tuple<std::shared_ptr<uint16_t>, int, int>(imageData, (int)nOutputRows, (int)nOutputCols);
     }
 }
@@ -230,7 +230,8 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getIma
     return imageProcessingDescriptors;
 }
 
-void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
+void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>> &
+                                             processingDescriptors,
                                              moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>>& incomingImagesQueue,
                                              moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>& outgoingImagesQueue,
                                              AtomicString& errorString) {
@@ -248,7 +249,7 @@ void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nC
 
             size_t nInputRows = nRows, nInputCols = nCols;
             size_t nOutputRows = nRows, nOutputCols = nCols;
-            std::shared_ptr<std::uint16_t> outputImage = _processImage(nInputRows, nInputCols, inputImage, processingDescriptors, nOutputRows, nOutputCols);
+            std::shared_ptr<std::uint16_t> outputImage = ProcessImage(nInputRows, nInputCols, inputImage, processingDescriptors, nOutputRows, nOutputCols);
             std::tuple<std::shared_ptr<std::uint16_t>, int, int, double> imageData(outputImage, nOutputRows, nOutputCols, timeStamp);
             outgoingImagesQueue.enqueue(imageData);
         }
@@ -260,79 +261,5 @@ void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nC
     catch (...) {
         errorString.set("unknown error in _imageProcessingWorker()");
         return;
-    }
-}
-
-std::shared_ptr<std::uint16_t> BaseCameraClass::_processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-                                                              size_t& nOutputRows, size_t& nOutputCols) {
-    size_t nInputRows = nRows, nInputCols = nCols;
-    nOutputRows = nRows;
-    nOutputCols = nCols;
-    std::shared_ptr<std::uint16_t> outputImage = inputImage;
-    for (const auto& pd : processingDescriptors) {
-        nInputRows = nOutputRows;
-        nInputCols = nOutputCols;
-        inputImage = outputImage;
-        outputImage = _doProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
-    }
-    return outputImage;
-}
-
-std::shared_ptr<std::uint16_t> BaseCameraClass::_doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, 
-                                                                  size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput) {
-    int processingType = descriptor->getType();
-    switch (processingType) {
-        case kRotateCW:
-        case kRotateCCW:
-        {
-            nRowsOutput = nColsInput;
-            nColsOutput = nRowsInput;
-            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            if (processingType == kRotateCW) {
-                RotateCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
-            } else {
-                RotateCCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
-            }
-            return outputImage;
-            break;
-        }
-        case kFlipHorizontal:
-        case kFlipVertical:
-        {
-            nRowsOutput = nRowsInput;
-            nColsOutput = nColsInput;
-            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            if (processingType == kFlipHorizontal) {
-                FlipHorizontal(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
-            } else {
-                FlipVertical(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
-            }
-            return outputImage;
-            break;
-        }
-        case kCrop:
-        {
-            IPDCrop* cropObj = reinterpret_cast<IPDCrop*>(descriptor.get());
-            nRowsOutput = cropObj->nRows;
-            nColsOutput = cropObj->nCols;
-            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            CropImage(inputImage.get(), nRowsInput, nColsInput, nRowsOutput, nColsOutput, outputImage.get());
-            return outputImage;
-            break;
-        }
-        case kBin:
-        {
-            IPDBin* binObj = reinterpret_cast<IPDBin*>(descriptor.get());
-            int binFactor = binObj->binFactor;
-            nRowsOutput = nRowsInput / binFactor;
-            nColsOutput = nColsInput / binFactor;
-            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            BinImage(inputImage.get(), nRowsInput, nColsInput, outputImage.get(), binFactor);
-            return outputImage;
-            break;
-        }
-        default:
-            throw std::logic_error("no processing in _doProcessingStep()");
-            break;
     }
 }

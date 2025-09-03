@@ -232,34 +232,7 @@ int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHard
 }
 
 int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
-    return HandleExceptions([&]() {
-        if (!gHaveInit) {
-            throw std::logic_error("The camera manager is unavailable");
-        }
-        std::shared_ptr<BaseCameraClass> camPtr = gCameraManager->getCamera(cameraName);
-
-        std::vector<std::shared_ptr<ImageProcessingDescriptor>> ops;
-        for (int i = 0; i < nOps; i += 1) {
-            switch (orientationOps[i]) {
-                case kRotateCW:
-                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDRotateCW));
-                    break;
-                case kRotateCCW:
-                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDRotateCCW));
-                    break;
-                case kFlipHorizontal:
-                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDFlipHorizontal));
-                    break;
-                case kFlipVertical:
-                    ops.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDFlipVertical));
-                    break;
-                default:
-                    throw std::runtime_error("Invalid orientation operation");
-            }
-        }
-
-        camPtr->setImageOrientationOps(ops);
-    });
+    return HandleExceptions([&]() {});
 }
 
 std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;

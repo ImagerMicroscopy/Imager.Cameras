@@ -8,6 +8,120 @@
 
 #include "ippi.h"
 
+#include "ImageRecycler.h"
+
+enum class ImageProcessingTypes {
+    kRotateCW,
+    kRotateCCW,
+    kFlipHorizontal,
+    kFlipVertical,
+    kCrop,
+    kBin
+};
+
+ImageProcessingTypes IPDRotateCW::getType() const {
+    return ImageProcessingTypes::kRotateCW;
+}
+
+ImageProcessingTypes IPDRotateCCW::getType() const {
+    return ImageProcessingTypes::kRotateCCW;
+}
+
+ImageProcessingTypes IPDFlipHorizontal::getType() const {
+    return ImageProcessingTypes::kFlipHorizontal;
+}
+
+ImageProcessingTypes IPDFlipVertical::getType() const {
+    return ImageProcessingTypes::kFlipVertical;
+}
+
+ImageProcessingTypes IPDBin::getType() const {
+    return ImageProcessingTypes::kBin;
+}
+
+ImageProcessingTypes IPDCrop::getType() const {
+    return ImageProcessingTypes::kCrop;
+}
+
+std::shared_ptr<std::uint16_t> DoProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage,
+                                                                  size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
+
+std::shared_ptr<std::uint16_t> ProcessImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<
+                                            ImageProcessingDescriptor>> &
+                                            processingDescriptors,
+                                            size_t& nOutputRows, size_t& nOutputCols) {
+    size_t nInputRows = nRows, nInputCols = nCols;
+    nOutputRows = nRows;
+    nOutputCols = nCols;
+    std::shared_ptr<std::uint16_t> outputImage = inputImage;
+    for (const auto& pd : processingDescriptors) {
+        nInputRows = nOutputRows;
+        nInputCols = nOutputCols;
+        inputImage = outputImage;
+        outputImage = DoProcessingStep(pd, inputImage, nInputRows, nInputCols, nOutputRows, nOutputCols);
+    }
+    return outputImage;
+}
+
+std::shared_ptr<std::uint16_t> DoProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage,
+                                                                  size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput) {
+    ImageProcessingTypes processingType = descriptor->getType();
+    switch (processingType) {
+        case ImageProcessingTypes::kRotateCW:
+        case ImageProcessingTypes::kRotateCCW:
+        {
+            nRowsOutput = nColsInput;
+            nColsOutput = nRowsInput;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            if (processingType == ImageProcessingTypes::kRotateCW) {
+                RotateCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            } else {
+                RotateCCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            }
+            return outputImage;
+            break;
+        }
+        case ImageProcessingTypes::kFlipHorizontal:
+        case ImageProcessingTypes::kFlipVertical:
+        {
+            nRowsOutput = nRowsInput;
+            nColsOutput = nColsInput;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            if (processingType == ImageProcessingTypes::kFlipHorizontal) {
+                FlipHorizontal(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            } else {
+                FlipVertical(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            }
+            return outputImage;
+            break;
+        }
+        case ImageProcessingTypes::kCrop:
+        {
+            IPDCrop* cropObj = reinterpret_cast<IPDCrop*>(descriptor.get());
+            nRowsOutput = cropObj->nRows;
+            nColsOutput = cropObj->nCols;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            CropImage(inputImage.get(), nRowsInput, nColsInput, nRowsOutput, nColsOutput, outputImage.get());
+            return outputImage;
+            break;
+        }
+        case ImageProcessingTypes::kBin:
+        {
+            IPDBin* binObj = reinterpret_cast<IPDBin*>(descriptor.get());
+            int binFactor = binObj->binFactor;
+            nRowsOutput = nRowsInput / binFactor;
+            nColsOutput = nColsInput / binFactor;
+            std::shared_ptr<std::uint16_t> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            BinImage(inputImage.get(), nRowsInput, nColsInput, outputImage.get(), binFactor);
+            return outputImage;
+            break;
+        }
+        default:
+            throw std::logic_error("no processing in _doProcessingStep()");
+            break;
+    }
+}
+
 void RotateCW(const std::uint16_t* image, size_t nRows, size_t nCols, std::uint16_t* rotatedImage) {
     IppiSize roiSize = { (int)nRows, (int)nCols };
     ippiTranspose_16u_C1R(image, nRows * sizeof(std::uint16_t), rotatedImage, nCols * sizeof(std::uint16_t), roiSize);

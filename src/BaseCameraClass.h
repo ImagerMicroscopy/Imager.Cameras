@@ -32,7 +32,8 @@ public:
         NoImageBeforeTimeout
     };
 
-    BaseCameraClass() {;}
+    BaseCameraClass() : _asyncWantAbort(false), _asyncNImagesStored(0) { ; }
+
     virtual ~BaseCameraClass();
 
     virtual std::string getIdentifierStr() = 0;
@@ -42,7 +43,7 @@ public:
 
     virtual double getFrameRate() = 0;
     bool isConfiguredForHardwareTriggering();
-    virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& ops);
+    virtual void setImageOrientationOps(const std::vector<std::shared_ptr<ImageProcessingDescriptor>> &ops);
 
     std::tuple<std::shared_ptr<uint16_t>, int, int> acquireSingleImage();
 
@@ -75,13 +76,11 @@ private:
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _getImageProcessingDescriptors();
     virtual std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() { return {}; }
-    void _imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
+    void _imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>> &
+                                processingDescriptors,
                                 moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> &incomingImagesQueue,
                                 moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>& outgoingImagesQueue,
                                 AtomicString& errorString);
-    std::shared_ptr<std::uint16_t> _processImage(const size_t nRows, const size_t nCols, std::shared_ptr<std::uint16_t> inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>>& processingDescriptors,
-                                                 size_t& nOutputRows, size_t& nOutputCols);
-    std::shared_ptr<std::uint16_t> _doProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t> inputImage, size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _imageOrientationOps;
 
