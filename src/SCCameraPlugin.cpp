@@ -224,10 +224,6 @@ int IsConfiguredForHardwareTriggering(char* cameraName, int* isConfiguredForHard
     });
 }
 
-int SetImageOrientation(char* cameraName, int* orientationOps, int nOps) {
-    return HandleExceptions([&]() {});
-}
-
 std::vector<std::shared_ptr<std::uint16_t>> gImagesInFlight;
 std::mutex gImagesInFlightMutex;
 
