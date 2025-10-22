@@ -156,6 +156,48 @@ int SetStagePosition(double x, double y, double z, int usingHardwareAF, int afOf
     return -1;
 }
 
+int ListRobots(char** namesPtr, int nNames, int maxNBytesPerName, int* nNamesReturned) {
+    return HandleExceptions([&] {
+        std::vector<std::string> robotNames; // = <a call to a function you created>
+        *nNamesReturned = StoreStringListInBuffers(robotNames, namesPtr, nNames, maxNBytesPerName);
+        if (*nNamesReturned != robotNames.size()) {
+            throw std::runtime_error("Could not return all available robots");
+        }
+    });
+}
+
+int ListRobotPrograms(char* robotName, char** namesPtr, int nNames, int maxNBytesPerName, int* nNamesReturned) {
+    return HandleExceptions([&] {
+        std::vector<std::string> programNames; // = <a call to a function you created>
+        *nNamesReturned = StoreStringListInBuffers(programNames, namesPtr, nNames, maxNBytesPerName);
+        if (*nNamesReturned != programNames.size()) {
+            throw std::runtime_error("Could not return all available robot programs");
+        }
+    });
+}
+
+int ListRobotProgramArgumentsInfo(char* robotName, char* programName, char** encodedArgumentsPtr) {
+    return HandleExceptions([&]() {
+
+    });
+}
+
+void ReleaseRobotProgramArgumentsInfo(char* data) {
+
+}
+
+int ExecuteRobotProgram(char* robotName, char* programName, char* programArguments) {
+    return HandleExceptions([&]() {
+
+    });
+}
+
+int StopRobot() {
+    return HandleExceptions([&]() {
+
+    });
+}
+
 int ListConnectedCameraNames(char **namesPtr, int nNames, int maxNBytesPerName, int *nNamesReturned) {
     return HandleExceptions([&]() {
         if (!gHaveInit) {
