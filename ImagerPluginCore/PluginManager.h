@@ -6,7 +6,7 @@
 #include <string>
 
 #include "DeviceTemplates.h"
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 class PluginManager {
 public:

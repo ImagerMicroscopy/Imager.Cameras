@@ -9,7 +9,7 @@
 
 #include "XOPStandardHeaders.h"
 #include "CameraManager.h"
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 #include "Exceptions.h"
 
 CameraManager* gCameraManager = nullptr;

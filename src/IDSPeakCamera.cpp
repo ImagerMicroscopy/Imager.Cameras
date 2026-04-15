@@ -4,7 +4,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "CameraUtils.h"
+#include "ImagerPluginCore/CameraUtils.h"
 #include "StandardCameraProperties.h"
 
 IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :

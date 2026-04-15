@@ -1,7 +1,7 @@
 
 #include "SCPrinter.h"
 
-#include "PluginManager.h"
+#include "ImagerPluginCore/PluginManager.h"
 
 
 void Print(const std::string& str) {

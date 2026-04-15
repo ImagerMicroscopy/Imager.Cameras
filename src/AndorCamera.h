@@ -1,7 +1,7 @@
 #ifndef ANDORCAMERA_H
 #define ANDORCAMERA_H
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 #include "Andor/ATMCD32D.H"
 

@@ -8,7 +8,7 @@
 #include "ReaderWriterQueue/atomicops.h"
 #include "ReaderWriterQueue/readerwriterqueue.h"
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 class DummyCamera : public BaseCameraClass {
 public:

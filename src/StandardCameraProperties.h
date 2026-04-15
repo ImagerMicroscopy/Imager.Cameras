@@ -8,7 +8,7 @@
 #include <nlohmann/json.hpp>
 
 // Include the core CameraProperty class from ImagerPluginCore
-#include "CameraPropertiesEncoding.h"
+#include "ImagerPluginCore/CameraPropertiesEncoding.h"
 
 // Extended functionality for standard camera properties
 class DecodedStandardProperties {

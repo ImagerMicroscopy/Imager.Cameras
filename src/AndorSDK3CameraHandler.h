@@ -3,7 +3,7 @@
 
 #include "Andor/atcore.h"
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras();
 

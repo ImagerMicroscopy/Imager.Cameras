@@ -1,7 +1,7 @@
 #ifndef HAMAMATSUCAMERA_H
 #define HAMAMATSUCAMERA_H
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 #include "HamamatsuAPIWrapper.h"
 
 #include <string>

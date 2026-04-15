@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 std::vector<std::shared_ptr<BaseCameraClass>> OpenPhotometricsCameras();
 

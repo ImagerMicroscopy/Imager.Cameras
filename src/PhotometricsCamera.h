@@ -7,7 +7,7 @@
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 #include "PhotometricsAPIWrapper.h"
 
 class PhotometricsCamera : public BaseCameraClass {

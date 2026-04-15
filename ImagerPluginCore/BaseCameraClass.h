@@ -15,9 +15,9 @@
 
 #include "blockingconcurrentqueue.h"
 
-#include "CameraPropertiesEncoding.h"
-#include "ImageProcessingUtils.h"
-#include "CameraUtils.h"
+#include "ImagerPluginCore/CameraPropertiesEncoding.h"
+#include "ImagerPluginCore/ImageProcessingUtils.h"
+#include "ImagerPluginCore/CameraUtils.h"
 
 class BaseCameraClass {
 public:

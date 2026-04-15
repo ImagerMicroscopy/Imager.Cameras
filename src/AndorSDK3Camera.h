@@ -5,7 +5,7 @@
 
 #include "Andor/atcore.h"
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 #include "AndorSDK3APIWrapper.h"
 
 class AndorSDK3Camera : public BaseCameraClass {

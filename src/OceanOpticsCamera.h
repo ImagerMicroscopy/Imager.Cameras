@@ -1,7 +1,7 @@
 #ifndef OCEANOPTICS_H
 #define OCEANTOPICS_H
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 #include <future>
 #include <string>

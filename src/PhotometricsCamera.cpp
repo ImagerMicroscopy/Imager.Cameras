@@ -5,7 +5,7 @@
 #include <format>
 #include <thread>
 
-#include "CameraUtils.h"
+#include "ImagerPluginCore/CameraUtils.h"
 #include "StandardCameraProperties.h"
 
 #ifdef WITH_IGOR

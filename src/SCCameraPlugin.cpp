@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 #include "CameraManager.h"
-#include "PluginManager.h"
+#include "ImagerPluginCore/PluginManager.h"
 
 static CameraManager* gCameraManager = nullptr;
 

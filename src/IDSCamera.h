@@ -1,7 +1,7 @@
 #ifndef IDSCAMERA_H
 #define IDSCAMERA_H
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 #include <string>
 #include <vector>

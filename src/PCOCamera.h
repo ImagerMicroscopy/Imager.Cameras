@@ -1,7 +1,7 @@
 #ifndef PCOCAMERA_H
 #define PCOCAMERA_H
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 #include <limits>
 #include <string>

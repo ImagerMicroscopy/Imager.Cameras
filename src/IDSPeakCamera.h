@@ -5,7 +5,7 @@
 
 #include "IDSPeakAPIWrapper.h"
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 class IDSPeakCamera : public BaseCameraClass {
 public:

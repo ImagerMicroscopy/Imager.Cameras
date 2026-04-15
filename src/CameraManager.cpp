@@ -1,7 +1,8 @@
 
 #include "SCConfigure.h"
 #include "CameraManager.h"
-#include "BaseCameraClass.h"
+
+#include "ImagerPluginCore/BaseCameraClass.h"
 #include "SCPrinter.h"
 
 #include "PhotometricsCameraHandler.h"

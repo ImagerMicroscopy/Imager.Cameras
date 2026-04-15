@@ -18,7 +18,9 @@ json_dep = dependency('nlohmann_json')
 queue_dep = dependency('concurrentqueue')
 
 
-core_inc = include_directories('ImagerPluginCore')
+# Add an include dir so that we can use ImagerPluginCore/ syntax to access its headers
+core_inc = include_directories('.')
+
 sdk_inc = include_directories('./include')
 
 # Define the shared library (DLL) target for the plugin
@@ -34,7 +36,6 @@ shared_library(plugin_name,
   'ImagerPluginCore/RobotProgramArguments.cpp',
 
   # Add your plugin source files here
-  'src/AndorCamera.cpp',
   'src/AndorSDK3Camera.cpp',
   'src/AndorSDK3CameraHandler.cpp',
   'src/CameraManager.cpp',

@@ -1,5 +1,5 @@
 
-#include "BaseCameraClass.h"
+#include "ImagerPluginCore/BaseCameraClass.h"
 
 template <typename T>
 class ScopedSetter {
