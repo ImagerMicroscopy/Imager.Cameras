@@ -1,6 +1,6 @@
-#include "SCConfigure.h"
-
 #include "PCOCamera.h"
+
+#include "StandardCameraProperties.h"
 
 PCOCamera::PCOCamera(HANDLE camHandle) :
     _camHandle(camHandle),

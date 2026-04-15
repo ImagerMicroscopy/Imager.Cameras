@@ -221,7 +221,7 @@ private:
     std::pair<int, int> _crop;
     int _triggerMode;
     std::vector<std::uint16_t> _asyncBuffer;
-    moodycamel::BlockingReaderWriterQueue<int> _pvcamCallbackQueue;
+    moodycamel::BlockingConcurrentQueue<int> _pvcamCallbackQueue;
     bool _installedCallbackFunction;
     bool _haveCameraDisconnectionError;
 };

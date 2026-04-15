@@ -1,15 +1,16 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef CAMERAUTILS_H
+#define CAMERAUTILS_H
 
-#include <algorithm>
+#include <cstdint>
 #include <functional>
-#include <mutex>
-#include <stdexcept>
+#include <memory>
 #include <string>
+#include <mutex>
+#include <utility>
 
 template <typename T>
 T clamp(const T& a, const T& min, const T& max) {
-	return std::min(max, std::max(a, min));
+        return std::min(max, std::max(a, min));
 }
 
 class CleanupRunner {
@@ -37,4 +38,6 @@ private:
 std::string wcharStringToUtf8(const std::wstring& str);
 std::wstring utf8StringToWChar(const std::string& str);
 
-#endif
+std::shared_ptr<std::uint16_t> NewRecycledImage(std::pair<size_t, size_t> size);
+
+#endif // CAMERAUTILS_H

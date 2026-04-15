@@ -5,7 +5,8 @@
 #include <format>
 #include <thread>
 
-#include "Utils.h"
+#include "CameraUtils.h"
+#include "StandardCameraProperties.h"
 
 #ifdef WITH_IGOR
     #include "XOPStandardHeaders.h"
@@ -496,7 +497,7 @@ BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(
 }
 
 void PhotometricsCamera::_pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr) {
-    moodycamel::BlockingReaderWriterQueue<int>* queuePtr = (moodycamel::BlockingReaderWriterQueue<int>*)(contextPtr);
+    moodycamel::BlockingConcurrentQueue<int>* queuePtr = (moodycamel::BlockingConcurrentQueue<int>*)(contextPtr);
     queuePtr->enqueue(0);
 }
 

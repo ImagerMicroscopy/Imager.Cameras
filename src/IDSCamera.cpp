@@ -3,6 +3,7 @@
 #ifdef WITH_IDS
 
 #include "IDSCamera.h"
+#include "StandardCameraProperties.h"
 
 IDSCamera::IDSCamera(HIDS camHandle) :
     _camHandle(camHandle)

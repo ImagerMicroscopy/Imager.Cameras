@@ -1,9 +1,8 @@
-#include "SCConfigure.h"
-
-
 #include "HamamatsuCamera.h"
 
 #include "Hamamatsu/dcamprop.h"
+
+#include "StandardCameraProperties.h"
 
 HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
     _camHandle(camHandle),

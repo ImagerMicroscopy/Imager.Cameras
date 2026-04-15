@@ -4,6 +4,7 @@
 #ifdef WITH_DUMMYCAM
 
 #include "DummyCamera.h"
+#include "StandardCameraProperties.h"
 
 #include <random>
 

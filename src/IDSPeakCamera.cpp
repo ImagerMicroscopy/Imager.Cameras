@@ -4,7 +4,8 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "Utils.h"
+#include "CameraUtils.h"
+#include "StandardCameraProperties.h"
 
 IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
     _camDescriptor(camDescriptor),

@@ -52,20 +52,4 @@ private:
     std::vector<std::string> _availableOptions;
 };
 
-class DecodedStandardProperties {
-    public:
-        std::optional<double> exposureTime;
-        std::optional<int> crop1;
-        std::optional<int> crop2;
-        std::optional<int> binningFactor;
-};
-
-std::vector<CameraProperty> GetStandardProperties(const double currentExposureTime, const std::pair<int, int>& currentCrop, const std::vector<int> &allowableCropping1,
-                                                  const std::vector<int> &allowableCropping2, const int currentBinning, const std::vector<int>& allowableBinning);
-
-DecodedStandardProperties DecodeAndRemoveStandardProperties(std::vector<CameraProperty>& properties);
-
-std::vector<int> StandardCroppingOptions(int uncroppedDimension);
-std::vector<int> StandardBinningOptions();
-
 #endif

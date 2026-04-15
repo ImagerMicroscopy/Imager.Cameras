@@ -1,13 +1,6 @@
 
 #include "BaseCameraClass.h"
 
-#ifdef WITH_IGOR
-#include "XOPStandardHeaders.h"
-#endif
-
-#include "Utils.h"
-#include "ImageRecycler.h"
-
 template <typename T>
 class ScopedSetter {
 public:
@@ -79,7 +72,7 @@ int BaseCameraClass::startAsyncAcquisition(AcquisitionMode acqMode, std::uint64_
     _asyncWantAbort = false;
     _asyncNImagesStored = 0;
     _clearAvailableImagesQueue();
-    std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>> startedNotificationQueue(new moodycamel::BlockingReaderWriterQueue<int>());
+    std::shared_ptr<moodycamel::BlockingConcurrentQueue<int>> startedNotificationQueue(new moodycamel::BlockingConcurrentQueue<int>());
 
     _asyncWorkerFuture = std::async(std::launch::async, [=]() {
         _asyncAcquisitionWorker(acqMode, nImagesToAcquire, startedNotificationQueue);
@@ -149,13 +142,13 @@ std::optional<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>> Base
     }
 }
 
-void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, const std::shared_ptr<moodycamel::BlockingReaderWriterQueue<int>>& startedNotificationQueue) {
+void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, const std::shared_ptr<moodycamel::BlockingConcurrentQueue<int>>& startedNotificationQueue) {
     auto actualImageSize = _getSizeOfRawImages();
 
     try {
         std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
 
-        moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> processingQueue;
+        moodycamel::BlockingConcurrentQueue<std::pair<std::shared_ptr<std::uint16_t>, double>> processingQueue;
         AtomicString _asyncProcessingErrorStr;
         _asyncProcessingErrorStr.clear();
         std::future<void> imageProcessingFuture = std::async(std::launch::async, [&]() {
@@ -232,8 +225,8 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> BaseCameraClass::_getIma
 
 void BaseCameraClass::_imageProcessingWorker(const size_t nRows, const size_t nCols, const std::vector<std::shared_ptr<ImageProcessingDescriptor>> &
                                              processingDescriptors,
-                                             moodycamel::BlockingReaderWriterQueue<std::pair<std::shared_ptr<std::uint16_t>, double>>& incomingImagesQueue,
-                                             moodycamel::BlockingReaderWriterQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>& outgoingImagesQueue,
+                                             moodycamel::BlockingConcurrentQueue<std::pair<std::shared_ptr<std::uint16_t>, double>>& incomingImagesQueue,
+                                             moodycamel::BlockingConcurrentQueue<std::tuple<std::shared_ptr<std::uint16_t>, int, int, double>>& outgoingImagesQueue,
                                              AtomicString& errorString) {
     try {
         std::shared_ptr<std::uint16_t> inputImage;
