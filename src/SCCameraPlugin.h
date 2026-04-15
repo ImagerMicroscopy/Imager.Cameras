@@ -1,8 +1,9 @@
 #ifndef SCCAMERAPLUGIN_H
 #define SCCAMERAPLUGIN_H
 
-void InitPlugin();
+#include <filesystem>
 
+void InitPlugin(const std::filesystem::path& configDirPath);
 void ShutdownPlugin();
 
 #endif

@@ -4,9 +4,10 @@
 #ifdef WITH_DUMMYCAM
 
 #include "DummyCamera.h"
-#include "StandardCameraProperties.h"
 
 #include <random>
+
+#include "StandardCameraProperties.h"
 
 DummyCamera::DummyCamera() :
     _exposureTime(50.0e-3),
@@ -18,6 +19,8 @@ DummyCamera::DummyCamera() :
     _abortTimerThread(false)
 {
     _currentCropping = _getSensorSize();
+    _cameraID = _camCounter;
+    _camCounter += 1;
 }
 
 double DummyCamera::getFrameRate() {

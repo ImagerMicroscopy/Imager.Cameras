@@ -1,6 +1,7 @@
 #ifndef DUMMYCAMERA_H
 #define DUMMYCAMERA_H
 
+#include <format>
 #include <thread>
 #include <memory>
 
@@ -8,14 +9,13 @@
 #include "ReaderWriterQueue/readerwriterqueue.h"
 
 #include "BaseCameraClass.h"
-#include "Utils.h"
 
 class DummyCamera : public BaseCameraClass {
 public:
     DummyCamera();
     virtual ~DummyCamera() { ; }
 
-    std::string getIdentifierStr() override { return std::string("ZZ__DummyCam"); };
+    std::string getIdentifierStr() override { return std::format("ZZ__DummyCam_{}", _cameraID); };
 
     double getFrameRate() override;
 
@@ -57,6 +57,9 @@ private:
 
     moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::vector<uint16_t>>> _imagesQueue;
     std::uint16_t _frameCounter;
+
+    int _cameraID = 0;
+    static inline int _camCounter = 0;
 };
 
 #endif
