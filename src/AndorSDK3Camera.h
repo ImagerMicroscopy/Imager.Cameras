@@ -72,7 +72,7 @@ private:
 
     void _derivedStartUnboundedAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
-    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis) override;
 
     void _startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode);
 

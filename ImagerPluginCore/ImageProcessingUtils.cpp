@@ -41,44 +41,41 @@ ImageProcessingTypes IPDCrop::getType() const {
     return ImageProcessingTypes::kCrop;
 }
 
-std::shared_ptr<std::uint16_t[]> DoProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t[]> inputImage,
-                                                                  size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput);
+AcquiredImage DoProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, const AcquiredImage& inputImage);
 
 AcquiredImage ProcessImage(const AcquiredImage& inputImage, const std::vector<std::shared_ptr<ImageProcessingDescriptor>> & processingDescriptors) {
     if (processingDescriptors.empty()) {
         return inputImage;
     }
 
-    size_t nInputRows = inputImage.getNRows();
-    size_t nInputCols = inputImage.getNCols();
-    size_t nOutputRows = nInputRows;
-    size_t nOutputCols = nInputCols;
-    
-    std::shared_ptr<std::uint16_t[]> currentData = inputImage.getData();
+    AcquiredImage currentImage = inputImage;
 
     for (const auto& pd : processingDescriptors) {
-        nInputRows = nOutputRows;
-        nInputCols = nOutputCols;
-        currentData = DoProcessingStep(pd, currentData, nInputRows, nInputCols, nOutputRows, nOutputCols);
+        currentImage = DoProcessingStep(pd, currentImage);
     }
     
-    return AcquiredImage((int)nOutputRows, (int)nOutputCols, inputImage.getTimestamp(), currentData);
+    return currentImage;
 }
 
-std::shared_ptr<std::uint16_t[]> DoProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, std::shared_ptr<std::uint16_t[]> inputImage,
-                                                                  size_t nRowsInput, size_t nColsInput, size_t& nRowsOutput, size_t& nColsOutput) {
+AcquiredImage DoProcessingStep(std::shared_ptr<ImageProcessingDescriptor> descriptor, const AcquiredImage& inputImage) {
     ImageProcessingTypes processingType = descriptor->getType();
+    size_t nRowsInput = inputImage.getNRows();
+    size_t nColsInput = inputImage.getNCols();
+    double timestamp = inputImage.getTimestamp();
+    size_t nRowsOutput;
+    size_t nColsOutput;
+
     switch (processingType) {
         case ImageProcessingTypes::kRotateCW:
         case ImageProcessingTypes::kRotateCCW:
         {
             nRowsOutput = nColsInput;
             nColsOutput = nRowsInput;
-            std::shared_ptr<std::uint16_t[]> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
+            AcquiredImage outputImage = NewRecycledImage((int)nRowsOutput, (int)nColsOutput, timestamp);
             if (processingType == ImageProcessingTypes::kRotateCW) {
-                RotateCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+                RotateCW(inputImage.getData().get(), nRowsInput, nColsInput, outputImage.getData().get());
             } else {
-                RotateCCW(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+                RotateCCW(inputImage.getData().get(), nRowsInput, nColsInput, outputImage.getData().get());
             }
             return outputImage;
             break;
@@ -88,11 +85,11 @@ std::shared_ptr<std::uint16_t[]> DoProcessingStep(std::shared_ptr<ImageProcessin
         {
             nRowsOutput = nRowsInput;
             nColsOutput = nColsInput;
-            std::shared_ptr<std::uint16_t[]> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            if (processingType == ImageProcessingTypes::kFlipHorizontal) {
-                FlipHorizontal(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+            AcquiredImage outputImage = NewRecycledImage((int)nRowsOutput, (int)nColsOutput, timestamp);
+            if (processingType == ImageProcessingTypes::kFlipHorizontal) {      
+                FlipHorizontal(inputImage.getData().get(), nRowsInput, nColsInput, outputImage.getData().get());
             } else {
-                FlipVertical(inputImage.get(), nRowsInput, nColsInput, outputImage.get());
+                FlipVertical(inputImage.getData().get(), nRowsInput, nColsInput, outputImage.getData().get());
             }
             return outputImage;
             break;
@@ -102,8 +99,8 @@ std::shared_ptr<std::uint16_t[]> DoProcessingStep(std::shared_ptr<ImageProcessin
             IPDCrop* cropObj = reinterpret_cast<IPDCrop*>(descriptor.get());
             nRowsOutput = cropObj->nRows;
             nColsOutput = cropObj->nCols;
-            std::shared_ptr<std::uint16_t[]> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            CropImage(inputImage.get(), nRowsInput, nColsInput, nRowsOutput, nColsOutput, outputImage.get());
+            AcquiredImage outputImage = NewRecycledImage((int)nRowsOutput, (int)nColsOutput, timestamp);
+            CropImage(inputImage.getData().get(), nRowsInput, nColsInput, nRowsOutput, nColsOutput, outputImage.getData().get());
             return outputImage;
             break;
         }
@@ -113,8 +110,8 @@ std::shared_ptr<std::uint16_t[]> DoProcessingStep(std::shared_ptr<ImageProcessin
             int binFactor = binObj->binFactor;
             nRowsOutput = nRowsInput / binFactor;
             nColsOutput = nColsInput / binFactor;
-            std::shared_ptr<std::uint16_t[]> outputImage = NewRecycledImage(std::pair<size_t, size_t>(nRowsOutput, nColsOutput));
-            BinImage(inputImage.get(), nRowsInput, nColsInput, outputImage.get(), binFactor);
+            AcquiredImage outputImage = NewRecycledImage((int)nRowsOutput, (int)nColsOutput, timestamp);
+            BinImage(inputImage.getData().get(), nRowsInput, nColsInput, outputImage.getData().get(), binFactor);
             return outputImage;
             break;
         }

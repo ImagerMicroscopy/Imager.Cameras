@@ -222,20 +222,20 @@ void PCOCamera::_derivedAbortAsyncAcquisition() {
     _throwIfPCOError(_pcoAPIWrapper.PCO_CancelImages(_camHandle));
 }
 
-BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+std::optional<AcquiredImage> PCOCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
 #ifdef _WIN32
     int result = WaitForSingleObject(_waitObjects.at(_nextBufferToReadIndex), timeoutMillis);
     if ((result != WAIT_OBJECT_0) && (result != WAIT_TIMEOUT)) {
         throw std::runtime_error("Unexpected return in WaitForSingleObject()");
     }
     if (result == WAIT_TIMEOUT) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
 #else
     void* bufPtr = nullptr;
     int result = _pcoAPIWrapper.PCO_WaitforNextBufferAdr(_camHandle, &bufPtr, timeoutMillis);
     if ((result & PCO_ERROR_TIMEOUT) == PCO_ERROR_TIMEOUT) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
     if (result != PCO_NOERROR) {
         throw std::runtime_error("Unexpected return in WaitForNextBufferAdr()" + pcoErrorAsString(result));
@@ -243,14 +243,11 @@ BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeo
 #endif
 
     auto imageSize = _getSensorSize();
+    AcquiredImage image = NewRecycledImage(imageSize.first, imageSize.second);
     int nPixelsInImage = imageSize.first * imageSize.second;
-    int nBytesPerImage = nPixelsInImage * sizeof(std::uint16_t);
     std::uint16_t *thisImagePtr = _frameBuffer.data() + _nextBufferToReadIndex * nPixelsInImage;
-    if (nBytes != nBytesPerImage) {
-        throw std::runtime_error("buffer of invalid size for PCO");
-    }
 
-    memcpy(bufferForThisImage, thisImagePtr, nBytesPerImage);
+    memcpy(image.getData().get(), thisImagePtr, nPixelsInImage * sizeof(std::uint16_t));
 
 #ifdef _WIN32
     ResetEvent(_waitObjects.at(_nextBufferToReadIndex));
@@ -266,7 +263,7 @@ BaseCameraClass::NewImageResult PCOCamera::_waitForNewImageWithTimeout(int timeo
     _nextBufferToReadIndex = (_nextBufferToReadIndex + 1) % kPCOImagesInBuffer;
     _numberOfImagesDelivered += 1;
 
-    return NewImageCopied;
+    return std::make_optional(image);
 }
 
 void PCOCamera::_fetchCameraInfo() {

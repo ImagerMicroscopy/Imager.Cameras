@@ -274,11 +274,11 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
     }
 }
 
-BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
+ std::optional<AcquiredImage> IDSPeakCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
     peak_frame_handle peakFrameH = nullptr;
     peak_status status = _peakAPIWrapper.peak_Acquisition_WaitForFrame(_camHandle, timeoutMillis, &peakFrameH);
     if (status == PEAK_STATUS_TIMEOUT) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
     if (PEAK_ERROR(status)) {
         throw std::runtime_error("can't wait for IDS Peak frame");
@@ -315,19 +315,19 @@ BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int t
     }
 
     int nPixels = (int)frameInfo.bytesWritten / nBytesPerPixel;
-    if (nBytes / 2 != nPixels) {    // assume UINT16 pixels in output
-        throw std::runtime_error("IDS peak format not UINT16");
-    }
+    int width = frameInfo.roi.size.width;
+    int height = frameInfo.roi.size.height;
+    AcquiredImage image = NewRecycledImage(width, height);
 
     uint8_t* bufAddress = frameInfo.buffer.memoryAddress;
     switch (nBytesPerPixel) {
         case 1:
             for (int i = 0; i < nPixels; ++i) {
-                bufferForThisImage[i] = bufAddress[i];
+                image.getData().get()[i] = bufAddress[i];
             }
             break;
         case 2:
-            memcpy(bufferForThisImage, bufAddress, nBytes);
+            memcpy(image.getData().get(), bufAddress, nPixels * sizeof(std::uint16_t));
             break;
         default:
             throw std::runtime_error("invalid bytes per pixel for IDS Peak");
@@ -335,5 +335,5 @@ BaseCameraClass::NewImageResult IDSPeakCamera::_waitForNewImageWithTimeout(int t
 
     _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
     
-    return NewImageCopied;
+    return std::make_optional(image);
 }

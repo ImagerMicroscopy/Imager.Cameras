@@ -463,11 +463,9 @@ AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
         _apiWrapper.dcamcap_firetrigger(_camHandle, 0);
     }
     
-    auto imageSize = _getSizeOfRawImages();
-    AcquiredImage acquiredImage(imageSize.first, imageSize.second, 0.0);
     int waitMillis = std::max(5000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
-    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, acquiredImage.getData().get(), imageSize.first * imageSize.second * sizeof(std::uint16_t));
-    if (result == NoImageBeforeTimeout) {
+    auto acquiredImage = _waitForNewImageWithTimeout(waitMillis);
+    if (!acquiredImage.has_value()) {
         throw std::runtime_error("waiting for single dcam acquisition but timeout");
     }
 
@@ -477,7 +475,7 @@ AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
         _apiWrapper.dcambuf_release(_camHandle, 0);
     }
 
-    return acquiredImage;
+    return acquiredImage.value();
 }
 
 void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
@@ -515,19 +513,21 @@ void HamamatsuCamera::_derivedAbortAsyncAcquisition() {
     _releaseCamWaitHandle();
 }
 
-BaseCameraClass::NewImageResult HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+std::optional<AcquiredImage> HamamatsuCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
     DCAMWAIT_START waitParams = { 0 };
     waitParams.size = sizeof(DCAMWAIT_START);
     waitParams.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY;
     waitParams.timeout = timeoutMillis;
     DCAMERR err = _apiWrapper.dcamwait_start(_camWaitHandle, &waitParams);
     if (err == DCAMERR_TIMEOUT) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
 
-    _copyLatestImage(bufferForThisImage, nBytes);
+    auto actualImageSize = _getSizeOfRawImages();
+    AcquiredImage image = NewRecycledImage(actualImageSize.first, actualImageSize.second);
+    _copyLatestImage(image.getData().get(), image.getNRows() * image.getNCols() * sizeof(std::uint16_t));
 
-    return NewImageCopied;
+    return std::make_optional(image);
 }
 
 void HamamatsuCamera::_copyLatestImage(std::uint16_t* bufferForThisImage, int nBytes) {

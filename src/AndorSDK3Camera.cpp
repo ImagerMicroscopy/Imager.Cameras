@@ -119,14 +119,12 @@ AcquiredImage AndorSDK3Camera::_derivedAcquireSingleImage() {
 
     _sendSoftwareTrigger();
 
-    auto imageSize = _getSizeOfRawImages();
-    AcquiredImage acquiredImage(imageSize.first, imageSize.second, 0.0);
     int waitMillis = std::max(5000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
-    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, acquiredImage.getData().get(), imageSize.first * imageSize.second * sizeof(std::uint16_t));
-    if (result == NoImageBeforeTimeout) {
+    auto acquiredImage = _waitForNewImageWithTimeout(waitMillis);
+    if (!acquiredImage.has_value()) {
         throw std::runtime_error("Andor 3 timeout in single image acquisition");
     }
-    return acquiredImage;
+    return acquiredImage.value();
 }
 
 void AndorSDK3Camera::_stopSoftwareTriggeredAcquisitionIfRunning() {
@@ -149,12 +147,12 @@ void AndorSDK3Camera::_derivedAbortAsyncAcquisition() {
     _apiWrapper.AT_Flush(_camHandle);
 }
 
-AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
+std::optional<AcquiredImage> AndorSDK3Camera::_waitForNewImageWithTimeout(int timeoutMillis) {
     std::uint8_t* bufPtr = nullptr;
     int bufSize = 0;
     int err = _apiWrapper.AT_WaitBuffer(_camHandle, &bufPtr, &bufSize, timeoutMillis);
     if (err == AT_ERR_TIMEDOUT) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
     if (err != AT_SUCCESS) {
         throw std::runtime_error("error waiting for Andor3 image");
@@ -167,13 +165,12 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
     }
 
     auto [aoiWidth, aoiHeight] = _getSizeOfRawImages();
-    if (nBytes != aoiWidth * aoiHeight * sizeof(std::uint16_t)) {
-        throw std::runtime_error("buffer size doesn't match Andor3 image");
-    }
+    AcquiredImage acquiredImage = NewRecycledImage((int)aoiWidth, (int)aoiHeight);
+
     // the docs mention that the image rows may be padded so we'll use a conversion function
     AT_64 aoiStrideInBytes = 0;
     _apiWrapper.AT_GetInt(_camHandle, L"AOI Stride", &aoiStrideInBytes);
-    err = _apiWrapper.AT_ConvertBuffer(bufPtr, (std::uint8_t*)bufferForThisImage, aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
+    err = _apiWrapper.AT_ConvertBuffer(bufPtr, (std::uint8_t*)acquiredImage.getData().get(), aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
     if (err) {
         throw std::runtime_error("can't convert Andor3 buffer");
     }
@@ -183,7 +180,7 @@ AndorSDK3Camera::NewImageResult AndorSDK3Camera::_waitForNewImageWithTimeout(int
         throw std::runtime_error("can't requeue Andor3 buffer");
     }
 
-    return NewImageCopied;
+    return std::make_optional(acquiredImage);
 }
 
 void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode) {

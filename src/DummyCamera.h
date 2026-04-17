@@ -26,14 +26,14 @@ private:
     std::pair<int, int> _getSizeOfRawImages() override;
 
     std::pair<int, int> _getSensorSize() const;
-    std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
+    AcquiredImage _generateNewImage();
     void _fillImage(std::uint16_t* data, size_t nPixels);
 
     AcquiredImage _derivedAcquireSingleImage() override;
 
     void _derivedStartUnboundedAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
-    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis) override;
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
@@ -54,7 +54,7 @@ private:
     std::thread _timerThread;
     volatile bool _abortTimerThread;
 
-    moodycamel::BlockingReaderWriterQueue<std::shared_ptr<std::vector<uint16_t>>> _imagesQueue;
+    moodycamel::BlockingReaderWriterQueue<AcquiredImage> _imagesQueue;
     std::uint16_t _frameCounter;
 
     int _cameraID = 0;

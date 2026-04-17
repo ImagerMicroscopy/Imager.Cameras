@@ -159,7 +159,7 @@ private:
 
     void _derivedStartUnboundedAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
-    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis) override;
 
     static void _pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);
     static void _pvcamCameraRemovedCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr);

@@ -44,7 +44,7 @@ private:
 
     void _derivedStartUnboundedAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
-    NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;
+    std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis) override;
 
     IDSPeakAPIWrapper _peakAPIWrapper;
     peak_camera_descriptor _camDescriptor;

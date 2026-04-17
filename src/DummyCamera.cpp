@@ -125,12 +125,11 @@ std::pair<int, int> DummyCamera::_getSensorSize() const {
     return std::make_pair(2048, 2048);
 }
 
-std::shared_ptr<std::vector<uint16_t>> DummyCamera::_generateNewImage() {
+AcquiredImage DummyCamera::_generateNewImage() {
     std::pair<int, int> imageDimensions = _getSizeOfRawImages();
-    int nPixels = imageDimensions.first * imageDimensions.second;
-    std::shared_ptr<std::vector<uint16_t>> buf(new std::vector<uint16_t>(nPixels));
-    _fillImage(buf->data(), nPixels);
-    return buf;
+    AcquiredImage image = NewRecycledImage(imageDimensions.first, imageDimensions.second);
+    _fillImage(image.getData().get(), imageDimensions.first * imageDimensions.second);
+    return image;
 }
 
 void DummyCamera::_fillImage(std::uint16_t * data, size_t nPixels) {
@@ -174,27 +173,13 @@ void DummyCamera::_derivedAbortAsyncAcquisition() {
     }
 }
 
-BaseCameraClass::NewImageResult DummyCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) {
-    std::shared_ptr<std::vector<std::uint16_t>> newImage;
+std::optional<AcquiredImage> DummyCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
+    AcquiredImage newImage;
     bool hadImage = _imagesQueue.wait_dequeue_timed(newImage, std::chrono::milliseconds(timeoutMillis));
     if (!hadImage) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
-
-    int nPixelsInBuf = nBytes / sizeof(std::uint16_t);
-    std::pair<int, int> imageSize = _getSizeOfRawImages();
-    int nPixels = imageSize.first * imageSize.second;
-
-    if (newImage->size() != nPixels) {
-        throw std::logic_error("dummy camera has wrong number of pixels");
-    }
-    if (nPixels != nPixelsInBuf) {
-        throw std::runtime_error("_waitForNewImageWithTimeout() with incorrect buffer size");
-    }
-
-    memcpy(bufferForThisImage, newImage->data(), nPixels * sizeof(uint16_t));
-
-    return NewImageCopied;
+    return std::make_optional(newImage);
 }
 
 #endif

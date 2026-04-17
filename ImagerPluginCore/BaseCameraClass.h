@@ -26,11 +26,6 @@ public:
         AcqFillAndStop
     };
 
-    enum NewImageResult {
-        NewImageCopied,
-        NoImageBeforeTimeout
-    };
-
     BaseCameraClass() : _asyncWantAbort(false), _asyncNImagesStored(0) { ; }
 
     virtual ~BaseCameraClass();
@@ -70,7 +65,7 @@ private:
     virtual bool _derivedHaveBoundedAsyncAcquisition() {return false;}
     virtual void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) {throw std::logic_error("_derivedStartBoundedAsyncAcquisition() not implemented");}
     virtual void _derivedAbortAsyncAcquisition();
-    virtual NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes);
+    virtual std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis);
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _getImageProcessingDescriptors();
     virtual std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() { return {}; }

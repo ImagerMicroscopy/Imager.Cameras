@@ -469,7 +469,7 @@ void PhotometricsCamera::_derivedAbortAsyncAcquisition() {
     _apiWrapper.pl_exp_stop_cont(_pvcamHandle, CCS_CLEAR);
 }
 
-BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t *bufferForThisImage, int nBytes) {
+std::optional<AcquiredImage> PhotometricsCamera::_waitForNewImageWithTimeout(int timeoutMillis) {
     if (_haveCameraDisconnectionError) {
         throw std::runtime_error("camera disconnected");
     }
@@ -477,8 +477,11 @@ BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(
     int dummy = 0;
     bool haveImage = _pvcamCallbackQueue.wait_dequeue_timed(dummy, std::chrono::milliseconds(timeoutMillis));
     if (!haveImage) {
-        return NoImageBeforeTimeout;
+        return std::nullopt;
     }
+
+    auto imageSize = _getSizeOfRawImages();
+    AcquiredImage image = NewRecycledImage(imageSize.first, imageSize.second);
 
     uint16_t* address = nullptr;
     int err = _apiWrapper.pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
@@ -486,14 +489,14 @@ BaseCameraClass::NewImageResult PhotometricsCamera::_waitForNewImageWithTimeout(
         throw std::runtime_error(getPVCAMErrorMessage());
     }
 
-    memcpy(bufferForThisImage, address, nBytes);
+    memcpy(image.getData().get(), address, imageSize.first * imageSize.second * sizeof(std::uint16_t));
 
     err = _apiWrapper.pl_exp_unlock_oldest_frame(_pvcamHandle);
     if (err != PV_OK) {
         throw std::runtime_error(getPVCAMErrorMessage());
     }
 
-    return NewImageCopied;
+    return std::make_optional(image);
 }
 
 void PhotometricsCamera::_pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr) {
