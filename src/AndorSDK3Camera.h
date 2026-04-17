@@ -67,8 +67,7 @@ private:
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
-    bool _hasCustomAcquireSingleImage() const override { return true; }
-    void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+    AcquiredImage _derivedAcquireSingleImage() override;
     void _stopSoftwareTriggeredAcquisitionIfRunning();
 
     void _derivedStartUnboundedAsyncAcquisition() override;

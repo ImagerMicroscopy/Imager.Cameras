@@ -42,8 +42,6 @@ private:
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
-    bool _hasCustomAcquireSingleImage() const override { return false; }
-
     void _derivedStartUnboundedAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;
     NewImageResult _waitForNewImageWithTimeout(int timeoutMillis, std::uint16_t* bufferForThisImage, int nBytes) override;

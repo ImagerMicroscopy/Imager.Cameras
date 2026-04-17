@@ -110,7 +110,7 @@ CameraProperty AndorSDK3Camera::_getSetPixelClock(const std::optional<CameraProp
     return prop;
 }
 
-void AndorSDK3Camera::_derivedAcquireSingleImage(std::uint16_t *bufferForThisImage, int nBytes) {
+AcquiredImage AndorSDK3Camera::_derivedAcquireSingleImage() {
     if (!_softwareTriggeredAcquisitionRunning) {
         // start a new software triggered acquisition
         _startUnboundedAsyncAcquisitionWithTriggerMode(kTriggerSoftware);
@@ -119,11 +119,14 @@ void AndorSDK3Camera::_derivedAcquireSingleImage(std::uint16_t *bufferForThisIma
 
     _sendSoftwareTrigger();
 
-    int waitMillis = std::max(2500, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
-    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, bufferForThisImage, nBytes);
+    auto imageSize = _getSizeOfRawImages();
+    AcquiredImage acquiredImage(imageSize.first, imageSize.second, 0.0);
+    int waitMillis = std::max(5000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
+    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, acquiredImage.getData().get(), imageSize.first * imageSize.second * sizeof(std::uint16_t));
     if (result == NoImageBeforeTimeout) {
         throw std::runtime_error("Andor 3 timeout in single image acquisition");
     }
+    return acquiredImage;
 }
 
 void AndorSDK3Camera::_stopSoftwareTriggeredAcquisitionIfRunning() {

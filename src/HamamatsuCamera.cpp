@@ -432,7 +432,7 @@ void HamamatsuCamera::_setDefaults() {
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY, DCAMPROP_TRIGGERPOLARITY__NEGATIVE);
 }
 
-void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
+AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
     DCAMERR err;
 
     // try to set up a software-triggered acquisition
@@ -463,8 +463,10 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
         _apiWrapper.dcamcap_firetrigger(_camHandle, 0);
     }
     
-    int waitMillis = std::max(1000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
-    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, bufferForThisImage, nBytes);
+    auto imageSize = _getSizeOfRawImages();
+    AcquiredImage acquiredImage(imageSize.first, imageSize.second, 0.0);
+    int waitMillis = std::max(5000, static_cast<int>(_getExposureTime() * 1000.0 * 2.0));
+    NewImageResult result = _waitForNewImageWithTimeout(waitMillis, acquiredImage.getData().get(), imageSize.first * imageSize.second * sizeof(std::uint16_t));
     if (result == NoImageBeforeTimeout) {
         throw std::runtime_error("waiting for single dcam acquisition but timeout");
     }
@@ -474,6 +476,8 @@ void HamamatsuCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisIma
         _releaseCamWaitHandle();
         _apiWrapper.dcambuf_release(_camHandle, 0);
     }
+
+    return acquiredImage;
 }
 
 void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {

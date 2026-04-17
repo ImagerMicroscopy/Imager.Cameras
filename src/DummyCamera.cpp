@@ -140,13 +140,11 @@ void DummyCamera::_fillImage(std::uint16_t * data, size_t nPixels) {
     _frameCounter += 1;
 }
 
-void DummyCamera::_derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) {
+AcquiredImage DummyCamera::_derivedAcquireSingleImage() {
     auto imageDimensions = _getSizeOfRawImages();
-    int nPixels = imageDimensions.first * imageDimensions.second;
-    if (nBytes != nPixels * sizeof(std::uint16_t)) {
-        throw std::runtime_error("invalid buffer size to _derivedAcquireSingleImage()");
-    }
-    _fillImage(bufferForThisImage, nPixels);
+    AcquiredImage image(imageDimensions.first, imageDimensions.second, 0.0);
+    _fillImage(image.getData().get(), imageDimensions.first * imageDimensions.second);
+    return image;
 }
 
 void DummyCamera::_derivedStartUnboundedAsyncAcquisition() {

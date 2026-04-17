@@ -29,8 +29,7 @@ private:
     std::shared_ptr<std::vector<uint16_t>> _generateNewImage();
     void _fillImage(std::uint16_t* data, size_t nPixels);
 
-    bool _hasCustomAcquireSingleImage() const override { return true; }
-    void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
+    AcquiredImage _derivedAcquireSingleImage() override;
 
     void _derivedStartUnboundedAsyncAcquisition() override;
     void _derivedAbortAsyncAcquisition() override;

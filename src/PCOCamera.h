@@ -17,13 +17,11 @@
 #include "PCO/sc2_camexport.h"
 #include "PCO/sc2_defs.h"
 
-
 #include "PCOAPIWrapper.h"
 
 const int kPCOImagesInBuffer = 4;
 
-class PCOCamera : public BaseCameraClass
-{
+class PCOCamera : public BaseCameraClass {
 public:
     enum GetOrSetProperty {
         GetProperty,
@@ -57,9 +55,6 @@ private:
     double _getExposureTime();
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
-
-    bool _hasCustomAcquireSingleImage() const override { return false; }
-    // void _derivedAcquireSingleImage(std::uint16_t* bufferForThisImage, int nBytes) override;
 
     void _derivedStartUnboundedAsyncAcquisition() override {_derivedStartBoundedAsyncAcquisition(std::numeric_limits<std::uint64_t>::max());};
     bool _derivedHaveBoundedAsyncAcquisition() override {return true;}
