@@ -135,8 +135,6 @@ AcquiredImage BaseCameraClass::_derivedAcquireSingleImage() {
 }
 
 void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, const std::shared_ptr<moodycamel::BlockingConcurrentQueue<int>>& startedNotificationQueue) {
-    auto actualImageSize = _getSizeOfRawImages();
-
     try {
         std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _getImageProcessingDescriptors();
 
@@ -165,7 +163,6 @@ void BaseCameraClass::_asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint
         startedNotificationQueue->enqueue(0);
 
         for ( ; ;) {
-            AcquiredImage theImage = NewRecycledImage(actualImageSize.first, actualImageSize.second);
             for ( ; ; ) {
                 if (_asyncWantAbort) {
                     return;

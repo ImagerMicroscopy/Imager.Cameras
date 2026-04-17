@@ -142,7 +142,7 @@ private:
 
     bool _derivedIsConfiguredForHardwareTriggering() override;
 
-    std::pair<int, int> _getSizeOfRawImages() override;
+    std::pair<int, int> _getSizeOfRawImages();
     std::pair<int, int> _getSensorSize();
 
     double _getExposureTime();

@@ -26,9 +26,11 @@ public:
         AcqFillAndStop
     };
 
-    BaseCameraClass() : _asyncWantAbort(false), _asyncNImagesStored(0) { ; }
-
+    BaseCameraClass() = default;
     virtual ~BaseCameraClass();
+    
+    BaseCameraClass(const BaseCameraClass&) = delete;
+    BaseCameraClass& operator=(const BaseCameraClass&) = delete;
 
     virtual std::string getIdentifierStr() = 0;
 
@@ -55,7 +57,6 @@ private:
 
     virtual bool _derivedIsConfiguredForHardwareTriggering() { return false; }
 
-    virtual std::pair<int, int> _getSizeOfRawImages() = 0;
     virtual AcquiredImage _derivedAcquireSingleImage();
 
     void _asyncAcquisitionWorker(AcquisitionMode acqMode, std::uint64_t nImagesToAcquire, const std::shared_ptr<moodycamel::BlockingConcurrentQueue<int>>& startedNotificationQueue);
@@ -78,8 +79,8 @@ private:
 
     std::chrono::steady_clock::time_point _acquisitionStartTimeStamp;
     AtomicString _asyncAcquisitionErrorStr;
-    volatile bool _asyncWantAbort;
-    std::uint64_t _asyncNImagesStored;
+    volatile bool _asyncWantAbort = false;
+    std::uint64_t _asyncNImagesStored = 0;
     moodycamel::BlockingConcurrentQueue<AcquiredImage> _availableImagesQueue;
     std::future<void> _asyncAcquisitionWorkerFuture;
 

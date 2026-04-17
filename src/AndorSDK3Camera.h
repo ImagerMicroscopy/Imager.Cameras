@@ -55,7 +55,7 @@ private:
 
     CameraProperty _getSetPixelClock(const std::optional<CameraProperty> &maybeValueToSet = std::optional<CameraProperty>());
 
-    std::pair<int, int> _getSizeOfRawImages() override;
+    std::pair<int, int> _getSizeOfRawImages();
 
     void _setExposureTime(const double exposureTime);
     double _getExposureTime();

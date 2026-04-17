@@ -45,7 +45,7 @@ private:
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
     void _derivedSetCameraProperties(const std::vector<CameraProperty> &properties) override;
 
-    std::pair<int, int> _getSizeOfRawImages() override;
+    std::pair<int, int> _getSizeOfRawImages();
 
     std::pair<int, int> _getSensorSize() const { return _sensorSize; }
     // int _getBinningFactor() const override;
