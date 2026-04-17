@@ -27,7 +27,10 @@ public:
         PropTriggerSource,
         PropTriggerMode,
         PropTriggerActive,
-        PropTriggerPolarity
+        PropTriggerPolarity,
+        PropOutputTriggerKind,
+        PropOutputTriggerPeriod,
+        PropOutputTriggerPolarity
     };
 
     HamamatsuCamera(HDCAM camHandle);
@@ -43,8 +46,10 @@ private:
     std::pair<int, int> _getSizeOfRawImages();
 
     std::pair<int, int> _getSensorSize() const { return _sensorSize; }
+    CameraProperty _getSetOutputTriggerKind(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetEMMode(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetEMGain(GetOrSetProperty getOrSet, const double value);
+    CameraProperty _getSetOutputTriggerPeriod(GetOrSetProperty getOrSet, const double value);
     CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetTemperatureSetPoint(GetOrSetProperty getOrSet, const double setPoint);
     CameraProperty _getSetCoolerOn(GetOrSetProperty getOrSet, const std::string& mode);
@@ -52,7 +57,7 @@ private:
     CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetTriggerActive(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetTriggerPolarity(GetOrSetProperty getOrSet, const std::string& mode);
-
+    CameraProperty _getSetOutputTriggerPolarity(GetOrSetProperty getOrSet, const std::string& mode);
     void _setExposureTime(const double exposureTime);
     double _getExposureTime();
     void _setImageCrop(const std::pair<int, int>& crop);

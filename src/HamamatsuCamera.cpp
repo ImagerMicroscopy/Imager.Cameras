@@ -66,6 +66,15 @@ std::vector<CameraProperty> HamamatsuCamera::_derivedGetCameraProperties() {
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGER_MODE)) {
         properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
     }
+    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND)) {
+        properties.push_back(_getSetOutputTriggerKind(GetProperty, std::string()));
+    }
+    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_PERIOD)) {
+        properties.push_back(_getSetOutputTriggerPeriod(GetProperty, 0.0001));
+    }
+    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY)) {
+        properties.push_back(_getSetOutputTriggerPolarity(GetProperty, std::string()));
+    }
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERACTIVE)) {
         properties.push_back(_getSetTriggerActive(GetProperty, std::string()));
     }
@@ -131,6 +140,15 @@ void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProper
                 break;
             case PropTriggerPolarity:
                 _getSetTriggerPolarity(SetProperty, prop.getCurrentOption());
+                break;
+            case PropOutputTriggerKind:
+                _getSetOutputTriggerKind(SetProperty, prop.getCurrentOption());
+                break;
+            case PropOutputTriggerPolarity:
+                _getSetOutputTriggerPolarity(SetProperty, prop.getCurrentOption());
+                break;
+            case PropOutputTriggerPeriod:
+                _getSetOutputTriggerPeriod(SetProperty, prop.getValue());
                 break;
             default:
                 throw std::runtime_error("setting unrecognized option");
@@ -251,6 +269,118 @@ CameraProperty HamamatsuCamera::_getSetTriggerSource(GetOrSetProperty getOrSet, 
     prop.setDiscrete(actual, { kInternal, kExternal });
     return prop;
 }
+
+
+CameraProperty HamamatsuCamera::_getSetOutputTriggerPeriod(GetOrSetProperty getOrSet, const double value)
+{
+    if (getOrSet == SetProperty) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_PERIOD, value, true);
+    }
+    CameraProperty prop(PropOutputTriggerPeriod, "Trigger period");
+    prop.setNumeric(_getPropertyValue(_camHandle,  DCAM_IDPROP_OUTPUTTRIGGER_PERIOD));
+    return prop;
+}
+
+
+CameraProperty HamamatsuCamera::_getSetOutputTriggerKind(GetOrSetProperty getOrSet, const std::string& mode)
+{
+    static const char* programmable = "Programmable";
+    static const char* low          = "Low";
+    static const char* globalexp    = "Global Exposure";
+    static const char* triggerready = "Trigger Ready";
+    static const char* high         = "High";
+    static const char* anyrowexp    = "Any Row Exposure";
+    if (getOrSet == SetProperty) {
+
+        if (mode == programmable) {
+            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE);
+        } else if (mode == low) {
+            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__LOW);
+        } else if (mode == globalexp) {
+            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__GLOBALEXPOSURE);
+        } else if (mode == triggerready) {
+            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGERREADY);
+        } else if (mode == high) {
+            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__HIGH);
+        } else if (mode == anyrowexp) {
+            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE);       
+        }
+        else {
+            throw std::runtime_error("unknown argument to _getSetOutputTriggerKind()");
+        }
+    }
+    int currentSource = _getPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND);
+    const char* actual = nullptr;
+    switch (currentSource) {
+        case DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE:
+            actual = programmable;
+            break;
+        case DCAMPROP_OUTPUTTRIGGER_KIND__LOW:
+            actual = low;
+            break;
+        case DCAMPROP_OUTPUTTRIGGER_KIND__GLOBALEXPOSURE:
+            actual = globalexp;
+            break;
+        case DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGERREADY:
+            actual = triggerready;
+            break;
+        case DCAMPROP_OUTPUTTRIGGER_KIND__HIGH:
+            actual = high;
+            break;
+        case DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE:
+            actual = anyrowexp;
+            break;
+
+        default:
+            throw std::runtime_error("_getSetOutputTriggerKind() but unknown mode");
+            break;
+    }   
+    CameraProperty prop(PropOutputTriggerKind, "Trigger kind");
+    prop.setDiscrete(actual, {programmable, low, globalexp, triggerready, high, anyrowexp });
+    return prop;
+}
+
+CameraProperty HamamatsuCamera::_getSetOutputTriggerPolarity(GetOrSetProperty getOrSet,
+                                                            const std::string& mode)
+{
+    static const char* negative = "Negative";
+    static const char* positive = "Positive";
+
+    if (getOrSet == SetProperty) {
+
+        if (mode == negative) {
+            _setPropertyValue(_camHandle,
+                              DCAM_IDPROP_OUTPUTTRIGGER_POLARITY,
+                              DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE);
+        } else if (mode == positive) {
+            _setPropertyValue(_camHandle,
+                              DCAM_IDPROP_OUTPUTTRIGGER_POLARITY,
+                              DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE);
+        } else {
+            throw std::runtime_error("unknown argument to _getSetOutputTriggerPolarity()");
+        }
+    }
+
+    int currentPolarity =
+        _getPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY);
+
+    const char* actual = nullptr;
+    switch (currentPolarity) {
+        case DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE:
+            actual = negative;
+            break;
+        case DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE:
+            actual = positive;
+            break;
+        default:
+            throw std::runtime_error("_getSetOutputTriggerPolarity() but unknown polarity");
+    }
+
+    CameraProperty prop(PropOutputTriggerPolarity, "Trigger polarity");
+    prop.setDiscrete(actual, { negative, positive });
+    return prop;
+}
+
 
 CameraProperty HamamatsuCamera::_getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode) {
     static const char* kNormal = "Normal";
@@ -424,12 +554,12 @@ void HamamatsuCamera::_setDefaults() {
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, _sensorSize.second);
 
     _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY, DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__EXPOSURE, true);
-
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__INTERNAL);
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGER_MODE, DCAMPROP_TRIGGER_MODE__NORMAL);
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERACTIVE, DCAMPROP_TRIGGERACTIVE__EDGE);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY, DCAMPROP_TRIGGERPOLARITY__NEGATIVE);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY, DCAMPROP_TRIGGERPOLARITY__POSITIVE);
+    _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE,true);
+
 }
 
 AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
@@ -638,5 +768,4 @@ std::pair<double, double> HamamatsuCamera::_getPropertyLimits(HDCAM camHandle, i
     }
     return std::pair<double, double>(attr.valuemin, attr.valuemax);
 }
-
 
