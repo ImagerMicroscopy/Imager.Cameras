@@ -134,11 +134,10 @@ void AndorSDK3Camera::_stopSoftwareTriggeredAcquisitionIfRunning() {
     }
 }
 
-void AndorSDK3Camera::_derivedStartUnboundedAsyncAcquisition() {
-    // if called here then we are not doing single image acquisitions,
-    // so we will run in internal trigger mode
+void AndorSDK3Camera::_derivedStartBoundedAsyncAcquisition([[maybe_unused]] std::uint64_t nImagesToAcquire) {
+    // We ignore nImagesToAcquire - the caller will abort the acquisition anyway. However,
+    // it's possible that we will acquire more images than needed - these will be discarded.
     _stopSoftwareTriggeredAcquisitionIfRunning();
-    
     _startUnboundedAsyncAcquisitionWithTriggerMode(kTriggerInternal);
 }
 

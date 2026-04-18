@@ -146,19 +146,24 @@ AcquiredImage DummyCamera::_derivedAcquireSingleImage() {
     return image;
 }
 
-void DummyCamera::_derivedStartUnboundedAsyncAcquisition() {
+void DummyCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) {
     _abortTimerThread = false;
     while (_imagesQueue.pop()) {
         ;
     }
      _timerThread = std::thread([=]() {
         std::int64_t exposureTimeMillis = this->_getExposureTime() * 1000.0;
+        std::uint64_t nImagesAcquired = 0;
         for ( ; ; ) {
+            if (nImagesAcquired >= nImagesToAcquire) {
+                return;
+            }
             if (this->_abortTimerThread)
                 return;
             std::this_thread::sleep_for(std::chrono::milliseconds(exposureTimeMillis));
             auto newImage = _generateNewImage();
             _imagesQueue.enqueue(newImage);
+            nImagesAcquired += 1;
         }
     });
 }

@@ -31,7 +31,7 @@ private:
 
     AcquiredImage _derivedAcquireSingleImage() override;
 
-    void _derivedStartUnboundedAsyncAcquisition() override;
+    void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) override;
     void _derivedAbortAsyncAcquisition() override;
     std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis) override;
 

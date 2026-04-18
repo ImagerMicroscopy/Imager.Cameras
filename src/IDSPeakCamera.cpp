@@ -257,7 +257,9 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> IDSPeakCamera::_derivedG
     return descriptors;
 }
 
-void IDSPeakCamera::_derivedStartUnboundedAsyncAcquisition() {
+void IDSPeakCamera::_derivedStartBoundedAsyncAcquisition([[maybe_unused]] std::uint64_t nImagesToAcquire) {
+    // We ignore nImagesToAcquire - the caller will abort the acquisition anyway. However,
+    // it's possible that we will acquire more images than needed - these will be discarded.
     peak_status status = PEAK_STATUS_SUCCESS;
     status = _peakAPIWrapper.peak_Acquisition_Start(_camHandle, PEAK_INFINITE);
     if (PEAK_ERROR(status)) {

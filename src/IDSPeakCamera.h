@@ -42,7 +42,7 @@ private:
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> _derivedGetAdditionalImageProcessingDescriptors() override;
 
-    void _derivedStartUnboundedAsyncAcquisition() override;
+    void _derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) override;
     void _derivedAbortAsyncAcquisition() override;
     std::optional<AcquiredImage> _waitForNewImageWithTimeout(int timeoutMillis) override;
 

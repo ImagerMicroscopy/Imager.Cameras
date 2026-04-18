@@ -486,7 +486,9 @@ void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
     }
 }
 
-void HamamatsuCamera::_derivedStartUnboundedAsyncAcquisition() {
+void HamamatsuCamera::_derivedStartBoundedAsyncAcquisition([[maybe_unused]] std::uint64_t nImagesToAcquire) {
+    // We ignore nImagesToAcquire - the caller will abort the acquisition anyway. However,
+    // it's possible that we will acquire more images than needed - these will be discarded.
     
     _stopSoftwareTriggeredAcquisitionIfRunning();
 
