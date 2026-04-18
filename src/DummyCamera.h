@@ -5,8 +5,7 @@
 #include <thread>
 #include <memory>
 
-#include "ReaderWriterQueue/atomicops.h"
-#include "ReaderWriterQueue/readerwriterqueue.h"
+#include "blockingconcurrentqueue.h"
 
 #include "ImagerPluginCore/BaseCameraClass.h"
 
@@ -54,7 +53,7 @@ private:
     std::thread _timerThread;
     volatile bool _abortTimerThread;
 
-    moodycamel::BlockingReaderWriterQueue<AcquiredImage> _imagesQueue;
+    moodycamel::BlockingConcurrentQueue<AcquiredImage> _imagesQueue;
     std::uint16_t _frameCounter;
 
     int _cameraID = 0;

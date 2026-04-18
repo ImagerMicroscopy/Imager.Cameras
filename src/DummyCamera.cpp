@@ -148,7 +148,8 @@ AcquiredImage DummyCamera::_derivedAcquireSingleImage() {
 
 void DummyCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcquire) {
     _abortTimerThread = false;
-    while (_imagesQueue.pop()) {
+    AcquiredImage dummy;
+    while (_imagesQueue.try_dequeue(dummy)) {
         ;
     }
      _timerThread = std::thread([=]() {
@@ -173,7 +174,8 @@ void DummyCamera::_derivedAbortAsyncAcquisition() {
     if (_timerThread.joinable()) {
         _timerThread.join();
     }
-    while (_imagesQueue.pop()) {
+    AcquiredImage dummy;
+    while (_imagesQueue.try_dequeue(dummy)) {
         ;
     }
 }
