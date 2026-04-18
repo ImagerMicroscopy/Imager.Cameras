@@ -1,5 +1,7 @@
 #include "PCOCamera.h"
 
+#include <format>
+
 #include "StandardCameraProperties.h"
 
 PCOCamera::PCOCamera(HANDLE camHandle) :
@@ -168,7 +170,7 @@ void PCOCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAcqu
     int nPixelsInImage = imageSize.first * imageSize.second;
 
     if (nImagesToAcquire > (uint64_t)std::numeric_limits<std::uint32_t>::max()) {
-        nImagesToAcquire = std::numeric_limits<std::uint32_t>::max();
+        throw std::runtime_error(std::format("Can't acquire more than {} images in one acquisition (limitation of PCO API)", std::numeric_limits<std::uint32_t>::max()));
     }
 
     if (_frameBuffer.empty()) {
