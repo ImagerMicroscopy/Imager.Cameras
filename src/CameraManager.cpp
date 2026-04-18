@@ -7,17 +7,9 @@
 
 #include "PhotometricsCameraHandler.h"
 
-#ifdef WITH_ANDOR
-#include "AndorCamera.h"
-#endif
-
 #include "AndorSDK3CameraHandler.h"
 
 #include "HamamatsuCameraHandler.h"
-
-#ifdef WITH_IDS
-#include "IDSCamera.h"
-#endif
 
 #include "PCOCamera.h"
 
@@ -46,17 +38,6 @@ void CameraManager::discoverCameras() {
         _availableCameras.insert({c->getIdentifierStr(), c});
     }
 
-#ifdef WITH_ANDOR
-    try {
-        std::shared_ptr<BaseCameraClass> andorCamera(new AndorCamera());
-        std::string identifier = andorCamera->getIdentifierStr();
-        _availableCameras.insert({andorCamera->getIdentifierStr(), andorCamera});
-    }
-    catch (const std::runtime_error& e) {
-        // no Andor camera available
-    }
-#endif
-
     std::vector<std::shared_ptr<BaseCameraClass>> andorCameras = OpenAndorSDK3Cameras();
     for (auto& c : andorCameras) {
         _availableCameras.insert({c->getIdentifierStr(), c});
@@ -66,25 +47,6 @@ void CameraManager::discoverCameras() {
     for (auto c : hamamatsuCameras) {
         _availableCameras.insert({c->getIdentifierStr(), c});
     }
-
-#ifdef WITH_IDS
-    is_SetErrorReport(0, IS_DISABLE_ERR_REP);
-    int nIDSCams;
-    int idsErr = is_GetNumberOfCameras(&nIDSCams);
-    if (idsErr != IS_SUCCESS) {
-        throw std::runtime_error("unable to determine number of IDS cameras");
-    }
-    for (int i = 0; i < nIDSCams; i += 1) {
-        HIDS camHandle = 0;
-        idsErr = is_InitCamera(&camHandle, nullptr);
-        if (idsErr != IS_SUCCESS) {
-
-            throw std::runtime_error("unable to open IDS camera");
-        }
-        std::shared_ptr<BaseCameraClass> idsCamera(new IDSCamera(camHandle));
-        _availableCameras.insert({idsCamera->getIdentifierStr(), idsCamera});
-    }
-#endif
 
     std::vector<std::shared_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
     for (auto& cam : idsCams) {
@@ -161,6 +123,6 @@ void CameraManager::abortRunningAcquisitions() {
 void CameraManager::_applyCameraOrientationOptions() {
     for (const auto& [name, camera] : _availableCameras) {
         std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _configFile.getProcessingOptionsForCamera(name);
-        camera->setImageOrientationOps(imageProcessingDescriptors);
+        camera->setImageProcessingOps(imageProcessingDescriptors);
     }
 }
