@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "ImagerPluginCore/CameraUtils.h"
-#include "StandardCameraProperties.h"
+#include "ImagerPluginCore/StandardCameraProperties.h"
 
 #ifdef WITH_IGOR
     #include "XOPStandardHeaders.h"
@@ -419,7 +419,7 @@ std::vector<std::pair<std::string, int>> PhotometricsCamera::_getTriggerModes() 
 void PhotometricsCamera::_derivedStartBoundedAsyncAcquisition([[maybe_unused]] std::uint64_t nImagesToAcquire) {
     // We ignore nImagesToAcquire - the caller will abort the acquisition anyway. However,
     // it's possible that we will acquire more images than needed - these will be discarded.
-    
+
     int err = 0;
     std::uint64_t exposureTime = _getCameraParameterCurrentValue<std::uint64_t>(PARAM_EXPOSURE_TIME);
     std::uint32_t nBytesInImage;

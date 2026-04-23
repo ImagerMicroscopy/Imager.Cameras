@@ -7,7 +7,7 @@
 
 #include <random>
 
-#include "StandardCameraProperties.h"
+#include "ImagerPluginCore/StandardCameraProperties.h"
 
 DummyCamera::DummyCamera() :
     _exposureTime(50.0e-3),

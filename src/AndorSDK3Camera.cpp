@@ -4,7 +4,7 @@
 #include "Andor/atutility.h"
 
 #include "ImagerPluginCore/CameraUtils.h"
-#include "StandardCameraProperties.h"
+#include "ImagerPluginCore/StandardCameraProperties.h"
 
 AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _camHandle(camHandle),

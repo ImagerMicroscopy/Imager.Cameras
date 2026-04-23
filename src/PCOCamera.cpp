@@ -2,7 +2,7 @@
 
 #include <format>
 
-#include "StandardCameraProperties.h"
+#include "ImagerPluginCore/StandardCameraProperties.h"
 
 PCOCamera::PCOCamera(HANDLE camHandle) :
     _camHandle(camHandle),

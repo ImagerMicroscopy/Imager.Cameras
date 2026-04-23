@@ -34,6 +34,7 @@ shared_library(plugin_name,
   'ImagerPluginCore/CameraPropertiesEncoding.cpp',
   'ImagerPluginCore/PluginManager.cpp',
   'ImagerPluginCore/RobotProgramArguments.cpp',
+  'ImagerPluginCore/StandardCameraProperties.cpp',
 
   # Add your plugin source files here
   'src/AndorSDK3Camera.cpp',
@@ -51,7 +52,6 @@ shared_library(plugin_name,
   'src/SCCameraPlugin.cpp',
   'src/SCPrinter.cpp',
   'src/SCConfigurationFile.cpp',
-  'src/StandardCameraProperties.cpp',
 
   include_directories : [core_inc, sdk_inc, include_directories('src')],
   #link_with : [core_lib],

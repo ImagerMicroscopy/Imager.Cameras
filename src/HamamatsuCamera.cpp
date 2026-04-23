@@ -2,7 +2,7 @@
 
 #include "Hamamatsu/dcamprop.h"
 
-#include "StandardCameraProperties.h"
+#include "ImagerPluginCore/StandardCameraProperties.h"
 
 HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
     _camHandle(camHandle),
