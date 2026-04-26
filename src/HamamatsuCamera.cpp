@@ -605,7 +605,7 @@ AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
         _apiWrapper.dcambuf_release(_camHandle, 0);
     }
 
-    return std::move(acquiredImage);
+    return std::move(acquiredImage.value());
 }
 
 void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
