@@ -124,7 +124,7 @@ AcquiredImage AndorSDK3Camera::_derivedAcquireSingleImage() {
     if (!acquiredImage.has_value()) {
         throw std::runtime_error("Andor 3 timeout in single image acquisition");
     }
-    return acquiredImage.value();
+    return std::move(acquiredImage.value());
 }
 
 void AndorSDK3Camera::_stopSoftwareTriggeredAcquisitionIfRunning() {
@@ -179,7 +179,7 @@ std::optional<AcquiredImage> AndorSDK3Camera::_waitForNewImageWithTimeout(int ti
         throw std::runtime_error("can't requeue Andor3 buffer");
     }
 
-    return std::make_optional(acquiredImage);
+    return acquiredImage;
 }
 
 void AndorSDK3Camera::_startUnboundedAsyncAcquisitionWithTriggerMode(TriggerMode triggerMode) {

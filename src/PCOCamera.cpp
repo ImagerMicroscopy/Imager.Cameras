@@ -265,7 +265,7 @@ std::optional<AcquiredImage> PCOCamera::_waitForNewImageWithTimeout(int timeoutM
     _nextBufferToReadIndex = (_nextBufferToReadIndex + 1) % kPCOImagesInBuffer;
     _numberOfImagesDelivered += 1;
 
-    return std::make_optional(image);
+    return image;
 }
 
 void PCOCamera::_fetchCameraInfo() {

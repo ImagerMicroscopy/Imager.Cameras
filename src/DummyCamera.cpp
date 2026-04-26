@@ -163,7 +163,7 @@ void DummyCamera::_derivedStartBoundedAsyncAcquisition(std::uint64_t nImagesToAc
                 return;
             std::this_thread::sleep_for(std::chrono::milliseconds(exposureTimeMillis));
             auto newImage = _generateNewImage();
-            _imagesQueue.enqueue(newImage);
+            _imagesQueue.enqueue(std::move(newImage));
             nImagesAcquired += 1;
         }
     });
@@ -186,7 +186,7 @@ std::optional<AcquiredImage> DummyCamera::_waitForNewImageWithTimeout(int timeou
     if (!hadImage) {
         return std::nullopt;
     }
-    return std::make_optional(newImage);
+    return newImage;
 }
 
 #endif

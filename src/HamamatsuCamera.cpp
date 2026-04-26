@@ -605,7 +605,7 @@ AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
         _apiWrapper.dcambuf_release(_camHandle, 0);
     }
 
-    return acquiredImage.value();
+    return std::move(acquiredImage);
 }
 
 void HamamatsuCamera::_stopSoftwareTriggeredAcquisitionIfRunning() {
@@ -659,7 +659,7 @@ std::optional<AcquiredImage> HamamatsuCamera::_waitForNewImageWithTimeout(int ti
     AcquiredImage image = NewRecycledImage(actualImageSize.first, actualImageSize.second);
     _copyLatestImage(image.getData().get(), image.getNRows() * image.getNCols() * sizeof(std::uint16_t));
 
-    return std::make_optional(image);
+    return image;
 }
 
 void HamamatsuCamera::_copyLatestImage(std::uint16_t* bufferForThisImage, int nBytes) {

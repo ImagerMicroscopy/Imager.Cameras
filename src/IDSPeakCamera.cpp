@@ -337,5 +337,5 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
 
     _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
     
-    return std::make_optional(image);
+    return image;
 }

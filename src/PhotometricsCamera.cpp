@@ -499,7 +499,7 @@ std::optional<AcquiredImage> PhotometricsCamera::_waitForNewImageWithTimeout(int
         throw std::runtime_error(getPVCAMErrorMessage());
     }
 
-    return std::make_optional(image);
+    return image;
 }
 
 void PhotometricsCamera::_pvcamCallbackFunction(FRAME_INFO* infoPtr, void* contextPtr) {
