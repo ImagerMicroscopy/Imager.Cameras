@@ -7,13 +7,15 @@
 #include <memory>
 #include <exception>
 
+#include "ImagerPluginCore/ConfigManager.h"
+
 #include "SCConfigurationFile.h"
 
 class BaseCameraClass;
 
 class CameraManager {
 public:
-    CameraManager(const SCConfigurationFile& configFile) : _configFile(configFile) {}
+    CameraManager(ConfigManager& configManager) : _configManager(&configManager) {}
     ~CameraManager();
 
     void discoverCameras();
@@ -28,8 +30,8 @@ public:
 private:
     void _applyCameraOrientationOptions();
 
+    ConfigManager* _configManager = nullptr;
     std::map<std::string, std::shared_ptr<BaseCameraClass>> _availableCameras;
-    SCConfigurationFile _configFile;
 };
 
 #endif

@@ -7,14 +7,16 @@
 
 static CameraManager* gCameraManager = nullptr;
 
-void StartCameraManager(const fs::path& configDirPath);
+void StartCameraManager(ConfigManager& configManager);
 void StopCameraManager();
 
-void InitPlugin(const std::filesystem::path& configDirPath) {
+void InitPlugin() {
     // Imager is starting up. Create all objects and perform all work
     // needed to start operation.
 
-    StartCameraManager(configDirPath);
+    ConfigManager& configManager = PluginManager::Manager().getConfigManager();
+
+    StartCameraManager(configManager);
     gCameraManager->discoverCameras();
     std::vector<std::string> cameraNames = gCameraManager->getCameraIdentifiers();
 
@@ -29,11 +31,12 @@ void ShutdownPlugin() {
     StopCameraManager();
 }
 
-void StartCameraManager(const fs::path& configDirPath) {
+void StartCameraManager(ConfigManager& configManager) {
     if (gCameraManager == nullptr) {
-        SCConfigurationFile configFile(configDirPath);
-        gCameraManager = new CameraManager(configFile);
+        gCameraManager = new CameraManager(configManager);
         gCameraManager->discoverCameras();
+    } else {
+        throw std::logic_error("CameraManager is already running");
     }
 }
 

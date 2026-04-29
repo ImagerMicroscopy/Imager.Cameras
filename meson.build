@@ -19,6 +19,10 @@ add_global_arguments('-DIMAGER_EQUIPMENT_NAME="' + plugin_name + '"', language :
 # Fetch the core Imager plugin support files
 imager_core_dep = dependency('imagerplugincore')
 
+# Compile the plugin API directly into this plugin
+imager_core_sp = subproject('imagerplugincore')
+imager_api_source = imager_core_sp.get_variable('api_source')
+
 # Fetch dependencies
 json_dep = dependency('nlohmann_json')
 queue_dep = dependency('concurrentqueue')
@@ -44,6 +48,8 @@ shared_library(plugin_name,
   'src/SCCameraPlugin.cpp',
   'src/SCPrinter.cpp',
   'src/SCConfigurationFile.cpp',
+
+  imager_api_source,
 
   include_directories : [sdk_inc, include_directories('src')],
   dependencies : [json_dep, queue_dep, imager_core_dep],

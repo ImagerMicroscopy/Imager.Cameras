@@ -6,26 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "ImageProcessingUtils.h"
+#include "ImagerPluginCore/ConfigManager.h"
 
-namespace fs = std::filesystem;
+class ImageProcessingDescriptor;
 
-class SCConfigurationFile {
-public:
-    SCConfigurationFile(const fs::path& configFileDirectory);
-    ~SCConfigurationFile() {;}
-
-    std::vector<std::shared_ptr<ImageProcessingDescriptor>> getProcessingOptionsForCamera(const std::string &cameraName);
-
-private:
-    static std::string _defaultConfigFileContents();
-    void _parseConfigFile();
-
-    std::shared_ptr<ImageProcessingDescriptor> _processingTypeForSetting(std::string argument);
-
-    fs::path _configFilePath;
-    std::map<std::string, std::vector<std::shared_ptr<ImageProcessingDescriptor>>>  _orientationOptions;
-};
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> GetProcessingOptionsForCamera(ConfigManager& configManager, const std::string &cameraName);
 
 
 #endif //SRC_SCCONFIGURATIONFILE_H

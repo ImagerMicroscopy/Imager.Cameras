@@ -1,106 +1,44 @@
 #include "SCConfigurationFile.h"
 
+#include <algorithm>
+#include <cctype>
+#include <iterator>
+#include <sstream>
 #include <stdexcept>
 
-#include "toml.hpp"
+#include "ImageProcessingUtils.h"
 
-SCConfigurationFile::SCConfigurationFile(const fs::path &configFileDirectory) {
-    _configFilePath = configFileDirectory / "SCCameraConfig.toml";
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> GetProcessingOptionsForCamera(ConfigManager& configManager, const std::string& cameraName) {
 
-    if (!fs::exists(_configFilePath)) {
-        std::ofstream file(_configFilePath, std::ios::trunc);
-        file << _defaultConfigFileContents();
-    }
+    auto setting = configManager.getSettingOrDefault(cameraName / "orientation", "");
+    std::string orientationStr = setting.first;
 
-    _parseConfigFile();
-}
+    std::vector<std::shared_ptr<ImageProcessingDescriptor>> result;
 
-std::vector<std::shared_ptr<ImageProcessingDescriptor>> SCConfigurationFile::getProcessingOptionsForCamera(
-    const std::string &cameraName) {
-    if (_orientationOptions.count(cameraName) > 0) {
-        return _orientationOptions.at(cameraName);
-    } else {
-        return std::vector<std::shared_ptr<ImageProcessingDescriptor>>();
-    }
-}
+    // Remove all whitespace from the orientation string
+    std::string filtered;
+    filtered.reserve(orientationStr.size());
+    std::copy_if(orientationStr.begin(), orientationStr.end(), std::back_inserter(filtered), [](char c){
+        return !std::isspace(static_cast<unsigned char>(c));
+    });
 
-std::string SCConfigurationFile::_defaultConfigFileContents() {
-    std::string contents =
-    R"(# Configuration file for the SCCamera plugin for Imager"
-#
-# Use this file to set any camera-specific properties. Imager will then set these
-# properties when the program starts.
-#
+    std::stringstream ss(filtered);
+    std::string token;
+    while (std::getline(ss, token, ';')) {
+        if (token.empty()) continue;
 
-[camera-orientation]
-
-# Include here orientation settings for as many cameras as you want. Specify the camera via the name with which
-# it shows up in Imager. The names of the supported operations are "RotateCW", "RotateCCW", "FlipHorizontal", "FlipVertical".
-# You can specify these names in an array. The operations will be applied on the images from left to right.
-# The actual visual effect of the operations may not be what you expect, depending on how the images are displayed.
-# The best way to figure this out for your system is to simply experiment.
-#
-# Example 1: Camera1 needs all four operations to be acceptable
-# "Camera1" = ["RotateCW", "RotateCCW", "FlipHorizontal", "FlipVertical"]
-# Example 2: Camera2 needs no operations to be acceptable
-# "Camera2" = []
-# Lines that start with '#' are treated as comments (ignored). Be sure to remove these when configuring your system!
-)";
-    return contents;
-}
-
-void SCConfigurationFile::_parseConfigFile() {
-    try {
-        // Open the file for reading
-        std::ifstream file(_configFilePath);
-
-        // Read the file contents into a string
-        std::string content((std::istreambuf_iterator<char>(file)),
-                            std::istreambuf_iterator<char>());
-        file.close();
-
-        // Load the TOML file
-        const auto data = toml::parse_file(_configFilePath.string()); // Replace with the actual path to your TOML file
-
-        // Extract the "Camera Orientation" table
-        if (!data.contains("camera-orientation")) {
-            throw std::runtime_error("The config file is missing the \"camera-orientation\" section. (Delete the file to generate a new one on startup");
+        if (token == "RotateCW") {
+            result.push_back(std::make_shared<IPDRotateCW>());
+        } else if (token == "RotateCCW") {
+            result.push_back(std::make_shared<IPDRotateCCW>());
+        } else if (token == "FlipHorizontal") {
+            result.push_back(std::make_shared<IPDFlipHorizontal>());
+        } else if (token == "FlipVertical") {
+            result.push_back(std::make_shared<IPDFlipVertical>());
+        } else {
+            throw std::runtime_error("Invalid orientation setting: " + token);
         }
-
-        const auto& cameraOrientationNode = data.at("camera-orientation");
-        const auto& cameraOrientation = cameraOrientationNode.as_table();
-        // Iterate through each name and its associated transformations
-        for (const auto& entry : *cameraOrientation) {
-            const std::string cameraName = std::string(entry.first);
-            std::vector<std::shared_ptr<ImageProcessingDescriptor>> orientationOptions;
-            // Check if the node is an array and iterate over its elements
-            if (auto transformations = entry.second.as_array()) {
-                for (const auto& transformNode : *transformations) {
-                    // Check if the element is a string before extracting
-                    if (auto transformValue = transformNode.as_string()) {
-                        // Here, you would use transformValue->get() or simply *transformValue
-                        // to get the string, and pass it to _processingTypeForSetting
-                        orientationOptions.push_back(_processingTypeForSetting(transformValue->get()));
-                    }
-                }
-            }
-            _orientationOptions[cameraName] = orientationOptions;
-        }
-    } catch (const toml::parse_error& err) {
-        throw std::runtime_error(std::string("Failed to parse TOML file: ") + err.what());
     }
-}
 
-std::shared_ptr<ImageProcessingDescriptor> SCConfigurationFile::_processingTypeForSetting(const std::string argument) {
-    if (argument == "RotateCW") {
-        return std::make_shared<IPDRotateCW>();
-    } else if (argument == "RotateCCW") {
-        return std::make_shared<IPDRotateCCW>();
-    } else if (argument == "FlipHorizontal") {
-        return std::make_shared<IPDFlipHorizontal>();
-    } else if (argument == "FlipVertical") {
-        return std::make_shared<IPDFlipVertical>();
-    } else {
-        throw std::runtime_error("Invalid orientation setting: " + argument);
-    }
+    return result;
 }

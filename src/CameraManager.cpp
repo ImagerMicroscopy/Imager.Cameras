@@ -122,7 +122,7 @@ void CameraManager::abortRunningAcquisitions() {
 
 void CameraManager::_applyCameraOrientationOptions() {
     for (const auto& [name, camera] : _availableCameras) {
-        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = _configFile.getProcessingOptionsForCamera(name);
+        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = GetProcessingOptionsForCamera(*_configManager, name);
         camera->setImageProcessingOps(imageProcessingDescriptors);
     }
 }
