@@ -245,7 +245,7 @@ std::optional<AcquiredImage> PCOCamera::_waitForNewImageWithTimeout(int timeoutM
 #endif
 
     auto imageSize = _getSensorSize();
-    AcquiredImage image = NewRecycledImage(imageSize.first, imageSize.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageSize.first, imageSize.second);
     int nPixelsInImage = imageSize.first * imageSize.second;
     std::uint16_t *thisImagePtr = _frameBuffer.data() + _nextBufferToReadIndex * nPixelsInImage;
 

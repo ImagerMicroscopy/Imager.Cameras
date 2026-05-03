@@ -17,7 +17,6 @@ void InitPlugin() {
     ConfigManager& configManager = PluginManager::Manager().getConfigManager();
 
     StartCameraManager(configManager);
-    gCameraManager->discoverCameras();
     std::vector<std::string> cameraNames = gCameraManager->getCameraIdentifiers();
 
     for (const auto& name : cameraNames) {

@@ -302,38 +302,25 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
     }
     _nextExpectedImageInSequenceIdx += 1;
 
-    int nBytesPerPixel;
+    int width = frameInfo.roi.size.width;
+    int height = frameInfo.roi.size.height;
+
+    AcquiredImage::PixelFormat pixelFormat;
     switch (frameInfo.pixelFormat) {
         case PEAK_PIXEL_FORMAT_MONO8:
-            nBytesPerPixel = 1;
+            pixelFormat = AcquiredImage::PixelFormat::Mono8;
             break;
         case PEAK_PIXEL_FORMAT_MONO10:
         case PEAK_PIXEL_FORMAT_MONO12:
-            nBytesPerPixel = 2;
+            pixelFormat = AcquiredImage::PixelFormat::Mono16;
             break;
         default:
             throw std::runtime_error("unsupported pixel format for IDS Peak");
             break;
     }
 
-    int nPixels = (int)frameInfo.bytesWritten / nBytesPerPixel;
-    int width = frameInfo.roi.size.width;
-    int height = frameInfo.roi.size.height;
-    AcquiredImage image = NewRecycledImage(width, height);
-
-    uint8_t* bufAddress = frameInfo.buffer.memoryAddress;
-    switch (nBytesPerPixel) {
-        case 1:
-            for (int i = 0; i < nPixels; ++i) {
-                image.getData().get()[i] = bufAddress[i];
-            }
-            break;
-        case 2:
-            memcpy(image.getData().get(), bufAddress, nPixels * sizeof(std::uint16_t));
-            break;
-        default:
-            throw std::runtime_error("invalid bytes per pixel for IDS Peak");
-    }
+    AcquiredImage image = NewRecycledImage(pixelFormat, width, height);
+    memcpy(image.getData().get(), frameInfo.buffer.memoryAddress, frameInfo.bytesWritten);
 
     _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
     

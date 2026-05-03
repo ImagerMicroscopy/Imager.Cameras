@@ -164,12 +164,12 @@ std::optional<AcquiredImage> AndorSDK3Camera::_waitForNewImageWithTimeout(int ti
     }
 
     auto [aoiWidth, aoiHeight] = _getSizeOfRawImages();
-    AcquiredImage acquiredImage = NewRecycledImage((int)aoiWidth, (int)aoiHeight);
+    AcquiredImage acquiredImage = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, (int)aoiWidth, (int)aoiHeight);
 
     // the docs mention that the image rows may be padded so we'll use a conversion function
     AT_64 aoiStrideInBytes = 0;
     _apiWrapper.AT_GetInt(_camHandle, L"AOI Stride", &aoiStrideInBytes);
-    err = _apiWrapper.AT_ConvertBuffer(bufPtr, (std::uint8_t*)acquiredImage.getData().get(), aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
+    err = _apiWrapper.AT_ConvertBuffer(bufPtr, acquiredImage.getData().get(), aoiWidth, aoiHeight, aoiStrideInBytes, L"Mono16", L"Mono16");
     if (err) {
         throw std::runtime_error("can't convert Andor3 buffer");
     }

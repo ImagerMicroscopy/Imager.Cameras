@@ -127,8 +127,8 @@ std::pair<int, int> DummyCamera::_getSensorSize() const {
 
 AcquiredImage DummyCamera::_generateNewImage() {
     std::pair<int, int> imageDimensions = _getSizeOfRawImages();
-    AcquiredImage image = NewRecycledImage(imageDimensions.first, imageDimensions.second);
-    _fillImage(image.getData().get(), imageDimensions.first * imageDimensions.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageDimensions.first, imageDimensions.second);
+    _fillImage(reinterpret_cast<std::uint16_t*>(image.getData().get()), imageDimensions.first * imageDimensions.second);
     return image;
 }
 
@@ -141,8 +141,8 @@ void DummyCamera::_fillImage(std::uint16_t * data, size_t nPixels) {
 
 AcquiredImage DummyCamera::_derivedAcquireSingleImage() {
     auto imageDimensions = _getSizeOfRawImages();
-    AcquiredImage image(imageDimensions.first, imageDimensions.second, 0.0);
-    _fillImage(image.getData().get(), imageDimensions.first * imageDimensions.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageDimensions.first, imageDimensions.second);
+    _fillImage(reinterpret_cast<std::uint16_t*>(image.getData().get()), imageDimensions.first * imageDimensions.second);
     return image;
 }
 

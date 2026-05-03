@@ -484,7 +484,7 @@ std::optional<AcquiredImage> PhotometricsCamera::_waitForNewImageWithTimeout(int
     }
 
     auto imageSize = _getSizeOfRawImages();
-    AcquiredImage image = NewRecycledImage(imageSize.first, imageSize.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageSize.first, imageSize.second);
 
     uint16_t* address = nullptr;
     int err = _apiWrapper.pl_exp_get_oldest_frame(_pvcamHandle, reinterpret_cast<void**>(&address));
