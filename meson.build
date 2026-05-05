@@ -2,6 +2,7 @@ project('SCCameraPlugin', 'cpp',
   version : '0.1',
   default_options : ['warning_level=3', 'cpp_std=c++20', 'b_vscrt=static_from_buildtype']
 )
+add_project_arguments('-fpermissive', language: 'cpp')
 
 # --- USER SETTINGS ---
 # Change this variable to customize your plugin's name
