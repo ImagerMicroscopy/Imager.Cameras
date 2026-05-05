@@ -55,5 +55,6 @@ shared_library(plugin_name,
   include_directories : [sdk_inc, include_directories('src')],
   dependencies : [json_dep, queue_dep, imager_core_dep],
   name_suffix : 'imagerplugin', # Change the output file extension
+  name_prefix: '',
   cpp_args : ['-DNOMINMAX'],
   )
