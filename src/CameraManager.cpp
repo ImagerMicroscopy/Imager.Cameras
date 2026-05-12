@@ -24,6 +24,7 @@
 #include "IDSPeakCameraHandler.h"
 
 CameraManager::~CameraManager() {
+    _availableCameras.clear();
     CloseAndorSDK3Library();
     ClosePhotometricsLibrary();
     CloseHamamatsuLibrary();
@@ -33,24 +34,24 @@ CameraManager::~CameraManager() {
 void CameraManager::discoverCameras() {
     _availableCameras.clear();
 
-    std::vector<std::shared_ptr<BaseCameraClass>> photometricsCameras = OpenPhotometricsCameras();
-    for (auto c : photometricsCameras) {
-        _availableCameras.insert({c->getIdentifierStr(), c});
+    std::vector<std::unique_ptr<BaseCameraClass>> photometricsCameras = OpenPhotometricsCameras();
+    for (auto& c : photometricsCameras) {
+        _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::shared_ptr<BaseCameraClass>> andorCameras = OpenAndorSDK3Cameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> andorCameras = OpenAndorSDK3Cameras();
     for (auto& c : andorCameras) {
-        _availableCameras.insert({c->getIdentifierStr(), c});
+        _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::shared_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras();
-    for (auto c : hamamatsuCameras) {
-        _availableCameras.insert({c->getIdentifierStr(), c});
+    std::vector<std::unique_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras();
+    for (auto& c : hamamatsuCameras) {
+        _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::shared_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
     for (auto& cam : idsCams) {
-        _availableCameras.insert({cam->getIdentifierStr(), cam});
+        _availableCameras.insert(std::make_pair(cam->getIdentifierStr(), std::move(cam)));
     }
 
     PCOAPIWrapper pcoAPIWrapper = GetPCOAPIWrapper();
@@ -66,8 +67,8 @@ void CameraManager::discoverCameras() {
             if (pcoCamHandle == nullptr) {
                 break;
             }
-            std::shared_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
-            _availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), pcoCamera));
+            std::unique_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
+            _availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), std::move(pcoCamera)));
         }
     }
 
@@ -77,7 +78,7 @@ void CameraManager::discoverCameras() {
     seabreezeAPI->probeDevices();
     int nOODevices = seabreezeAPI->getDeviceIDs(ooDeviceIDs, sizeof(ooDeviceIDs));
     for (int i = 0; i < nOODevices; i += 1) {
-        std::shared_ptr<BaseCameraClass> ooCamera(new OceanOpticsCamera(ooDeviceIDs[i]));
+        std::unique_ptr<BaseCameraClass> ooCamera(new OceanOpticsCamera(ooDeviceIDs[i]));
         _availableCameras.emplace(ooCamera->getIdentifierStr(), ooCamera);
     }
 
@@ -105,13 +106,15 @@ std::vector<std::string> CameraManager::getCameraIdentifiers() const {
 std::shared_ptr<BaseCameraClass> CameraManager::getCamera(const std::string& identifier) const {
     if (_availableCameras.count(identifier) == 0)
         throw std::runtime_error("Camera not found");
-    return _availableCameras.at(identifier);
+    // The plugin manager gets a shared_ptr with a deleter that does nothing, because it is the resposibility of
+    // the camera manager to destroy the camera objects.
+    return std::shared_ptr<BaseCameraClass>(_availableCameras.at(identifier).get(), [](BaseCameraClass*){});
 }
 
 std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
     if (_availableCameras.size() == 0)
         throw std::runtime_error("No cameras found");
-    return _availableCameras.begin()->second;
+    return std::shared_ptr<BaseCameraClass>(_availableCameras.begin()->second.get(), [](BaseCameraClass*){});
 }
 
 void CameraManager::abortRunningAcquisitions() {

@@ -5,10 +5,10 @@
 #include "IDSPeakCamera.h"
 #include "SCPrinter.h"
 
-std::vector<std::shared_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
+std::vector<std::unique_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
     IDSPeakAPIWrapper apiWrapper;
     if (!apiWrapper.areAllFunctionsLoaded()) {
-        return std::vector<std::shared_ptr<BaseCameraClass>>();
+        return std::vector<std::unique_ptr<BaseCameraClass>>();
     }
 
     Print("Found IDS Peak runtime");
@@ -27,7 +27,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
         throw std::runtime_error("can't list cameras");
     }
 
-    std::vector<std::shared_ptr<BaseCameraClass>> cameras;
+    std::vector<std::unique_ptr<BaseCameraClass>> cameras;
     for (size_t i = 0; i < nCameras; ++i) {
         cameras.emplace_back(new IDSPeakCamera(camDescriptors[i]));
     }

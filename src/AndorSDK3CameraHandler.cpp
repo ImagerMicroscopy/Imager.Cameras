@@ -11,10 +11,10 @@
 #include "AndorSDK3APIWrapper.h"
 #include "SCPrinter.h"
 
-std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
+std::vector<std::unique_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
     AndorSDK3APIWrapper apiWrapper = GetAndorSDK3APIWrapper();
     if (!apiWrapper.areAllFunctionsLoaded()) {
-        return std::vector<std::shared_ptr<BaseCameraClass>>();
+        return std::vector<std::unique_ptr<BaseCameraClass>>();
     }
 
     Print("Found Andor3 runtime");
@@ -35,7 +35,7 @@ std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
         throw std::runtime_error("can't get Andor 3 device count");
     }
     
-    std::vector<std::shared_ptr<BaseCameraClass>> cameras;
+    std::vector<std::unique_ptr<BaseCameraClass>> cameras;
     for (int i = 0; i < iNumberDevices; ++i) {
         AT_H camHandle = 0;
         err = apiWrapper.AT_Open(i, &camHandle);

@@ -5,7 +5,7 @@
 
 #include "ImagerPluginCore/BaseCameraClass.h"
 
-std::vector<std::shared_ptr<BaseCameraClass>> OpenHamamatsuCameras();
+std::vector<std::unique_ptr<BaseCameraClass>> OpenHamamatsuCameras();
 
 void CloseHamamatsuLibrary();
 

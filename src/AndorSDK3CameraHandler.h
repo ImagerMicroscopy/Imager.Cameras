@@ -5,7 +5,7 @@
 
 #include "ImagerPluginCore/BaseCameraClass.h"
 
-std::vector<std::shared_ptr<BaseCameraClass>> OpenAndorSDK3Cameras();
+std::vector<std::unique_ptr<BaseCameraClass>> OpenAndorSDK3Cameras();
 
 void CloseAndorSDK3Library();
 

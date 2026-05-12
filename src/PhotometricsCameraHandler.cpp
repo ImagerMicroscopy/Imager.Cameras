@@ -4,8 +4,8 @@
 #include "PhotometricsAPIWrapper.h"
 #include "SCPrinter.h"
 
-std::vector<std::shared_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
-    std::vector<std::shared_ptr<BaseCameraClass>> cameras;
+std::vector<std::unique_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
+    std::vector<std::unique_ptr<BaseCameraClass>> cameras;
 
     PhotometricsAPIWrapper apiWrapper = GetPhotometricsAPIWrapper();
     if (!apiWrapper.areAllFunctionsLoaded()) {

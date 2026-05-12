@@ -3,7 +3,7 @@
 
 #include "ImagerPluginCore/BaseCameraClass.h"
 
-std::vector<std::shared_ptr<BaseCameraClass>> OpenIDSPeakCameras();
+std::vector<std::unique_ptr<BaseCameraClass>> OpenIDSPeakCameras();
 
 void CloseIDSPeakLibrary();
 

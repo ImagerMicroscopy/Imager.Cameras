@@ -31,7 +31,7 @@ private:
     void _applyCameraOrientationOptions();
 
     ConfigManager* _configManager = nullptr;
-    std::map<std::string, std::shared_ptr<BaseCameraClass>> _availableCameras;
+    std::map<std::string, std::unique_ptr<BaseCameraClass>> _availableCameras;
 };
 
 #endif
