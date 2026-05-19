@@ -50,6 +50,7 @@ double AndorSDK3Camera::getFrameRate() {
 
 void AndorSDK3Camera::_setDefaults() {
     _setParameterStringValue("PixelEncoding", "Mono16");
+    _setParameterStringValue("SimplePreAmpGainControl", "16-bit (low noise & high well capacity)");
     _setParameterStringValue("CycleMode", "Continuous");
     _getSetTriggerMode_SDK(kTriggerInternal);
     _setParameterBoolValue("MetadataEnable", true);
