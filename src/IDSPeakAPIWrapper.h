@@ -250,7 +250,7 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_ExposureTime_Get");
     }
 
-    peak_status peak_Acquisition_Start(peak_camera_handle hCam, int32_t numFrames) {
+    peak_status peak_Acquisition_Start(peak_camera_handle hCam, uint32_t numFrames) {
         if (peak_Acquisition_Start_ptr) {
             return peak_Acquisition_Start_ptr(hCam, numFrames);
         }
@@ -264,7 +264,7 @@ public:
         throw std::logic_error("Attempt to execute unloaded IDS Peak Comfort C API function: peak_Acquisition_Stop");
     }
 
-    peak_status peak_Acquisition_WaitForFrame(peak_camera_handle hCam, int32_t timeoutMs, peak_frame_handle* hFrame) {
+    peak_status peak_Acquisition_WaitForFrame(peak_camera_handle hCam, uint32_t timeoutMs, peak_frame_handle* hFrame) {
         if (peak_Acquisition_WaitForFrame_ptr) {
             return peak_Acquisition_WaitForFrame_ptr(hCam, timeoutMs, hFrame);
         }
@@ -384,13 +384,13 @@ private:
     F_peak_ExposureTime_Get peak_ExposureTime_Get_ptr;
 
     // Acquisition functions
-    using F_peak_Acquisition_Start = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, int32_t numFrames);
+    using F_peak_Acquisition_Start = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, uint32_t numFrames);
     F_peak_Acquisition_Start peak_Acquisition_Start_ptr;
 
     using F_peak_Acquisition_Stop = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
     F_peak_Acquisition_Stop peak_Acquisition_Stop_ptr;
 
-    using F_peak_Acquisition_WaitForFrame = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, int32_t timeoutMs, peak_frame_handle* hFrame);
+    using F_peak_Acquisition_WaitForFrame = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, uint32_t timeoutMs, peak_frame_handle* hFrame);
     F_peak_Acquisition_WaitForFrame peak_Acquisition_WaitForFrame_ptr;
 
     // Frame functions
