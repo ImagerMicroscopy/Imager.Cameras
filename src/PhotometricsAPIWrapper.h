@@ -6,226 +6,108 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#define LIB_HANDLE HINSTANCE
+#define LOAD_LIBRARY(path) LoadLibraryA(path)
+#define GET_PROC_ADDRESS GetProcAddress
+#define FREE_LIBRARY FreeLibrary
 #else
 #include <dlfcn.h>
+#define LIB_HANDLE void*
+#define LOAD_LIBRARY(path) dlopen(path, RTLD_LAZY)
+#define GET_PROC_ADDRESS dlsym
+#define FREE_LIBRARY dlclose
 #endif
 
 #include "PVCAM/pvcam.h"
 
 class PhotometricsAPIWrapper {
 public:
-    PhotometricsAPIWrapper(const std::string& libPath) : _isLoaded(false) {
-#ifdef _WIN32
-        _hLib = LoadLibrary(libPath.c_str());
-#else
-        _hLib = dlopen(libPath.c_str(), RTLD_LAZY);
-#endif
+    decltype(&::pl_pvcam_init) pl_pvcam_init = nullptr;
+    decltype(&::pl_pvcam_uninit) pl_pvcam_uninit = nullptr;
+    decltype(&::pl_cam_get_total) pl_cam_get_total = nullptr;
+    decltype(&::pl_cam_get_name) pl_cam_get_name = nullptr;
+    decltype(&::pl_cam_open) pl_cam_open = nullptr;
+    decltype(&::pl_cam_close) pl_cam_close = nullptr;
+    decltype(&::pl_get_param) pl_get_param = nullptr;
+    decltype(&::pl_set_param) pl_set_param = nullptr;
+    decltype(&::pl_get_enum_param) pl_get_enum_param = nullptr;
+    decltype(&::pl_enum_str_length) pl_enum_str_length = nullptr;
+    decltype(&::pl_exp_setup_cont) pl_exp_setup_cont = nullptr;
+    decltype(&::pl_exp_start_cont) pl_exp_start_cont = nullptr;
+    decltype(&::pl_exp_check_cont_status) pl_exp_check_cont_status = nullptr;
+    decltype(&::pl_exp_stop_cont) pl_exp_stop_cont = nullptr;
+    decltype(&::pl_exp_get_oldest_frame) pl_exp_get_oldest_frame = nullptr;
+    decltype(&::pl_exp_unlock_oldest_frame) pl_exp_unlock_oldest_frame = nullptr;
+    decltype(&::pl_error_code) pl_error_code = nullptr;
+    decltype(&::pl_error_message) pl_error_message = nullptr;
+    decltype(&::pl_cam_register_callback_ex3) pl_cam_register_callback_ex3 = nullptr;
+    decltype(&::pl_cam_deregister_callback) pl_cam_deregister_callback = nullptr;
+
+    PhotometricsAPIWrapper(const std::string& libPath) {
+        _hLib = LOAD_LIBRARY(libPath.c_str());
         if (!_hLib) {
+            // we don't have the library, so the runtime probably isn't installed.
+            _allFunctionsLoaded = false;
             return;
         }
+        pl_pvcam_init = reinterpret_cast<decltype(pl_pvcam_init)>(GET_PROC_ADDRESS(_hLib, "pl_pvcam_init"));
+        if (!pl_pvcam_init) throw std::runtime_error("Failed to load function: pl_pvcam_init");
+        pl_pvcam_uninit = reinterpret_cast<decltype(pl_pvcam_uninit)>(GET_PROC_ADDRESS(_hLib, "pl_pvcam_uninit"));
+        if (!pl_pvcam_uninit) throw std::runtime_error("Failed to load function: pl_pvcam_uninit");
+        pl_cam_get_total = reinterpret_cast<decltype(pl_cam_get_total)>(GET_PROC_ADDRESS(_hLib, "pl_cam_get_total"));
+        if (!pl_cam_get_total) throw std::runtime_error("Failed to load function: pl_cam_get_total");
+        pl_cam_get_name = reinterpret_cast<decltype(pl_cam_get_name)>(GET_PROC_ADDRESS(_hLib, "pl_cam_get_name"));
+        if (!pl_cam_get_name) throw std::runtime_error("Failed to load function: pl_cam_get_name");
+        pl_cam_open = reinterpret_cast<decltype(pl_cam_open)>(GET_PROC_ADDRESS(_hLib, "pl_cam_open"));
+        if (!pl_cam_open) throw std::runtime_error("Failed to load function: pl_cam_open");
+        pl_cam_close = reinterpret_cast<decltype(pl_cam_close)>(GET_PROC_ADDRESS(_hLib, "pl_cam_close"));
+        if (!pl_cam_close) throw std::runtime_error("Failed to load function: pl_cam_close");
+        pl_get_param = reinterpret_cast<decltype(pl_get_param)>(GET_PROC_ADDRESS(_hLib, "pl_get_param"));
+        if (!pl_get_param) throw std::runtime_error("Failed to load function: pl_get_param");
+        pl_set_param = reinterpret_cast<decltype(pl_set_param)>(GET_PROC_ADDRESS(_hLib, "pl_set_param"));
+        if (!pl_set_param) throw std::runtime_error("Failed to load function: pl_set_param");
+        pl_get_enum_param = reinterpret_cast<decltype(pl_get_enum_param)>(GET_PROC_ADDRESS(_hLib, "pl_get_enum_param"));
+        if (!pl_get_enum_param) throw std::runtime_error("Failed to load function: pl_get_enum_param");
+        pl_enum_str_length = reinterpret_cast<decltype(pl_enum_str_length)>(GET_PROC_ADDRESS(_hLib, "pl_enum_str_length"));
+        if (!pl_enum_str_length) throw std::runtime_error("Failed to load function: pl_enum_str_length");
+        pl_exp_setup_cont = reinterpret_cast<decltype(pl_exp_setup_cont)>(GET_PROC_ADDRESS(_hLib, "pl_exp_setup_cont"));
+        if (!pl_exp_setup_cont) throw std::runtime_error("Failed to load function: pl_exp_setup_cont");
+        pl_exp_start_cont = reinterpret_cast<decltype(pl_exp_start_cont)>(GET_PROC_ADDRESS(_hLib, "pl_exp_start_cont"));
+        if (!pl_exp_start_cont) throw std::runtime_error("Failed to load function: pl_exp_start_cont");
+        pl_exp_check_cont_status = reinterpret_cast<decltype(pl_exp_check_cont_status)>(GET_PROC_ADDRESS(_hLib, "pl_exp_check_cont_status"));
+        if (!pl_exp_check_cont_status) throw std::runtime_error("Failed to load function: pl_exp_check_cont_status");
+        pl_exp_stop_cont = reinterpret_cast<decltype(pl_exp_stop_cont)>(GET_PROC_ADDRESS(_hLib, "pl_exp_stop_cont"));
+        if (!pl_exp_stop_cont) throw std::runtime_error("Failed to load function: pl_exp_stop_cont");
+        pl_exp_get_oldest_frame = reinterpret_cast<decltype(pl_exp_get_oldest_frame)>(GET_PROC_ADDRESS(_hLib, "pl_exp_get_oldest_frame"));
+        if (!pl_exp_get_oldest_frame) throw std::runtime_error("Failed to load function: pl_exp_get_oldest_frame");
+        pl_exp_unlock_oldest_frame = reinterpret_cast<decltype(pl_exp_unlock_oldest_frame)>(GET_PROC_ADDRESS(_hLib, "pl_exp_unlock_oldest_frame"));
+        if (!pl_exp_unlock_oldest_frame) throw std::runtime_error("Failed to load function: pl_exp_unlock_oldest_frame");
+        pl_error_code = reinterpret_cast<decltype(pl_error_code)>(GET_PROC_ADDRESS(_hLib, "pl_error_code"));
+        if (!pl_error_code) throw std::runtime_error("Failed to load function: pl_error_code");
+        pl_error_message = reinterpret_cast<decltype(pl_error_message)>(GET_PROC_ADDRESS(_hLib, "pl_error_message"));
+        if (!pl_error_message) throw std::runtime_error("Failed to load function: pl_error_message");
+        pl_cam_register_callback_ex3 = reinterpret_cast<decltype(pl_cam_register_callback_ex3)>(GET_PROC_ADDRESS(_hLib, "pl_cam_register_callback_ex3"));
+        if (!pl_cam_register_callback_ex3) throw std::runtime_error("Failed to load function: pl_cam_register_callback_ex3");
+        pl_cam_deregister_callback = reinterpret_cast<decltype(pl_cam_deregister_callback)>(GET_PROC_ADDRESS(_hLib, "pl_cam_deregister_callback"));
+        if (!pl_cam_deregister_callback) throw std::runtime_error("Failed to load function: pl_cam_deregister_callback");
 
-        // Load each function
-        _isLoaded = loadFunction(_pl_pvcam_init, "pl_pvcam_init") &&
-                   loadFunction(_pl_pvcam_uninit, "pl_pvcam_uninit") &&
-                   loadFunction(_pl_cam_get_total, "pl_cam_get_total") &&
-                   loadFunction(_pl_cam_get_name, "pl_cam_get_name") &&
-                   loadFunction(_pl_cam_open, "pl_cam_open") &&
-                   loadFunction(_pl_cam_close, "pl_cam_close") &&
-                   loadFunction(_pl_get_param, "pl_get_param") &&
-                   loadFunction(_pl_set_param, "pl_set_param") &&
-                   loadFunction(_pl_get_enum_param, "pl_get_enum_param") &&
-                   loadFunction(_pl_enum_str_length, "pl_enum_str_length") &&
-                   loadFunction(_pl_exp_setup_cont, "pl_exp_setup_cont") &&
-                   loadFunction(_pl_exp_start_cont, "pl_exp_start_cont") &&
-                   loadFunction(_pl_exp_check_cont_status, "pl_exp_check_cont_status") &&
-                   loadFunction(_pl_exp_stop_cont, "pl_exp_stop_cont") &&
-                   loadFunction(_pl_exp_get_oldest_frame, "pl_exp_get_oldest_frame") &&
-                   loadFunction(_pl_exp_unlock_oldest_frame, "pl_exp_unlock_oldest_frame") &&
-                   loadFunction(_pl_error_code, "pl_error_code") &&
-                   loadFunction(_pl_error_message, "pl_error_message") &&
-                   loadFunction(_pl_cam_register_callback_ex3, "pl_cam_register_callback_ex3") &&
-                   loadFunction(_pl_cam_deregister_callback, "pl_cam_deregister_callback");
+        _allFunctionsLoaded = true;
     }
 
     ~PhotometricsAPIWrapper() {
         if (_hLib) {
-#ifdef _WIN32
-            FreeLibrary((HMODULE)_hLib);
-#else
-            dlclose(_hLib);
-#endif
+            FREE_LIBRARY(_hLib);
         }
     }
 
     PhotometricsAPIWrapper(const PhotometricsAPIWrapper&) = delete;
     PhotometricsAPIWrapper& operator=(const PhotometricsAPIWrapper&) = delete;
 
-    bool areAllFunctionsLoaded() const {
-        return _isLoaded;
-    }
-
-    // Wrapper functions
-    rs_bool pl_pvcam_init() {
-        if (!_pl_pvcam_init) throw std::logic_error("Function pl_pvcam_init not loaded.");
-        return _pl_pvcam_init();
-    }
-
-    rs_bool pl_pvcam_uninit() {
-        if (!_pl_pvcam_uninit) throw std::logic_error("Function pl_pvcam_uninit not loaded.");
-        return _pl_pvcam_uninit();
-    }
-
-    rs_bool pl_cam_get_total(int16* totl_cams) {
-        if (!_pl_cam_get_total) throw std::logic_error("Function pl_cam_get_total not loaded.");
-        return _pl_cam_get_total(totl_cams);
-    }
-
-    rs_bool pl_cam_get_name(int16 cam_num, char* camera_name) {
-        if (!_pl_cam_get_name) throw std::logic_error("Function pl_cam_get_name not loaded.");
-        return _pl_cam_get_name(cam_num, camera_name);
-    }
-
-    rs_bool pl_cam_open(char* camera_name, int16* hcam, int16 o_mode) {
-        if (!_pl_cam_open) throw std::logic_error("Function pl_cam_open not loaded.");
-        return _pl_cam_open(camera_name, hcam, o_mode);
-    }
-
-    rs_bool pl_cam_close(int16 hcam) {
-        if (!_pl_cam_close) throw std::logic_error("Function pl_cam_close not loaded.");
-        return _pl_cam_close(hcam);
-    }
-
-    rs_bool pl_get_param(int16 hcam, uns32 param_id, int16 param_attribute, void* param_value) {
-        if (!_pl_get_param) throw std::logic_error("Function pl_get_param not loaded.");
-        return _pl_get_param(hcam, param_id, param_attribute, param_value);
-    }
-
-    rs_bool pl_set_param(int16 hcam, uns32 param_id, void* param_value) {
-        if (!_pl_set_param) throw std::logic_error("Function pl_set_param not loaded.");
-        return _pl_set_param(hcam, param_id, param_value);
-    }
-
-    rs_bool pl_get_enum_param(int16 hcam, uns32 param_id, uns32 index, int32* value, char* desc, uns32 length) {
-        if (!_pl_get_enum_param) throw std::logic_error("Function pl_get_enum_param not loaded.");
-        return _pl_get_enum_param(hcam, param_id, index, value, desc, length);
-    }
-
-    rs_bool pl_enum_str_length(int16 hcam, uns32 param_id, uns32 index, uns32* length) {
-        if (!_pl_enum_str_length) throw std::logic_error("Function pl_enum_str_length not loaded.");
-        return _pl_enum_str_length(hcam, param_id, index, length);
-    }
-
-    rs_bool pl_exp_setup_cont(int16 hcam, uns16 rgn_total, const rgn_type* rgn_array, int16 exp_mode, uns32 exposure_time, uns32* exp_bytes, int16 buffer_mode) {
-        if (!_pl_exp_setup_cont) throw std::logic_error("Function pl_exp_setup_cont not loaded.");
-        return _pl_exp_setup_cont(hcam, rgn_total, rgn_array, exp_mode, exposure_time, exp_bytes, buffer_mode);
-    }
-
-    rs_bool pl_exp_start_cont(int16 hcam, void* pixel_stream, uns32 size) {
-        if (!_pl_exp_start_cont) throw std::logic_error("Function pl_exp_start_cont not loaded.");
-        return _pl_exp_start_cont(hcam, pixel_stream, size);
-    }
-
-    rs_bool pl_exp_check_cont_status(int16 hcam, int16* status, uns32* bytes_arrived, uns32* buffer_cnt) {
-        if (!_pl_exp_check_cont_status) throw std::logic_error("Function pl_exp_check_cont_status not loaded.");
-        return _pl_exp_check_cont_status(hcam, status, bytes_arrived, buffer_cnt);
-    }
-
-    rs_bool pl_exp_stop_cont(int16 hcam, int16 cam_state) {
-        if (!_pl_exp_stop_cont) throw std::logic_error("Function pl_exp_stop_cont not loaded.");
-        return _pl_exp_stop_cont(hcam, cam_state);
-    }
-
-    rs_bool pl_exp_get_oldest_frame(int16 hcam, void** frame) {
-        if (!_pl_exp_get_oldest_frame) throw std::logic_error("Function pl_exp_get_oldest_frame not loaded.");
-        return _pl_exp_get_oldest_frame(hcam, frame);
-    }
-
-    rs_bool pl_exp_unlock_oldest_frame(int16 hcam) {
-        if (!_pl_exp_unlock_oldest_frame) throw std::logic_error("Function pl_exp_unlock_oldest_frame not loaded.");
-        return _pl_exp_unlock_oldest_frame(hcam);
-    }
-
-    int16 pl_error_code() {
-        if (!_pl_error_code) throw std::logic_error("Function pl_error_code not loaded.");
-        return _pl_error_code();
-    }
-
-    rs_bool pl_error_message(int16 err_code, char* msg) {
-        if (!_pl_error_message) throw std::logic_error("Function pl_error_message not loaded.");
-        return _pl_error_message(err_code, msg);
-    }
-
-    rs_bool pl_cam_register_callback_ex3(int16 hcam, int32 callback_event, void* callback, void* context) {
-        if (!_pl_cam_register_callback_ex3) throw std::logic_error("Function pl_cam_register_callback_ex3 not loaded.");
-        return _pl_cam_register_callback_ex3(hcam, callback_event, callback, context);
-    }
-
-    rs_bool pl_cam_deregister_callback(int16 hcam, int32 callback_event) {
-        if (!_pl_cam_deregister_callback) throw std::logic_error("Function pl_cam_deregister_callback not loaded.");
-        return _pl_cam_deregister_callback(hcam, callback_event);
-    }
+    bool areAllFunctionsLoaded() const { return _allFunctionsLoaded; }
 
 private:
-    void* _hLib;
-    bool _isLoaded;
-
-    // Define function pointer types
-    using pl_pvcam_init_t = decltype(&::pl_pvcam_init);
-    using pl_pvcam_uninit_t = decltype(&::pl_pvcam_uninit);
-    using pl_cam_get_total_t = decltype(&::pl_cam_get_total);
-    using pl_cam_get_name_t = decltype(&::pl_cam_get_name);
-    using pl_cam_open_t = decltype(&::pl_cam_open);
-    using pl_cam_close_t = decltype(&::pl_cam_close);
-    using pl_get_param_t = decltype(&::pl_get_param);
-    using pl_set_param_t = decltype(&::pl_set_param);
-    using pl_get_enum_param_t = decltype(&::pl_get_enum_param);
-    using pl_enum_str_length_t = decltype(&::pl_enum_str_length);
-    using pl_exp_setup_cont_t = decltype(&::pl_exp_setup_cont);
-    using pl_exp_start_cont_t = decltype(&::pl_exp_start_cont);
-    using pl_exp_check_cont_status_t = decltype(&::pl_exp_check_cont_status);
-    using pl_exp_stop_cont_t = decltype(&::pl_exp_stop_cont);
-    using pl_exp_get_oldest_frame_t = decltype(&::pl_exp_get_oldest_frame);
-    using pl_exp_unlock_oldest_frame_t = decltype(&::pl_exp_unlock_oldest_frame);
-    using pl_error_code_t = decltype(&::pl_error_code);
-    using pl_error_message_t = decltype(&::pl_error_message);
-    using pl_cam_register_callback_ex3_t = decltype(&::pl_cam_register_callback_ex3);
-    using pl_cam_deregister_callback_t = decltype(&::pl_cam_deregister_callback);
-
-    // Function pointers as member variables
-    pl_pvcam_init_t _pl_pvcam_init;
-    pl_pvcam_uninit_t _pl_pvcam_uninit;
-    pl_cam_get_total_t _pl_cam_get_total;
-    pl_cam_get_name_t _pl_cam_get_name;
-    pl_cam_open_t _pl_cam_open;
-    pl_cam_close_t _pl_cam_close;
-    pl_get_param_t _pl_get_param;
-    pl_set_param_t _pl_set_param;
-    pl_get_enum_param_t _pl_get_enum_param;
-    pl_enum_str_length_t _pl_enum_str_length;
-    pl_exp_setup_cont_t _pl_exp_setup_cont;
-    pl_exp_start_cont_t _pl_exp_start_cont;
-    pl_exp_check_cont_status_t _pl_exp_check_cont_status;
-    pl_exp_stop_cont_t _pl_exp_stop_cont;
-    pl_exp_get_oldest_frame_t _pl_exp_get_oldest_frame;
-    pl_exp_unlock_oldest_frame_t _pl_exp_unlock_oldest_frame;
-    pl_error_code_t _pl_error_code;
-    pl_error_message_t _pl_error_message;
-    pl_cam_register_callback_ex3_t _pl_cam_register_callback_ex3;
-    pl_cam_deregister_callback_t _pl_cam_deregister_callback;
-
-    template <typename T>
-    bool loadFunction(T& funcPtr, const std::string& funcName) {
-#ifdef _WIN32
-        FARPROC procAddress = GetProcAddress((HMODULE)_hLib, funcName.c_str());
-#else
-        void* procAddress = dlsym(_hLib, funcName.c_str());
-#endif
-        if (!procAddress) {
-            return false;
-        }
-        funcPtr = reinterpret_cast<T>(procAddress);
-        return true;
-    }
+    LIB_HANDLE _hLib = nullptr;
+    bool _allFunctionsLoaded = false;
 };
 
 inline PhotometricsAPIWrapper GetPhotometricsAPIWrapper() {

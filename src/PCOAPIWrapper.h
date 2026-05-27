@@ -66,7 +66,9 @@ public:
     PCOAPIWrapper(const std::string& libraryPath) {
         _dllHandle = LOAD_LIBRARY(libraryPath.c_str());
         if (!_dllHandle) {
-            throw std::runtime_error("Failed to load library: " + libraryPath);
+            // we don't have the library, so the runtime probably isn't installed.
+            _allFunctionsLoaded = false;
+            return;
         }
         PCO_GetGeneral = reinterpret_cast<decltype(PCO_GetGeneral)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetGeneral"));
         if (!PCO_GetGeneral) throw std::runtime_error("Failed to load function: PCO_GetGeneral");
