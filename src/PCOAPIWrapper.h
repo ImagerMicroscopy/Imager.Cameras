@@ -31,85 +31,99 @@
 #define FREE_LIBRARY dlclose
 #endif
 
-// Macro to define function pointer types
-#define DEFINE_FUNC_PTR(name, return_type, ...) \
-    typedef return_type(WINAPI * name##_func)(__VA_ARGS__);
-
-// Define function pointer types for each function in the library
-DEFINE_FUNC_PTR(PCO_GetGeneral, int, HANDLE, PCO_General*);
-DEFINE_FUNC_PTR(PCO_GetCameraType, int, HANDLE, PCO_CameraType*);
-DEFINE_FUNC_PTR(PCO_GetCameraHealthStatus, int, HANDLE, DWORD*, DWORD*, DWORD*);
-DEFINE_FUNC_PTR(PCO_ResetSettingsToDefault, int, HANDLE);
-DEFINE_FUNC_PTR(PCO_GetCameraDescription, int, HANDLE, PCO_Description*);
-DEFINE_FUNC_PTR(PCO_GetCameraName, int, HANDLE, char*, WORD);
-DEFINE_FUNC_PTR(PCO_GetSizes, int, HANDLE, WORD*, WORD*, WORD*, WORD*);
-DEFINE_FUNC_PTR(PCO_GetPixelRate, int, HANDLE, DWORD*);
-DEFINE_FUNC_PTR(PCO_SetPixelRate, int, HANDLE, DWORD);
-DEFINE_FUNC_PTR(PCO_ArmCamera, int, HANDLE);
-DEFINE_FUNC_PTR(PCO_GetDelayExposureTime, int, HANDLE, DWORD*, DWORD*, WORD*, WORD*);
-DEFINE_FUNC_PTR(PCO_SetDelayExposureTime, int, HANDLE, DWORD, DWORD, WORD, WORD);
-DEFINE_FUNC_PTR(PCO_SetRecordingState, int, HANDLE, WORD);
-DEFINE_FUNC_PTR(PCO_SetAcquireModeEx, int, HANDLE, WORD, DWORD, DWORD*);
-DEFINE_FUNC_PTR(PCO_SetStorageMode, int, HANDLE, WORD);
-DEFINE_FUNC_PTR(PCO_SetTimestampMode, int, HANDLE, WORD);
-DEFINE_FUNC_PTR(PCO_SetAcquireControl, int, HANDLE, DWORD, DWORD*, WORD);
-DEFINE_FUNC_PTR(PCO_AddBufferExtern, int, HANDLE, HANDLE, WORD, DWORD, DWORD, DWORD, void*, DWORD, DWORD*);
-DEFINE_FUNC_PTR(PCO_WaitforNextBufferAdr, int, HANDLE, void**, int);
-DEFINE_FUNC_PTR(PCO_GetErrorTextSDK, void, DWORD, char*, DWORD);
-DEFINE_FUNC_PTR(PCO_GetCOCRuntime, int, HANDLE, DWORD*, DWORD*);
-DEFINE_FUNC_PTR(PCO_CloseCamera, int, HANDLE);
-DEFINE_FUNC_PTR(PCO_SetMetaDataMode, int, HANDLE, WORD, WORD*, WORD*);
-DEFINE_FUNC_PTR(PCO_OpenCamera, int, HANDLE*, WORD);
-DEFINE_FUNC_PTR(PCO_CancelImages, int, HANDLE);
-DEFINE_FUNC_PTR(PCO_SetImageParameters, int, HANDLE, WORD, WORD, DWORD, void*, int);
-
 class PCOAPIWrapper {
 public:
-    PCOAPIWrapper(const std::string& libraryPath) : _allFunctionsLoaded(true) {
+    decltype(&::PCO_GetGeneral) PCO_GetGeneral = nullptr;
+    decltype(&::PCO_GetCameraType) PCO_GetCameraType = nullptr;
+    decltype(&::PCO_GetCameraHealthStatus) PCO_GetCameraHealthStatus = nullptr;
+    decltype(&::PCO_ResetSettingsToDefault) PCO_ResetSettingsToDefault = nullptr;
+    decltype(&::PCO_GetCameraDescription) PCO_GetCameraDescription = nullptr;
+    decltype(&::PCO_GetCameraName) PCO_GetCameraName = nullptr;
+    decltype(&::PCO_GetSizes) PCO_GetSizes = nullptr;
+    decltype(&::PCO_GetPixelRate) PCO_GetPixelRate = nullptr;
+    decltype(&::PCO_SetPixelRate) PCO_SetPixelRate = nullptr;
+    decltype(&::PCO_ArmCamera) PCO_ArmCamera = nullptr;
+    decltype(&::PCO_GetDelayExposureTime) PCO_GetDelayExposureTime = nullptr;
+    decltype(&::PCO_SetDelayExposureTime) PCO_SetDelayExposureTime = nullptr;
+    decltype(&::PCO_SetRecordingState) PCO_SetRecordingState = nullptr;
+    decltype(&::PCO_SetAcquireModeEx) PCO_SetAcquireModeEx = nullptr;
+    decltype(&::PCO_SetStorageMode) PCO_SetStorageMode = nullptr;
+    decltype(&::PCO_SetTimestampMode) PCO_SetTimestampMode = nullptr;
+    decltype(&::PCO_SetAcquireControl) PCO_SetAcquireControl = nullptr;
+    decltype(&::PCO_AddBufferExtern) PCO_AddBufferExtern = nullptr;
+#ifdef __linux__
+    decltype(&::PCO_WaitforNextBufferAdr) PCO_WaitforNextBufferAdr = nullptr;
+#endif
+    decltype(&::PCO_GetErrorTextSDK) PCO_GetErrorTextSDK = nullptr;
+    decltype(&::PCO_GetCOCRuntime) PCO_GetCOCRuntime = nullptr;
+    decltype(&::PCO_CloseCamera) PCO_CloseCamera = nullptr;
+    decltype(&::PCO_SetMetaDataMode) PCO_SetMetaDataMode = nullptr;
+    decltype(&::PCO_OpenCamera) PCO_OpenCamera = nullptr;
+    decltype(&::PCO_CancelImages) PCO_CancelImages = nullptr;
+    decltype(&::PCO_SetImageParameters) PCO_SetImageParameters = nullptr;
+
+
+    PCOAPIWrapper(const std::string& libraryPath) {
         _dllHandle = LOAD_LIBRARY(libraryPath.c_str());
         if (!_dllHandle) {
-            _allFunctionsLoaded = false;
-            return;
+            throw std::runtime_error("Failed to load library: " + libraryPath);
         }
-
-        // Initialize function pointers
-        functionMap = {
-            {"PCO_GetGeneral", &_PCO_GetGeneral},
-            {"PCO_GetCameraType", &_PCO_GetCameraType},
-            {"PCO_GetCameraHealthStatus", &_PCO_GetCameraHealthStatus},
-            {"PCO_ResetSettingsToDefault", &_PCO_ResetSettingsToDefault},
-            {"PCO_GetCameraDescription", &_PCO_GetCameraDescription},
-            {"PCO_GetCameraName", &_PCO_GetCameraName},
-            {"PCO_GetSizes", &_PCO_GetSizes},
-            {"PCO_GetPixelRate", &_PCO_GetPixelRate},
-            {"PCO_SetPixelRate", &_PCO_SetPixelRate},
-            {"PCO_ArmCamera", &_PCO_ArmCamera},
-            {"PCO_GetDelayExposureTime", &_PCO_GetDelayExposureTime},
-            {"PCO_SetDelayExposureTime", &_PCO_SetDelayExposureTime},
-            {"PCO_SetRecordingState", &_PCO_SetRecordingState},
-            {"PCO_SetAcquireModeEx", &_PCO_SetAcquireModeEx},
-            {"PCO_SetStorageMode", &_PCO_SetStorageMode},
-            {"PCO_SetTimestampMode", &_PCO_SetTimestampMode},
-            {"PCO_SetAcquireControl", &_PCO_SetAcquireControl},
-            {"PCO_AddBufferExtern", &_PCO_AddBufferExtern},
+        PCO_GetGeneral = reinterpret_cast<decltype(PCO_GetGeneral)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetGeneral"));
+        if (!PCO_GetGeneral) throw std::runtime_error("Failed to load function: PCO_GetGeneral");
+        PCO_GetCameraType = reinterpret_cast<decltype(PCO_GetCameraType)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetCameraType"));
+        if (!PCO_GetCameraType) throw std::runtime_error("Failed to load function: PCO_GetCameraType");
+        PCO_GetCameraHealthStatus = reinterpret_cast<decltype(PCO_GetCameraHealthStatus)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetCameraHealthStatus"));
+        if (!PCO_GetCameraHealthStatus) throw std::runtime_error("Failed to load function: PCO_GetCameraHealthStatus");
+        PCO_ResetSettingsToDefault = reinterpret_cast<decltype(PCO_ResetSettingsToDefault)>(GET_PROC_ADDRESS(_dllHandle, "PCO_ResetSettingsToDefault"));
+        if (!PCO_ResetSettingsToDefault) throw std::runtime_error("Failed to load function: PCO_ResetSettingsToDefault");
+        PCO_GetCameraDescription = reinterpret_cast<decltype(PCO_GetCameraDescription)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetCameraDescription"));
+        if (!PCO_GetCameraDescription) throw std::runtime_error("Failed to load function: PCO_GetCameraDescription");
+        PCO_GetCameraName = reinterpret_cast<decltype(PCO_GetCameraName)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetCameraName"));
+        if (!PCO_GetCameraName) throw std::runtime_error("Failed to load function: PCO_GetCameraName");
+        PCO_GetSizes = reinterpret_cast<decltype(PCO_GetSizes)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetSizes"));
+        if (!PCO_GetSizes) throw std::runtime_error("Failed to load function: PCO_GetSizes");
+        PCO_GetPixelRate = reinterpret_cast<decltype(PCO_GetPixelRate)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetPixelRate"));
+        if (!PCO_GetPixelRate) throw std::runtime_error("Failed to load function: PCO_GetPixelRate");
+        PCO_SetPixelRate = reinterpret_cast<decltype(PCO_SetPixelRate)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetPixelRate"));
+        if (!PCO_SetPixelRate) throw std::runtime_error("Failed to load function: PCO_SetPixelRate");
+        PCO_ArmCamera = reinterpret_cast<decltype(PCO_ArmCamera)>(GET_PROC_ADDRESS(_dllHandle, "PCO_ArmCamera"));
+        if (!PCO_ArmCamera) throw std::runtime_error("Failed to load function: PCO_ArmCamera");
+        PCO_GetDelayExposureTime = reinterpret_cast<decltype(PCO_GetDelayExposureTime)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetDelayExposureTime"));
+        if (!PCO_GetDelayExposureTime) throw std::runtime_error("Failed to load function: PCO_GetDelayExposureTime");
+        PCO_SetDelayExposureTime = reinterpret_cast<decltype(PCO_SetDelayExposureTime)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetDelayExposureTime"));
+        if (!PCO_SetDelayExposureTime) throw std::runtime_error("Failed to load function: PCO_SetDelayExposureTime");
+        PCO_SetRecordingState = reinterpret_cast<decltype(PCO_SetRecordingState)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetRecordingState"));
+        if (!PCO_SetRecordingState) throw std::runtime_error("Failed to load function: PCO_SetRecordingState");
+        PCO_SetAcquireModeEx = reinterpret_cast<decltype(PCO_SetAcquireModeEx)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetAcquireModeEx"));
+        if (!PCO_SetAcquireModeEx) throw std::runtime_error("Failed to load function: PCO_SetAcquireModeEx");
+        PCO_SetStorageMode = reinterpret_cast<decltype(PCO_SetStorageMode)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetStorageMode"));
+        if (!PCO_SetStorageMode) throw std::runtime_error("Failed to load function: PCO_SetStorageMode");
+        PCO_SetTimestampMode = reinterpret_cast<decltype(PCO_SetTimestampMode)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetTimestampMode"));
+        if (!PCO_SetTimestampMode) throw std::runtime_error("Failed to load function: PCO_SetTimestampMode");
+        PCO_SetAcquireControl = reinterpret_cast<decltype(PCO_SetAcquireControl)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetAcquireControl"));
+        if (!PCO_SetAcquireControl) throw std::runtime_error("Failed to load function: PCO_SetAcquireControl");
+        PCO_AddBufferExtern = reinterpret_cast<decltype(PCO_AddBufferExtern)>(GET_PROC_ADDRESS(_dllHandle, "PCO_AddBufferExtern"));
+        if (!PCO_AddBufferExtern) throw std::runtime_error("Failed to load function: PCO_AddBufferExtern");
 #ifdef __linux__
-            {"PCO_WaitforNextBufferAdr", &_PCO_WaitforNextBufferAdr},
+        PCO_WaitforNextBufferAdr = reinterpret_cast<decltype(PCO_WaitforNextBufferAdr)>(GET_PROC_ADDRESS(_dllHandle, "PCO_WaitforNextBufferAdr"));
+        if (!PCO_WaitforNextBufferAdr) throw std::runtime_error("Failed to load function: PCO_WaitforNextBufferAdr");
 #endif
-            {"PCO_GetErrorTextSDK", &_PCO_GetErrorTextSDK},
-            {"PCO_GetCOCRuntime", &_PCO_GetCOCRuntime},
-            {"PCO_CloseCamera", &_PCO_CloseCamera},
-            {"PCO_SetMetaDataMode", &_PCO_SetMetaDataMode},
-            {"PCO_OpenCamera", &_PCO_OpenCamera},
-            {"PCO_CancelImages", &_PCO_CancelImages},
-            {"PCO_SetImageParameters", &_PCO_SetImageParameters}
-        };
+        PCO_GetErrorTextSDK = reinterpret_cast<decltype(PCO_GetErrorTextSDK)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetErrorTextSDK"));
+        if (!PCO_GetErrorTextSDK) throw std::runtime_error("Failed to load function: PCO_GetErrorTextSDK");
+        PCO_GetCOCRuntime = reinterpret_cast<decltype(PCO_GetCOCRuntime)>(GET_PROC_ADDRESS(_dllHandle, "PCO_GetCOCRuntime"));
+        if (!PCO_GetCOCRuntime) throw std::runtime_error("Failed to load function: PCO_GetCOCRuntime");
+        PCO_CloseCamera = reinterpret_cast<decltype(PCO_CloseCamera)>(GET_PROC_ADDRESS(_dllHandle, "PCO_CloseCamera"));
+        if (!PCO_CloseCamera) throw std::runtime_error("Failed to load function: PCO_CloseCamera");
+        PCO_SetMetaDataMode = reinterpret_cast<decltype(PCO_SetMetaDataMode)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetMetaDataMode"));
+        if (!PCO_SetMetaDataMode) throw std::runtime_error("Failed to load function: PCO_SetMetaDataMode");
+        PCO_OpenCamera = reinterpret_cast<decltype(PCO_OpenCamera)>(GET_PROC_ADDRESS(_dllHandle, "PCO_OpenCamera"));
+        if (!PCO_OpenCamera) throw std::runtime_error("Failed to load function: PCO_OpenCamera");
+        PCO_CancelImages = reinterpret_cast<decltype(PCO_CancelImages)>(GET_PROC_ADDRESS(_dllHandle, "PCO_CancelImages"));
+        if (!PCO_CancelImages) throw std::runtime_error("Failed to load function: PCO_CancelImages");
+        PCO_SetImageParameters = reinterpret_cast<decltype(PCO_SetImageParameters)>(GET_PROC_ADDRESS(_dllHandle, "PCO_SetImageParameters"));
+        if (!PCO_SetImageParameters) throw std::runtime_error("Failed to load function: PCO_SetImageParameters");
 
-        for (const auto& func : functionMap) {
-            *func.second = GET_PROC_ADDRESS(_dllHandle, func.first.c_str());
-            if (!*func.second) {
-                _allFunctionsLoaded = false;
-            }
-        }
+        _allFunctionsLoaded = true;
     }
 
     ~PCOAPIWrapper() {
@@ -118,227 +132,16 @@ public:
         }
     }
 
-    bool areAllFunctionsLoaded() const {
-        return _allFunctionsLoaded;
-    }
+    PCOAPIWrapper(const PCOAPIWrapper&) = delete;
+    PCOAPIWrapper& operator=(const PCOAPIWrapper&) = delete;
 
-    // Wrapper methods for each function
-    int PCO_GetGeneral(HANDLE ph, PCO_General* strGeneral) {
-        if (!_PCO_GetGeneral) {
-            throw std::logic_error("Function PCO_GetGeneral is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetGeneral_func>(_PCO_GetGeneral)(ph, strGeneral);
-    }
+    bool areAllFunctionsLoaded() const {return _allFunctionsLoaded;}
 
-    int PCO_GetCameraType(HANDLE ph, PCO_CameraType* strCamType) {
-        if (!_PCO_GetCameraType) {
-            throw std::logic_error("Function PCO_GetCameraType is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetCameraType_func>(_PCO_GetCameraType)(ph, strCamType);
-    }
-
-    int PCO_GetCameraHealthStatus(HANDLE ph, DWORD* dwWarn, DWORD* dwErr, DWORD* dwStatus) {
-        if (!_PCO_GetCameraHealthStatus) {
-            throw std::logic_error("Function PCO_GetCameraHealthStatus is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetCameraHealthStatus_func>(_PCO_GetCameraHealthStatus)(ph, dwWarn, dwErr, dwStatus);
-    }
-
-    int PCO_ResetSettingsToDefault(HANDLE ph) {
-        if (!_PCO_ResetSettingsToDefault) {
-            throw std::logic_error("Function PCO_ResetSettingsToDefault is not loaded.");
-        }
-        return reinterpret_cast<PCO_ResetSettingsToDefault_func>(_PCO_ResetSettingsToDefault)(ph);
-    }
-
-    int PCO_GetCameraDescription(HANDLE ph, PCO_Description* strDescription) {
-        if (!_PCO_GetCameraDescription) {
-            throw std::logic_error("Function PCO_GetCameraDescription is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetCameraDescription_func>(_PCO_GetCameraDescription)(ph, strDescription);
-    }
-
-    int PCO_GetCameraName(HANDLE ph, char* szCameraName, WORD wSZCameraNameLen) {
-        if (!_PCO_GetCameraName) {
-            throw std::logic_error("Function PCO_GetCameraName is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetCameraName_func>(_PCO_GetCameraName)(ph, szCameraName, wSZCameraNameLen);
-    }
-
-    int PCO_GetSizes(HANDLE ph, WORD* wXResAct, WORD* wYResAct, WORD* wXResMax, WORD* wYResMax) {
-        if (!_PCO_GetSizes) {
-            throw std::logic_error("Function PCO_GetSizes is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetSizes_func>(_PCO_GetSizes)(ph, wXResAct, wYResAct, wXResMax, wYResMax);
-    }
-
-    int PCO_GetPixelRate(HANDLE ph, DWORD* dwPixelRate) {
-        if (!_PCO_GetPixelRate) {
-            throw std::logic_error("Function PCO_GetPixelRate is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetPixelRate_func>(_PCO_GetPixelRate)(ph, dwPixelRate);
-    }
-
-    int PCO_SetPixelRate(HANDLE ph, DWORD dwPixelRate) {
-        if (!_PCO_SetPixelRate) {
-            throw std::logic_error("Function PCO_SetPixelRate is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetPixelRate_func>(_PCO_SetPixelRate)(ph, dwPixelRate);
-    }
-
-    int PCO_ArmCamera(HANDLE ph) {
-        if (!_PCO_ArmCamera) {
-            throw std::logic_error("Function PCO_ArmCamera is not loaded.");
-        }
-        return reinterpret_cast<PCO_ArmCamera_func>(_PCO_ArmCamera)(ph);
-    }
-
-    int PCO_GetDelayExposureTime(HANDLE ph, DWORD* dwDelay, DWORD* dwExposure, WORD* wTimeBaseDelay, WORD* wTimeBaseExposure) {
-        if (!_PCO_GetDelayExposureTime) {
-            throw std::logic_error("Function PCO_GetDelayExposureTime is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetDelayExposureTime_func>(_PCO_GetDelayExposureTime)(ph, dwDelay, dwExposure, wTimeBaseDelay, wTimeBaseExposure);
-    }
-
-    int PCO_SetDelayExposureTime(HANDLE ph, DWORD dwDelay, DWORD dwExposure, WORD wTimeBaseDelay, WORD wTimeBaseExposure) {
-        if (!_PCO_SetDelayExposureTime) {
-            throw std::logic_error("Function PCO_SetDelayExposureTime is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetDelayExposureTime_func>(_PCO_SetDelayExposureTime)(ph, dwDelay, dwExposure, wTimeBaseDelay, wTimeBaseExposure);
-    }
-
-    int PCO_SetRecordingState(HANDLE ph, WORD wRecState) {
-        if (!_PCO_SetRecordingState) {
-            throw std::logic_error("Function PCO_SetRecordingState is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetRecordingState_func>(_PCO_SetRecordingState)(ph, wRecState);
-    }
-
-    int PCO_SetAcquireModeEx(HANDLE ph, WORD wAcquMode, DWORD dwNumberImages, DWORD* dwReserved) {
-        if (!_PCO_SetAcquireModeEx) {
-            throw std::logic_error("Function PCO_SetAcquireModeEx is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetAcquireModeEx_func>(_PCO_SetAcquireModeEx)(ph, wAcquMode, dwNumberImages, dwReserved);
-    }
-
-    int PCO_SetStorageMode(HANDLE ph, WORD wStorageMode) {
-        if (!_PCO_SetStorageMode) {
-            throw std::logic_error("Function PCO_SetStorageMode is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetStorageMode_func>(_PCO_SetStorageMode)(ph, wStorageMode);
-    }
-
-    int PCO_SetTimestampMode(HANDLE ph, WORD wTimeStampMode) {
-        if (!_PCO_SetTimestampMode) {
-            throw std::logic_error("Function PCO_SetTimestampMode is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetTimestampMode_func>(_PCO_SetTimestampMode)(ph, wTimeStampMode);
-    }
-
-    int PCO_SetAcquireControl(HANDLE ph, DWORD dwAcquCtrlFlags, DWORD* dwReserved, WORD wNumReserved) {
-        if (!_PCO_SetAcquireControl) {
-            throw std::logic_error("Function PCO_SetAcquireControl is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetAcquireControl_func>(_PCO_SetAcquireControl)(ph, dwAcquCtrlFlags, dwReserved, wNumReserved);
-    }
-
-    int PCO_AddBufferExtern(HANDLE ph, HANDLE hEvent, WORD wActSeg, DWORD dw1stImage, DWORD dwLastImage, DWORD dwSynch, void* pBuf, DWORD dwLen, DWORD* dwStatus) {
-        if (!_PCO_AddBufferExtern) {
-            throw std::logic_error("Function PCO_AddBufferExtern is not loaded.");
-        }
-        return reinterpret_cast<PCO_AddBufferExtern_func>(_PCO_AddBufferExtern)(ph, hEvent, wActSeg, dw1stImage, dwLastImage, dwSynch, pBuf, dwLen, dwStatus);
-    }
-
-#ifdef __linux__
-    int PCO_WaitforNextBufferAdr(HANDLE ph, void** BufferAddress, int timeout) {
-        if (!_PCO_WaitforNextBufferAdr) {
-            throw std::logic_error("Function PCO_WaitforNextBufferAdr is not loaded.");
-        }
-        return reinterpret_cast<PCO_WaitforNextBufferAdr_func>(_PCO_WaitforNextBufferAdr)(ph, BufferAddress, timeout);
-    }
-#endif
-
-    void PCO_GetErrorTextSDK(DWORD dwError, char* pszErrorString, DWORD dwErrorStringLength) {
-        if (!_PCO_GetErrorTextSDK) {
-            throw std::logic_error("Function PCO_GetErrorTextSDK is not loaded.");
-        }
-        reinterpret_cast<PCO_GetErrorTextSDK_func>(_PCO_GetErrorTextSDK)(dwError, pszErrorString, dwErrorStringLength);
-    }
-
-    int PCO_GetCOCRuntime(HANDLE ph, DWORD* dwTime_s, DWORD* dwTime_ns) {
-        if (!_PCO_GetCOCRuntime) {
-            throw std::logic_error("Function PCO_GetCOCRuntime is not loaded.");
-        }
-        return reinterpret_cast<PCO_GetCOCRuntime_func>(_PCO_GetCOCRuntime)(ph, dwTime_s, dwTime_ns);
-    }
-
-    int PCO_CloseCamera(HANDLE ph) {
-        if (!_PCO_CloseCamera) {
-            throw std::logic_error("Function PCO_CloseCamera is not loaded.");
-        }
-        return reinterpret_cast<PCO_CloseCamera_func>(_PCO_CloseCamera)(ph);
-    }
-
-    int PCO_SetMetaDataMode(HANDLE ph, WORD wMetaDataMode, WORD* wMetaDataSize, WORD* wMetaDataVersion) {
-        if (!_PCO_SetMetaDataMode) {
-            throw std::logic_error("Function PCO_SetMetaDataMode is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetMetaDataMode_func>(_PCO_SetMetaDataMode)(ph, wMetaDataMode, wMetaDataSize, wMetaDataVersion);
-    }
-
-    int PCO_OpenCamera(HANDLE* ph, WORD wCamNum) {
-        if (!_PCO_OpenCamera) {
-            throw std::logic_error("Function PCO_OpenCamera is not loaded.");
-        }
-        return reinterpret_cast<PCO_OpenCamera_func>(_PCO_OpenCamera)(ph, wCamNum);
-    }
-
-    int PCO_CancelImages(HANDLE ph) {
-        if (!_PCO_CancelImages) {
-            throw std::logic_error("Function PCO_CancelImages is not loaded.");
-        }
-        return reinterpret_cast<PCO_CancelImages_func>(_PCO_CancelImages)(ph);
-    }
-
-    int PCO_SetImageParameters(HANDLE ph, WORD wxres, WORD wyres, DWORD dwflags, void* param, int ilen) {
-        if (!_PCO_SetImageParameters) {
-            throw std::logic_error("Function PCO_SetImageParameters is not loaded.");
-        }
-        return reinterpret_cast<PCO_SetImageParameters_func>(_PCO_SetImageParameters)(ph, wxres, wyres, dwflags, param, ilen);
-    }
 
 private:
     LIB_HANDLE _dllHandle = nullptr;
-    std::map<std::string, void**> functionMap;
-    bool _allFunctionsLoaded = false;
 
-    // Function pointers with leading underscore
-    void* _PCO_GetGeneral = nullptr;
-    void* _PCO_GetCameraType = nullptr;
-    void* _PCO_GetCameraHealthStatus = nullptr;
-    void* _PCO_ResetSettingsToDefault = nullptr;
-    void* _PCO_GetCameraDescription = nullptr;
-    void* _PCO_GetCameraName = nullptr;
-    void* _PCO_GetSizes = nullptr;
-    void* _PCO_GetPixelRate = nullptr;
-    void* _PCO_SetPixelRate = nullptr;
-    void* _PCO_ArmCamera = nullptr;
-    void* _PCO_GetDelayExposureTime = nullptr;
-    void* _PCO_SetDelayExposureTime = nullptr;
-    void* _PCO_SetRecordingState = nullptr;
-    void* _PCO_SetAcquireModeEx = nullptr;
-    void* _PCO_SetStorageMode = nullptr;
-    void* _PCO_SetTimestampMode = nullptr;
-    void* _PCO_SetAcquireControl = nullptr;
-    void* _PCO_AddBufferExtern = nullptr;
-    void* _PCO_WaitforNextBufferAdr = nullptr;
-    void* _PCO_GetErrorTextSDK = nullptr;
-    void* _PCO_GetCOCRuntime = nullptr;
-    void* _PCO_CloseCamera = nullptr;
-    void* _PCO_SetMetaDataMode = nullptr;
-    void* _PCO_OpenCamera = nullptr;
-    void* _PCO_CancelImages = nullptr;
-    void* _PCO_SetImageParameters = nullptr;
+    bool _allFunctionsLoaded = false;
 };
 
 inline PCOAPIWrapper GetPCOAPIWrapper() {

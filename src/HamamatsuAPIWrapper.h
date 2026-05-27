@@ -27,7 +27,7 @@
 
 // Macro to define function pointer types
 #define DEFINE_FUNC_PTR(name, return_type, ...) \
-    using name##_func = return_type(DCAMAPI *)(__VA_ARGS__);
+    using name##_func = decltype(&::name);
 
 // Define function pointer types for each function in the library
 DEFINE_FUNC_PTR(dcamapi_init, DCAMERR, DCAMAPI_INIT*);

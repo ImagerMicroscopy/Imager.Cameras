@@ -27,32 +27,32 @@
 class AndorSDK3APIWrapper {
 public:
     // Define function pointer types for the functions in the DLLs
-    typedef int (*AT_ConvertBufferFunc)(AT_U8*, AT_U8*, AT_64, AT_64, AT_64, const AT_WC*, const AT_WC*);
-    typedef int (*AT_InitialiseUtilityLibraryFunc)();
-    typedef int (*AT_FinaliseUtilityLibraryFunc)();
-    typedef int (*AT_InitialiseLibraryFunc)();
-    typedef int (*AT_FinaliseLibraryFunc)();
-    typedef int (*AT_GetIntFunc)(AT_H, const AT_WC*, AT_64*);
-    typedef int (*AT_OpenFunc)(int, AT_H*);
-    typedef int (*AT_CloseFunc)(AT_H);
-    typedef int (*AT_GetStringFunc)(AT_H, const AT_WC*, AT_WC*, int);
-    typedef int (*AT_SetEnumeratedStringFunc)(AT_H, const AT_WC*, const AT_WC*);
-    typedef int (*AT_GetEnumIndexFunc)(AT_H, const AT_WC*, int*);
-    typedef int (*AT_GetEnumCountFunc)(AT_H, const AT_WC*, int*);
-    typedef int (*AT_GetEnumStringByIndexFunc)(AT_H, const AT_WC*, int, AT_WC*, int);
-    typedef int (*AT_SetFloatFunc)(AT_H, const AT_WC*, double);
-    typedef int (*AT_GetFloatFunc)(AT_H, const AT_WC*, double*);
-    typedef int (*AT_GetFloatMinFunc)(AT_H, const AT_WC*, double*);
-    typedef int (*AT_GetFloatMaxFunc)(AT_H, const AT_WC*, double*);
-    typedef int (*AT_SetIntFunc)(AT_H, const AT_WC*, AT_64);
-    typedef int (*AT_GetIntMinFunc)(AT_H, const AT_WC*, AT_64*);
-    typedef int (*AT_GetIntMaxFunc)(AT_H, const AT_WC*, AT_64*);
-    typedef int (*AT_GetBoolFunc)(AT_H, const AT_WC*, AT_BOOL*);
-    typedef int (*AT_SetBoolFunc)(AT_H, const AT_WC*, AT_BOOL);
-    typedef int (*AT_CommandFunc)(AT_H, const AT_WC*);
-    typedef int (*AT_WaitBufferFunc)(AT_H, AT_U8**, int*, unsigned int);
-    typedef int (*AT_QueueBufferFunc)(AT_H, AT_U8*, int);
-    typedef int (*AT_FlushFunc)(AT_H);
+    using AT_ConvertBufferFunc = decltype(&::AT_ConvertBuffer);
+    using AT_InitialiseUtilityLibraryFunc = decltype(&::AT_InitialiseUtilityLibrary);
+    using AT_FinaliseUtilityLibraryFunc = decltype(&::AT_FinaliseUtilityLibrary);
+    using AT_InitialiseLibraryFunc = decltype(&::AT_InitialiseLibrary);
+    using AT_FinaliseLibraryFunc = decltype(&::AT_FinaliseLibrary);
+    using AT_GetIntFunc = decltype(&::AT_GetInt);
+    using AT_OpenFunc = decltype(&::AT_Open);
+    using AT_CloseFunc = decltype(&::AT_Close);
+    using AT_GetStringFunc = decltype(&::AT_GetString);
+    using AT_SetEnumeratedStringFunc = decltype(&::AT_SetEnumeratedString);
+    using AT_GetEnumIndexFunc = decltype(&::AT_GetEnumIndex);
+    using AT_GetEnumCountFunc = decltype(&::AT_GetEnumCount);
+    using AT_GetEnumStringByIndexFunc = decltype(&::AT_GetEnumStringByIndex);
+    using AT_SetFloatFunc = decltype(&::AT_SetFloat);
+    using AT_GetFloatFunc = decltype(&::AT_GetFloat);
+    using AT_GetFloatMinFunc = decltype(&::AT_GetFloatMin);
+    using AT_GetFloatMaxFunc = decltype(&::AT_GetFloatMax);
+    using AT_SetIntFunc = decltype(&::AT_SetInt);
+    using AT_GetIntMinFunc = decltype(&::AT_GetIntMin);
+    using AT_GetIntMaxFunc = decltype(&::AT_GetIntMax);
+    using AT_GetBoolFunc = decltype(&::AT_GetBool);
+    using AT_SetBoolFunc = decltype(&::AT_SetBool);
+    using AT_CommandFunc = decltype(&::AT_Command);
+    using AT_WaitBufferFunc = decltype(&::AT_WaitBuffer);
+    using AT_QueueBufferFunc = decltype(&::AT_QueueBuffer);
+    using AT_FlushFunc = decltype(&::AT_Flush);
 
     AndorSDK3APIWrapper() : _allFunctionsLoaded(true) {
         // Load the DLLs

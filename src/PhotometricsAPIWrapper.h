@@ -170,26 +170,26 @@ private:
     bool _isLoaded;
 
     // Define function pointer types
-    typedef rs_bool (*pl_pvcam_init_t)();
-    typedef rs_bool (*pl_pvcam_uninit_t)();
-    typedef rs_bool (*pl_cam_get_total_t)(int16*);
-    typedef rs_bool (*pl_cam_get_name_t)(int16, char*);
-    typedef rs_bool (*pl_cam_open_t)(char*, int16*, int16);
-    typedef rs_bool (*pl_cam_close_t)(int16);
-    typedef rs_bool (*pl_get_param_t)(int16, uns32, int16, void*);
-    typedef rs_bool (*pl_set_param_t)(int16, uns32, void*);
-    typedef rs_bool (*pl_get_enum_param_t)(int16, uns32, uns32, int32*, char*, uns32);
-    typedef rs_bool (*pl_enum_str_length_t)(int16, uns32, uns32, uns32*);
-    typedef rs_bool (*pl_exp_setup_cont_t)(int16, uns16, const rgn_type*, int16, uns32, uns32*, int16);
-    typedef rs_bool (*pl_exp_start_cont_t)(int16, void*, uns32);
-    typedef rs_bool (*pl_exp_check_cont_status_t)(int16, int16*, uns32*, uns32*);
-    typedef rs_bool (*pl_exp_stop_cont_t)(int16, int16);
-    typedef rs_bool (*pl_exp_get_oldest_frame_t)(int16, void**);
-    typedef rs_bool (*pl_exp_unlock_oldest_frame_t)(int16);
-    typedef int16 (*pl_error_code_t)();
-    typedef rs_bool (*pl_error_message_t)(int16, char*);
-    typedef rs_bool (*pl_cam_register_callback_ex3_t)(int16, int32, void*, void*);
-    typedef rs_bool (*pl_cam_deregister_callback_t)(int16, int32);
+    using pl_pvcam_init_t = decltype(&::pl_pvcam_init);
+    using pl_pvcam_uninit_t = decltype(&::pl_pvcam_uninit);
+    using pl_cam_get_total_t = decltype(&::pl_cam_get_total);
+    using pl_cam_get_name_t = decltype(&::pl_cam_get_name);
+    using pl_cam_open_t = decltype(&::pl_cam_open);
+    using pl_cam_close_t = decltype(&::pl_cam_close);
+    using pl_get_param_t = decltype(&::pl_get_param);
+    using pl_set_param_t = decltype(&::pl_set_param);
+    using pl_get_enum_param_t = decltype(&::pl_get_enum_param);
+    using pl_enum_str_length_t = decltype(&::pl_enum_str_length);
+    using pl_exp_setup_cont_t = decltype(&::pl_exp_setup_cont);
+    using pl_exp_start_cont_t = decltype(&::pl_exp_start_cont);
+    using pl_exp_check_cont_status_t = decltype(&::pl_exp_check_cont_status);
+    using pl_exp_stop_cont_t = decltype(&::pl_exp_stop_cont);
+    using pl_exp_get_oldest_frame_t = decltype(&::pl_exp_get_oldest_frame);
+    using pl_exp_unlock_oldest_frame_t = decltype(&::pl_exp_unlock_oldest_frame);
+    using pl_error_code_t = decltype(&::pl_error_code);
+    using pl_error_message_t = decltype(&::pl_error_message);
+    using pl_cam_register_callback_ex3_t = decltype(&::pl_cam_register_callback_ex3);
+    using pl_cam_deregister_callback_t = decltype(&::pl_cam_deregister_callback);
 
     // Function pointers as member variables
     pl_pvcam_init_t _pl_pvcam_init;

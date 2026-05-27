@@ -305,102 +305,102 @@ private:
 
     // Explicitly declared function pointer typedefs and member variables
     // Library functions
-    using F_peak_Library_Init = peak_status (PEAK_CALLCONV*)();
+    using F_peak_Library_Init = decltype(&::peak_Library_Init);
     F_peak_Library_Init peak_Library_Init_ptr;
 
-    using F_peak_Library_Exit = peak_status (PEAK_CALLCONV*)();
+    using F_peak_Library_Exit = decltype(&::peak_Library_Exit);
     F_peak_Library_Exit peak_Library_Exit_ptr;
 
-    using F_peak_CameraList_Update = peak_status (PEAK_CALLCONV*)(size_t* cameraCount);
+    using F_peak_CameraList_Update = decltype(&::peak_CameraList_Update);
     F_peak_CameraList_Update peak_CameraList_Update_ptr;
 
-    using F_peak_CameraList_Get = peak_status (PEAK_CALLCONV*)(peak_camera_descriptor* camDescriptors, size_t* numCameras);
+    using F_peak_CameraList_Get = decltype(&::peak_CameraList_Get);
     F_peak_CameraList_Get peak_CameraList_Get_ptr;
 
     // Camera functions
-    using F_peak_Camera_GetAccessStatus = peak_access_status (PEAK_CALLCONV*)(peak_camera_id cameraID);
+    using F_peak_Camera_GetAccessStatus = decltype(&::peak_Camera_GetAccessStatus);
     F_peak_Camera_GetAccessStatus peak_Camera_GetAccessStatus_ptr;
 
-    using F_peak_Camera_Open = peak_status (PEAK_CALLCONV*)(peak_camera_id cameraID, peak_camera_handle* hCam);
+    using F_peak_Camera_Open = decltype(&::peak_Camera_Open);
     F_peak_Camera_Open peak_Camera_Open_ptr;
 
-    using F_peak_Camera_ResetToDefaultSettings = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_Camera_ResetToDefaultSettings = decltype(&::peak_Camera_ResetToDefaultSettings);
     F_peak_Camera_ResetToDefaultSettings peak_Camera_ResetToDefaultSettings_ptr;
 
-    using F_peak_Camera_Close = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_Camera_Close = decltype(&::peak_Camera_Close);
     F_peak_Camera_Close peak_Camera_Close_ptr;
 
     // FrameRate functions
-    using F_peak_FrameRate_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* frameRate);
+    using F_peak_FrameRate_Get = decltype(&::peak_FrameRate_Get);
     F_peak_FrameRate_Get peak_FrameRate_Get_ptr;
 
-    using F_peak_FrameRate_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minFrameRate, double* maxFrameRate, double* frameRateStep);
+    using F_peak_FrameRate_GetRange = decltype(&::peak_FrameRate_GetRange);
     F_peak_FrameRate_GetRange peak_FrameRate_GetRange_ptr;
 
-    using F_peak_FrameRate_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double frameRate);
+    using F_peak_FrameRate_Set = decltype(&::peak_FrameRate_Set);
     F_peak_FrameRate_Set peak_FrameRate_Set_ptr;
 
     // PixelClock functions
-    using F_peak_PixelClock_GetAccessStatus = peak_access_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_PixelClock_GetAccessStatus = decltype(&::peak_PixelClock_GetAccessStatus);
     F_peak_PixelClock_GetAccessStatus peak_PixelClock_GetAccessStatus_ptr;
 
-    using F_peak_PixelClock_HasRange = peak_bool (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_PixelClock_HasRange = decltype(&::peak_PixelClock_HasRange);
     F_peak_PixelClock_HasRange peak_PixelClock_HasRange_ptr;
 
-    using F_peak_PixelClock_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minPixelClock_MHz, double* maxPixelClock_MHz, double* incPixelClock_MHz);
+    using F_peak_PixelClock_GetRange = decltype(&::peak_PixelClock_GetRange);
     F_peak_PixelClock_GetRange peak_PixelClock_GetRange_ptr;
 
-    using F_peak_PixelClock_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double pixelClock_MHz);
+    using F_peak_PixelClock_Set = decltype(&::peak_PixelClock_Set);
     F_peak_PixelClock_Set peak_PixelClock_Set_ptr;
 
-    using F_peak_PixelClock_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* pixelClock_MHz);
+    using F_peak_PixelClock_Get = decltype(&::peak_PixelClock_Get);
     F_peak_PixelClock_Get peak_PixelClock_Get_ptr;
 
-    using F_peak_PixelClock_GetList = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* availableClocks, size_t* numClocks);
+    using F_peak_PixelClock_GetList = decltype(&::peak_PixelClock_GetList);
     F_peak_PixelClock_GetList peak_PixelClock_GetList_ptr;
 
     // Gain functions
-    using F_peak_Gain_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* minGain, double* maxGain, double* incGain);
+    using F_peak_Gain_GetRange = decltype(&::peak_Gain_GetRange);
     F_peak_Gain_GetRange peak_Gain_GetRange_ptr;
 
-    using F_peak_Gain_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double gain);
+    using F_peak_Gain_Set = decltype(&::peak_Gain_Set);
     F_peak_Gain_Set peak_Gain_Set_ptr;
 
-    using F_peak_Gain_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_gain_type gainType, peak_gain_channel gainChannel, double* gain);
+    using F_peak_Gain_Get = decltype(&::peak_Gain_Get);
     F_peak_Gain_Get peak_Gain_Get_ptr;
 
     // ROI functions
-    using F_peak_ROI_Size_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_size* size);
+    using F_peak_ROI_Size_Get = decltype(&::peak_ROI_Size_Get);
     F_peak_ROI_Size_Get peak_ROI_Size_Get_ptr;
 
     // ExposureTime functions
-    using F_peak_ExposureTime_GetRange = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* minExp, double* maxExp, double* expStep);
+    using F_peak_ExposureTime_GetRange = decltype(&::peak_ExposureTime_GetRange);
     F_peak_ExposureTime_GetRange peak_ExposureTime_GetRange_ptr;
 
-    using F_peak_ExposureTime_Set = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double exposureTime_us);
+    using F_peak_ExposureTime_Set = decltype(&::peak_ExposureTime_Set);
     F_peak_ExposureTime_Set peak_ExposureTime_Set_ptr;
 
-    using F_peak_ExposureTime_Get = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, double* exposureTime_us);
+    using F_peak_ExposureTime_Get = decltype(&::peak_ExposureTime_Get);
     F_peak_ExposureTime_Get peak_ExposureTime_Get_ptr;
 
     // Acquisition functions
-    using F_peak_Acquisition_Start = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, uint32_t numFrames);
+    using F_peak_Acquisition_Start = decltype(&::peak_Acquisition_Start);
     F_peak_Acquisition_Start peak_Acquisition_Start_ptr;
 
-    using F_peak_Acquisition_Stop = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam);
+    using F_peak_Acquisition_Stop = decltype(&::peak_Acquisition_Stop);
     F_peak_Acquisition_Stop peak_Acquisition_Stop_ptr;
 
-    using F_peak_Acquisition_WaitForFrame = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, uint32_t timeoutMs, peak_frame_handle* hFrame);
+    using F_peak_Acquisition_WaitForFrame = decltype(&::peak_Acquisition_WaitForFrame);
     F_peak_Acquisition_WaitForFrame peak_Acquisition_WaitForFrame_ptr;
 
     // Frame functions
-    using F_peak_Frame_IsComplete = peak_bool (PEAK_CALLCONV*)(peak_frame_handle hFrame);
+    using F_peak_Frame_IsComplete = decltype(&::peak_Frame_IsComplete);
     F_peak_Frame_IsComplete peak_Frame_IsComplete_ptr;
 
-    using F_peak_Frame_GetInfo = peak_status (PEAK_CALLCONV*)(peak_frame_handle hFrame, peak_frame_info* info);
+    using F_peak_Frame_GetInfo = decltype(&::peak_Frame_GetInfo);
     F_peak_Frame_GetInfo peak_Frame_GetInfo_ptr;
 
-    using F_peak_Frame_Release = peak_status (PEAK_CALLCONV*)(peak_camera_handle hCam, peak_frame_handle hFrame);
+    using F_peak_Frame_Release = decltype(&::peak_Frame_Release);
     F_peak_Frame_Release peak_Frame_Release_ptr;
 
 
