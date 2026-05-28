@@ -10,7 +10,9 @@
     #define PCO_LINUX
 #endif
 #include "PCO/pco_linux_defs.h"
+#include "PCO/pco_device.h"
 #include "PCO/pco_err.h"
+#include "PCO/pco_camexport.h"
 #include "PCO/sc2_sdkstructures.h"
 #include "PCO/sc2_sdkaddendum.h"
 #include "PCO/sc2_camexport.h"
