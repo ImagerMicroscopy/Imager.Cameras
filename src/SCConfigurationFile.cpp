@@ -10,8 +10,8 @@
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> GetProcessingOptionsForCamera(ConfigManager& configManager, const std::string& cameraName) {
 
-    auto setting = configManager.getSettingOrDefault(cameraName / "orientation", "");
-    std::string orientationStr = setting.first;
+    auto setting = configManager.getStringSettingOrDefault(cameraName / "orientation", "");
+    std::string orientationStr = setting.value;
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> result;
 
