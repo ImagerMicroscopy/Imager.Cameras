@@ -39,13 +39,7 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
     if (!err)
         throw std::runtime_error(getPVCAMErrorMessage());
 
-    char prodName[MAX_PRODUCT_NAME_LEN + 1];
-    char serNum[MAX_ALPHA_SER_NUM_LEN + 1];
-    _fillCameraTextParameter(PARAM_PRODUCT_NAME, prodName);
-    _fillCameraTextParameter(PARAM_HEAD_SER_NUM_ALPHA, serNum);
-    _identifier = prodName;
-    _identifier += "_";
-    _identifier += serNum;
+    _identifier = _getIdentifierString();
 
     _readoutPorts = _listReadoutPorts();
     _postProcessingFeatures = _listPostProcessingFeatures();
@@ -63,7 +57,11 @@ std::string PhotometricsCamera::getIdentifierStr() {
 
 double PhotometricsCamera::getFrameRate() {
     double exposureTime = _getExposureTime();
-    std::uint32_t readoutTimeus = _getCameraParameterCurrentValue<std::uint32_t>(PARAM_READOUT_TIME);
+
+    std::uint32_t readoutTimeus = 0;
+    if (_cameraSupportsParameter(PARAM_READOUT_TIME)) {
+        readoutTimeus = _getCameraParameterCurrentValue<std::uint32_t>(PARAM_READOUT_TIME);
+    }
     return (1.0 / (exposureTime + static_cast<double>(readoutTimeus) / 1.0e6));
 }
 
@@ -104,12 +102,24 @@ std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
     properties.push_back(_getSetReadoutPort(GetProperty, std::string()));
     properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
     properties.push_back(_getSetGain(GetProperty, std::string()));
-    properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
-    properties.push_back(_getSetPostProcessingFeature(GetProperty, std::string()));
 
-    const std::vector<CameraProperty> postProcessingFeatureParameters = _getSetPostProcessingFeatureParameter(GetProperty, -1, 0.0);
-    for (const auto& p : postProcessingFeatureParameters) {
-        properties.push_back(p);
+    if (_cameraSupportsParameter(PARAM_GAIN_MULT_FACTOR)) {
+        properties.push_back(_getSetMultiplicationGain(GetProperty, 0.0));
+    }
+
+    properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
+
+    if (_cameraSupportsParameter(PARAM_TEMP_SETPOINT)) {
+        properties.push_back(_getSetTemperatureSetpoint(GetProperty, 0.0));
+    }
+
+    if (_cameraSupportsParameter(PARAM_PP_INDEX)) {
+        properties.push_back(_getSetPostProcessingFeature(GetProperty, std::string()));
+
+        const std::vector<CameraProperty> postProcessingFeatureParameters = _getSetPostProcessingFeatureParameter(GetProperty, -1, 0.0);
+        for (const auto& p : postProcessingFeatureParameters) {
+            properties.push_back(p);
+        }
     }
 
     return properties;
@@ -150,8 +160,14 @@ void PhotometricsCamera::_derivedSetCameraProperties(const std::vector<CameraPro
             case PropGain:
                 _getSetGain(SetProperty, prop.getCurrentOption());
                 break;
+            case PropMultiplicationGain:
+                _getSetMultiplicationGain(SetProperty, prop.getValue());
+                break;
             case PropTriggerMode:
                 _getSetTriggerMode(SetProperty, prop.getCurrentOption());
+                break;
+            case PropTemperatureSetpoint:
+                _getSetTemperatureSetpoint(SetProperty, prop.getValue());
                 break;
             case PropPostProcessingFeature:
                 _getSetPostProcessingFeature(SetProperty, prop.getCurrentOption());
@@ -274,7 +290,34 @@ CameraProperty PhotometricsCamera::_getSetTriggerMode(GetOrSetProperty getOrSet,
     return prop;
 }
 
-CameraProperty PhotometricsCamera::_getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string & mode) {
+CameraProperty PhotometricsCamera::_getSetMultiplicationGain(GetOrSetProperty getOrSet, const double value) {
+    if (getOrSet == SetProperty) {
+        auto limits = _getCameraParameterLimits<std::uint16_t>(PARAM_GAIN_MULT_FACTOR);
+        std::uint16_t clamped = clamp(static_cast<std::uint16_t>(value), limits.first, limits.second);
+        _setCameraParameter<std::uint16_t>(PARAM_GAIN_MULT_FACTOR, clamped);
+    }
+
+    std::uint16_t currentValue = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_GAIN_MULT_FACTOR);
+    CameraProperty prop(PropMultiplicationGain, "Multiplication gain");
+    prop.setNumeric(currentValue);
+    return prop;
+}
+
+CameraProperty PhotometricsCamera::_getSetTemperatureSetpoint(GetOrSetProperty getOrSet, const double value) {
+    if (getOrSet == SetProperty) {
+        double rescaled = value * 100.0; // the camera expects temperature in units of 0.01 degree Celsius
+        auto limits = _getCameraParameterLimits<std::int16_t>(PARAM_TEMP_SETPOINT);
+        std::int16_t clamped = clamp(static_cast<std::int16_t>(rescaled), limits.first, limits.second);
+        _setCameraParameter<std::int16_t>(PARAM_TEMP_SETPOINT, clamped);
+    }
+
+    std::int16_t currentValue = _getCameraParameterCurrentValue<std::int16_t>(PARAM_TEMP_SETPOINT);
+    CameraProperty prop(PropTemperatureSetpoint, "Temperature setpoint");
+    prop.setNumeric(static_cast<double>(currentValue) / 100.0);
+    return prop;
+}
+
+CameraProperty PhotometricsCamera::_getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode) {
     if (getOrSet == SetProperty) {
         auto it = std::find_if(_postProcessingFeatures.cbegin(), _postProcessingFeatures.cend(), [&](const auto& f) {
             return (f.descriptor() == mode);
@@ -296,6 +339,10 @@ CameraProperty PhotometricsCamera::_getSetPostProcessingFeature(GetOrSetProperty
 }
 
 std::vector<CameraProperty> PhotometricsCamera::_getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value) {
+    if (!_cameraSupportsParameter(PARAM_PP_PARAM_INDEX)) {
+        return {};
+    }
+
     const PostProcessingFeature& currentFeature = _getCurrentPostProcessingFeature();
     const std::vector<PostProcessingFeatureParameter>& currentParameters = currentFeature.parameters();
 
@@ -515,22 +562,34 @@ void PhotometricsCamera::_pvcamCameraRemovedCallbackFunction(FRAME_INFO * infoPt
 std::vector<PhotometricsCamera::ReadoutPort> PhotometricsCamera::_listReadoutPorts() {
     std::vector<ReadoutPort> readoutPorts;
     std::vector<std::pair<std::int32_t, std::string>> portEnums = _getCameraEnumParameters(PARAM_READOUT_PORT);
+
     for (const auto& p : portEnums) {
         int portIndex = p.first;
         const std::string& portName = p.second;
         std::vector<SpeedEntry> speedEntries;
         _setCameraParameter<std::int32_t>(PARAM_READOUT_PORT, portIndex);
         std::uint32_t nSpeeds = _getCameraParameterCount(PARAM_SPDTAB_INDEX);
+
         for (std::uint32_t i = 0; i < nSpeeds; i += 1) {
             _setCameraParameter<std::int16_t>(PARAM_SPDTAB_INDEX, i);
             std::uint16_t pixelTime = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_PIX_TIME);
             std::vector<Gain> gains;
             std::pair<std::int16_t, std::int16_t> gainLimits = _getCameraParameterLimits<std::int16_t>(PARAM_GAIN_INDEX);
+
             for (std::uint16_t gainIdx = gainLimits.first; gainIdx <= gainLimits.second; gainIdx += 1) {
                 _setCameraParameter<std::int16_t>(PARAM_GAIN_INDEX, gainIdx);
-                char gainName[MAX_GAIN_NAME_LEN + 1];
-                _fillCameraTextParameter(PARAM_GAIN_NAME, gainName);
-                std::int16_t bitDepth = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_BIT_DEPTH);
+                std::string gainName;
+                if (_cameraSupportsParameter(PARAM_GAIN_NAME)) {
+                    char gainNameBuf[MAX_GAIN_NAME_LEN + 1];
+                    _fillCameraTextParameter(PARAM_GAIN_NAME, gainNameBuf);
+                    gainName = std::string(gainNameBuf);
+                } else {
+                    gainName = std::format("Gain index {}", gainIdx);
+                }
+                std::int16_t bitDepth = 16;
+                if (_cameraSupportsParameter(PARAM_BIT_DEPTH)) {
+                    bitDepth = _getCameraParameterCurrentValue<std::int16_t>(PARAM_BIT_DEPTH);
+                }
                 gains.emplace_back(gainIdx, bitDepth, gainName);
             }
             speedEntries.emplace_back(i, pixelTime, gains);
@@ -577,6 +636,10 @@ std::tuple<PhotometricsCamera::ReadoutPort, PhotometricsCamera::SpeedEntry, Phot
 std::vector<PhotometricsCamera::PostProcessingFeature> PhotometricsCamera::_listPostProcessingFeatures() {
     std::vector<PostProcessingFeature> features;
     int processingSettingID = PropFirstPostProcessingSettingID;
+
+    if (!_cameraSupportsParameter(PARAM_PP_INDEX)) {
+        return {};
+    }
 
     std::uint32_t nFeatures = _getCameraParameterCount(PARAM_PP_INDEX);
     for (std::uint32_t featureIdx = 0; featureIdx < nFeatures; featureIdx += 1) {
@@ -630,4 +693,23 @@ std::vector<std::pair<std::int32_t, std::string>> PhotometricsCamera::_getCamera
         params.emplace_back(value, desc);
     }
     return params;
+}
+
+std::string PhotometricsCamera::_getIdentifierString() {
+    char prodName[MAX_PRODUCT_NAME_LEN + 1];
+    char chipName[CCD_NAME_LEN + 1];
+    char serNum[MAX_ALPHA_SER_NUM_LEN + 1];
+
+    std::string identifier;
+
+    if (_cameraSupportsParameter(PARAM_PRODUCT_NAME)) {
+        _fillCameraTextParameter(PARAM_PRODUCT_NAME, prodName);
+        identifier = prodName;
+    } else {
+        _fillCameraTextParameter(PARAM_CHIP_NAME, chipName);
+        identifier = chipName;
+    }
+    _fillCameraTextParameter(PARAM_HEAD_SER_NUM_ALPHA, serNum);
+
+    return std::format("{}_{}", identifier, serNum);
 }

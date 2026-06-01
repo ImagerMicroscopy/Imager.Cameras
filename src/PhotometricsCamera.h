@@ -21,7 +21,9 @@ class PhotometricsCamera : public BaseCameraClass {
         PropReadoutPort = CameraProperty::FirstAvailablePropertyID,
         PropReadoutSpeed,
         PropGain,
+        PropMultiplicationGain,
         PropTriggerMode,
+        PropTemperatureSetpoint,
         PropPostProcessingFeature,
         PropFirstPostProcessingSettingID = CameraProperty::FirstAvailablePropertyID + 1000
     };
@@ -128,6 +130,7 @@ public:
     static std::string getPVCAMErrorMessage();
 
 private:
+    std::string _getIdentifierString();
     void _setDefaults();
 
     std::vector<CameraProperty> _derivedGetCameraProperties() override;
@@ -136,7 +139,9 @@ private:
     CameraProperty _getSetReadoutPort(GetOrSetProperty getOrSet, const std::string& port);
     CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
     CameraProperty _getSetGain(GetOrSetProperty getOrSet, const std::string& descriptor);
+    CameraProperty _getSetMultiplicationGain(GetOrSetProperty getOrSet, const double value);
     CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
+    CameraProperty _getSetTemperatureSetpoint(GetOrSetProperty getOrSet, const double value);
     CameraProperty _getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode);
     std::vector<CameraProperty> _getSetPostProcessingFeatureParameter(GetOrSetProperty getOrSet, const int scCameraParameterID, const double value);
 
