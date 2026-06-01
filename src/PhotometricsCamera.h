@@ -22,6 +22,7 @@ class PhotometricsCamera : public BaseCameraClass {
         PropReadoutSpeed,
         PropGain,
         PropMultiplicationGain,
+        PropFrameTransfer,
         PropTriggerMode,
         PropTemperatureSetpoint,
         PropPostProcessingFeature,
@@ -140,6 +141,7 @@ private:
     CameraProperty _getSetReadoutSpeed(GetOrSetProperty getOrSet, const std::string& descriptor);
     CameraProperty _getSetGain(GetOrSetProperty getOrSet, const std::string& descriptor);
     CameraProperty _getSetMultiplicationGain(GetOrSetProperty getOrSet, const double value);
+    CameraProperty _getSetFrameTransfer(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetTriggerMode(GetOrSetProperty getOrSet, const std::string& mode);
     CameraProperty _getSetTemperatureSetpoint(GetOrSetProperty getOrSet, const double value);
     CameraProperty _getSetPostProcessingFeature(GetOrSetProperty getOrSet, const std::string& mode);

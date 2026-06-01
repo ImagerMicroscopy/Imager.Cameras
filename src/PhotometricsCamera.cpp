@@ -107,6 +107,10 @@ std::vector<CameraProperty> PhotometricsCamera::_derivedGetCameraProperties() {
         properties.push_back(_getSetMultiplicationGain(GetProperty, 0.0));
     }
 
+    if (_cameraSupportsParameter(PARAM_FRAME_CAPABLE)) {
+        properties.push_back(_getSetFrameTransfer(GetProperty, std::string()));
+    }
+
     properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
 
     if (_cameraSupportsParameter(PARAM_TEMP_SETPOINT)) {
@@ -162,6 +166,9 @@ void PhotometricsCamera::_derivedSetCameraProperties(const std::vector<CameraPro
                 break;
             case PropMultiplicationGain:
                 _getSetMultiplicationGain(SetProperty, prop.getValue());
+                break;
+            case PropFrameTransfer:
+                _getSetFrameTransfer(SetProperty, prop.getCurrentOption());
                 break;
             case PropTriggerMode:
                 _getSetTriggerMode(SetProperty, prop.getCurrentOption());
@@ -300,6 +307,19 @@ CameraProperty PhotometricsCamera::_getSetMultiplicationGain(GetOrSetProperty ge
     std::uint16_t currentValue = _getCameraParameterCurrentValue<std::uint16_t>(PARAM_GAIN_MULT_FACTOR);
     CameraProperty prop(PropMultiplicationGain, "Multiplication gain");
     prop.setNumeric(currentValue);
+    return prop;
+}
+
+CameraProperty PhotometricsCamera::_getSetFrameTransfer(GetOrSetProperty getOrSet, const std::string& mode) {
+    std::vector<std::string> modes = {"disabled", "enabled"};
+    if (getOrSet == SetProperty) {
+        bool useFT = (mode == "enabled");
+        _setCameraParameter<std::int32_t>(PARAM_PMODE, useFT ? PMODE_FT : PMODE_NORMAL);
+    }
+
+    std::int32_t currentMode = _getCameraParameterCurrentValue<std::int32_t>(PARAM_PMODE);
+    CameraProperty prop(PropFrameTransfer, "Frame transfer");
+    prop.setDiscrete(currentMode == PMODE_FT ? "enabled" : "disabled", modes);
     return prop;
 }
 
