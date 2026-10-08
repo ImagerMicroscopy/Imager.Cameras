@@ -2,8 +2,10 @@
 #define HAMAMATSUCAMERA_H
 
 #include "ImagerPluginCore/BaseCameraClass.h"
+#include "ImagerPluginCore/ConfigManager.h"
 #include "HamamatsuAPIWrapper.h"
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -33,7 +35,7 @@ public:
         PropOutputTriggerPolarity
     };
 
-    HamamatsuCamera(HDCAM camHandle);
+    HamamatsuCamera(HDCAM camHandle, ConfigManager& configManager);
     virtual ~HamamatsuCamera();
 
     std::string getIdentifierStr() override;
@@ -65,6 +67,10 @@ private:
     void _setBinningFactor(const int binningFactor);
     int _getBinningFactor();
 
+    void _loadEnabledProperties(ConfigManager& configManager);
+    void _applyConfiguredDefaultValues(ConfigManager& configManager);
+    bool _isPropertyEnabled(int propertyCode) const { return _disabledProperties.count(propertyCode) == 0; }
+    void _setHamamatsuProperty(int propertyCode, const std::string& option, double value);
     void _setDefaults();
 
     AcquiredImage _derivedAcquireSingleImage() override;
@@ -90,6 +96,7 @@ private:
     bool _softwareTriggeredAcquisitionRunning;
     HDCAMWAIT _camWaitHandle;
     int _numberOfImagesDelivered{};
+    std::set<int> _disabledProperties;
 };
 
 #endif // HAMAMATSUCAMERA_H

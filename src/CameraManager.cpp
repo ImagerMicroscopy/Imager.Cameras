@@ -44,7 +44,7 @@ void CameraManager::discoverCameras() {
         _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::unique_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras(*_configManager);
     for (auto& c : hamamatsuCameras) {
         _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }

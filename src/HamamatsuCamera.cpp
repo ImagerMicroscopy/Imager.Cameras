@@ -4,7 +4,9 @@
 
 #include "ImagerPluginCore/StandardCameraProperties.h"
 
-HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
+#include "SCPrinter.h"
+
+HamamatsuCamera::HamamatsuCamera(HDCAM camHandle, ConfigManager& configManager) :
     _camHandle(camHandle),
     _apiWrapper(GetHamamatsuAPIWrapper()),
     _softwareTriggeredAcquisitionRunning(false),
@@ -21,8 +23,69 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
     }
     std::string serialNumber = _getDCAMString(_camHandle, DCAM_IDSTR_CAMERAID);
     _camName += "_" + serialNumber.substr(5);
-    
+
+    _loadEnabledProperties(configManager);
     _setDefaults();
+    _applyConfiguredDefaultValues(configManager);
+}
+
+namespace {
+    struct ConfigurableProperty {
+        int propertyCode;
+        const char* configKey;
+        bool enabledByDefault;
+        bool isNumeric;
+    };
+
+    // Hamamatsu-specific properties that can be disabled or given a default value in the config file,
+    // under [<camera name>.EnabledProperties] and [<camera name>.DefaultValues].
+    const std::vector<ConfigurableProperty>& ConfigurableProperties() {
+        static const std::vector<ConfigurableProperty> kProperties = {
+            { HamamatsuCamera::PropEMMode, "EMMode", true, false },
+            { HamamatsuCamera::PropEMGain, "EMGain", true, true },
+            { HamamatsuCamera::PropReadoutSpeed, "ReadoutSpeed", true, false },
+            { HamamatsuCamera::PropTemperatureSetPoint, "TemperatureSetPoint", true, true },
+            { HamamatsuCamera::PropCoolerOn, "CoolerOn", true, false },
+            { HamamatsuCamera::PropTriggerSource, "TriggerSource", true, false },
+            { HamamatsuCamera::PropTriggerMode, "TriggerMode", true, false },
+            { HamamatsuCamera::PropTriggerActive, "TriggerActive", true, false },
+            { HamamatsuCamera::PropTriggerPolarity, "TriggerPolarity", true, false },
+            { HamamatsuCamera::PropOutputTriggerKind, "OutputTriggerKind", false, false },
+            { HamamatsuCamera::PropOutputTriggerPeriod, "OutputTriggerPeriod", false, true },
+            { HamamatsuCamera::PropOutputTriggerPolarity, "OutputTriggerPolarity", false, false }
+        };
+        return kProperties;
+    }
+}
+
+void HamamatsuCamera::_loadEnabledProperties(ConfigManager& configManager) {
+    // Disabled properties are never exposed, set from the GUI, or given a built-in default value,
+    // as if the plugin did not know about them. Missing entries are written to the config file.
+    _disabledProperties.clear();
+    for (const auto& p : ConfigurableProperties()) {
+        auto setting = configManager.getBoolSettingOrDefault(_camName / "EnabledProperties" / p.configKey, p.enabledByDefault);
+        if (!setting.value) {
+            _disabledProperties.insert(p.propertyCode);
+        }
+    }
+}
+
+void HamamatsuCamera::_applyConfiguredDefaultValues(ConfigManager& configManager) {
+    // An empty value means "no default". Discrete properties take the option name as shown in the GUI
+    // (e.g. "Programmable"), numeric properties a number (e.g. "0.001").
+    for (const auto& p : ConfigurableProperties()) {
+        auto setting = configManager.getStringSettingOrDefault(_camName / "DefaultValues" / p.configKey, "");
+        if (setting.value.empty()) {
+            continue;
+        }
+        try {
+            double value = p.isNumeric ? std::stod(setting.value) : 0.0;
+            _setHamamatsuProperty(p.propertyCode, setting.value, value);
+        }
+        catch (const std::exception& e) {
+            Print(_camName + ": ignoring default value '" + setting.value + "' for " + p.configKey + ": " + e.what());
+        }
+    }
 }
 
 HamamatsuCamera::~HamamatsuCamera() {
@@ -45,40 +108,40 @@ std::vector<CameraProperty> HamamatsuCamera::_derivedGetCameraProperties() {
     properties = GetStandardProperties(_getExposureTime(), _getImageCrop(), StandardCroppingOptions(_getSensorSize().first),
                                        StandardCroppingOptions(_getSensorSize().second), _getBinningFactor(), { 1, 2, 4 });
 
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_CCDMODE)) {
+    if (_isPropertyEnabled(PropEMMode) && _propertyIsSupported(_camHandle, DCAM_IDPROP_CCDMODE)) {
         properties.push_back(_getSetEMMode(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_SENSITIVITY)) {
+    if (_isPropertyEnabled(PropEMGain) && _propertyIsSupported(_camHandle, DCAM_IDPROP_SENSITIVITY)) {
         properties.push_back(_getSetEMGain(GetProperty, 0.0));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_READOUTSPEED)) {
+    if (_isPropertyEnabled(PropReadoutSpeed) && _propertyIsSupported(_camHandle, DCAM_IDPROP_READOUTSPEED)) {
         properties.push_back(_getSetReadoutSpeed(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_SENSORCOOLER)) {
+    if (_isPropertyEnabled(PropCoolerOn) && _propertyIsSupported(_camHandle, DCAM_IDPROP_SENSORCOOLER)) {
         properties.push_back(_getSetCoolerOn(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET)) {
+    if (_isPropertyEnabled(PropTemperatureSetPoint) && _propertyIsSupported(_camHandle, DCAM_IDPROP_SENSORTEMPERATURETARGET)) {
         properties.push_back(_getSetTemperatureSetPoint(GetProperty, 0.0));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERSOURCE)) {
+    if (_isPropertyEnabled(PropTriggerSource) && _propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERSOURCE)) {
         properties.push_back(_getSetTriggerSource(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGER_MODE)) {
+    if (_isPropertyEnabled(PropTriggerMode) && _propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGER_MODE)) {
         properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND)) {
+    if (_isPropertyEnabled(PropOutputTriggerKind) && _propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND)) {
         properties.push_back(_getSetOutputTriggerKind(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_PERIOD)) {
+    if (_isPropertyEnabled(PropOutputTriggerPeriod) && _propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_PERIOD)) {
         properties.push_back(_getSetOutputTriggerPeriod(GetProperty, 0.0001));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY)) {
+    if (_isPropertyEnabled(PropOutputTriggerPolarity) && _propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY)) {
         properties.push_back(_getSetOutputTriggerPolarity(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERACTIVE)) {
+    if (_isPropertyEnabled(PropTriggerActive) && _propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERACTIVE)) {
         properties.push_back(_getSetTriggerActive(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY)) {
+    if (_isPropertyEnabled(PropTriggerPolarity) && _propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY)) {
         properties.push_back(_getSetTriggerPolarity(GetProperty, std::string()));
     }
 
@@ -113,46 +176,57 @@ void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProper
     }
 
     for (const auto& prop : propsCopy) {
-        switch (prop.getPropertyCode()) {
-            case PropEMMode:
-                _getSetEMMode(SetProperty, prop.getCurrentOption());
-                break;
-            case PropEMGain:
-                _getSetEMGain(SetProperty, prop.getValue());
-                break;
-            case PropReadoutSpeed:
-                _getSetReadoutSpeed(SetProperty, prop.getCurrentOption());
-                break;
-            case PropTemperatureSetPoint:
-                _getSetTemperatureSetPoint(SetProperty, prop.getValue());
-                break;
-            case PropCoolerOn:
-                _getSetCoolerOn(SetProperty, prop.getCurrentOption());
-                break;
-            case PropTriggerSource:
-                _getSetTriggerSource(SetProperty, prop.getCurrentOption());
-                break;
-            case PropTriggerMode:
-                _getSetTriggerMode(SetProperty, prop.getCurrentOption());
-                break;
-            case PropTriggerActive:
-                _getSetTriggerActive(SetProperty, prop.getCurrentOption());
-                break;
-            case PropTriggerPolarity:
-                _getSetTriggerPolarity(SetProperty, prop.getCurrentOption());
-                break;
-            case PropOutputTriggerKind:
-                _getSetOutputTriggerKind(SetProperty, prop.getCurrentOption());
-                break;
-            case PropOutputTriggerPolarity:
-                _getSetOutputTriggerPolarity(SetProperty, prop.getCurrentOption());
-                break;
-            case PropOutputTriggerPeriod:
-                _getSetOutputTriggerPeriod(SetProperty, prop.getValue());
-                break;
-            default:
-                throw std::runtime_error("setting unrecognized option");
+        if (!_isPropertyEnabled(prop.getPropertyCode())) {
+            // disabled in the config file, e.g. a stale value from previously saved settings
+            continue;
         }
+        bool isNumeric = (prop.getPropertyCode() == PropEMGain) || (prop.getPropertyCode() == PropTemperatureSetPoint) ||
+                         (prop.getPropertyCode() == PropOutputTriggerPeriod);
+        _setHamamatsuProperty(prop.getPropertyCode(), isNumeric ? std::string() : prop.getCurrentOption(),
+                              isNumeric ? prop.getValue() : 0.0);
+    }
+}
+
+void HamamatsuCamera::_setHamamatsuProperty(int propertyCode, const std::string& option, double value) {
+    switch (propertyCode) {
+        case PropEMMode:
+            _getSetEMMode(SetProperty, option);
+            break;
+        case PropEMGain:
+            _getSetEMGain(SetProperty, value);
+            break;
+        case PropReadoutSpeed:
+            _getSetReadoutSpeed(SetProperty, option);
+            break;
+        case PropTemperatureSetPoint:
+            _getSetTemperatureSetPoint(SetProperty, value);
+            break;
+        case PropCoolerOn:
+            _getSetCoolerOn(SetProperty, option);
+            break;
+        case PropTriggerSource:
+            _getSetTriggerSource(SetProperty, option);
+            break;
+        case PropTriggerMode:
+            _getSetTriggerMode(SetProperty, option);
+            break;
+        case PropTriggerActive:
+            _getSetTriggerActive(SetProperty, option);
+            break;
+        case PropTriggerPolarity:
+            _getSetTriggerPolarity(SetProperty, option);
+            break;
+        case PropOutputTriggerKind:
+            _getSetOutputTriggerKind(SetProperty, option);
+            break;
+        case PropOutputTriggerPolarity:
+            _getSetOutputTriggerPolarity(SetProperty, option);
+            break;
+        case PropOutputTriggerPeriod:
+            _getSetOutputTriggerPeriod(SetProperty, value);
+            break;
+        default:
+            throw std::runtime_error("setting unrecognized option");
     }
 }
 
@@ -265,7 +339,7 @@ CameraProperty HamamatsuCamera::_getSetTriggerSource(GetOrSetProperty getOrSet, 
             throw std::runtime_error("_getSetTriggerSource() but unknown source");
             break;
     }
-    CameraProperty prop(PropTriggerSource, "Trigger source");
+    CameraProperty prop(PropTriggerSource, "Trigger source [IN]");
     prop.setDiscrete(actual, { kInternal, kExternal });
     return prop;
 }
@@ -276,7 +350,7 @@ CameraProperty HamamatsuCamera::_getSetOutputTriggerPeriod(GetOrSetProperty getO
     if (getOrSet == SetProperty) {
         _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_PERIOD, value, true);
     }
-    CameraProperty prop(PropOutputTriggerPeriod, "Trigger period");
+    CameraProperty prop(PropOutputTriggerPeriod, "Trigger period [OUT]");
     prop.setNumeric(_getPropertyValue(_camHandle,  DCAM_IDPROP_OUTPUTTRIGGER_PERIOD));
     return prop;
 }
@@ -335,7 +409,7 @@ CameraProperty HamamatsuCamera::_getSetOutputTriggerKind(GetOrSetProperty getOrS
             throw std::runtime_error("_getSetOutputTriggerKind() but unknown mode");
             break;
     }   
-    CameraProperty prop(PropOutputTriggerKind, "Trigger kind");
+    CameraProperty prop(PropOutputTriggerKind, "Trigger kind [OUT]");
     prop.setDiscrete(actual, {programmable, low, globalexp, triggerready, high, anyrowexp });
     return prop;
 }
@@ -376,7 +450,7 @@ CameraProperty HamamatsuCamera::_getSetOutputTriggerPolarity(GetOrSetProperty ge
             throw std::runtime_error("_getSetOutputTriggerPolarity() but unknown polarity");
     }
 
-    CameraProperty prop(PropOutputTriggerPolarity, "Trigger polarity");
+    CameraProperty prop(PropOutputTriggerPolarity, "Trigger polarity [OUT]");
     prop.setDiscrete(actual, { negative, positive });
     return prop;
 }
@@ -408,7 +482,7 @@ CameraProperty HamamatsuCamera::_getSetTriggerMode(GetOrSetProperty getOrSet, co
             throw std::runtime_error("_getSetTriggerMode() but unknown mode");
             break;
     }
-    CameraProperty prop(PropTriggerMode, "Trigger mode");
+    CameraProperty prop(PropTriggerMode, "Trigger mode [IN]");
     prop.setDiscrete(actual, { kNormal, kStart });
     return prop;
 }
@@ -439,7 +513,7 @@ CameraProperty HamamatsuCamera::_getSetTriggerActive(GetOrSetProperty getOrSet, 
             throw std::runtime_error("_getSetTriggerActive() but unknown level");
             break;
     }
-    CameraProperty prop(PropTriggerActive, "Trigger active");
+    CameraProperty prop(PropTriggerActive, "Trigger active [IN]");
     prop.setDiscrete(actual, { kEdge, kLevel });
     return prop;
 }
@@ -470,7 +544,7 @@ CameraProperty HamamatsuCamera::_getSetTriggerPolarity(GetOrSetProperty getOrSet
             throw std::runtime_error("_getSetTriggerPolarity() but unknown level");
             break;
     }
-    CameraProperty prop(PropTriggerPolarity, "Trigger polarity");
+    CameraProperty prop(PropTriggerPolarity, "Trigger polarity [IN]");
     prop.setDiscrete(actual, { kPositive, kNegative });
     return prop;
 }
@@ -541,25 +615,40 @@ int HamamatsuCamera::_getBinningFactor() {
 }
 
 void HamamatsuCamera::_setDefaults() {
-    _setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD, true);
+    if (_isPropertyEnabled(PropEMMode)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_CCDMODE, DCAMPROP_CCDMODE__EMCCD, true);
+    }
 
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__OFF);
     _sensorSize.first = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_WIDTH);
     _sensorSize.second = _getPropertyValue(_camHandle, DCAM_IDPROP_IMAGE_HEIGHT);
 
-    _setPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED, DCAMPROP_READOUTSPEED__FASTEST);
+    if (_isPropertyEnabled(PropReadoutSpeed)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_READOUTSPEED, DCAMPROP_READOUTSPEED__FASTEST);
+    }
 
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYMODE, DCAMPROP_MODE__ON);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYHSIZE, _sensorSize.first);
     _setPropertyValue(_camHandle, DCAM_IDPROP_SUBARRAYVSIZE, _sensorSize.second);
 
-    _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY, DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__INTERNAL);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGER_MODE, DCAMPROP_TRIGGER_MODE__NORMAL);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERACTIVE, DCAMPROP_TRIGGERACTIVE__EDGE);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY, DCAMPROP_TRIGGERPOLARITY__POSITIVE);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE,true);
-
+    if (_isPropertyEnabled(PropOutputTriggerPolarity)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY, DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE);
+    }
+    if (_isPropertyEnabled(PropTriggerSource)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__INTERNAL);
+    }
+    if (_isPropertyEnabled(PropTriggerMode)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGER_MODE, DCAMPROP_TRIGGER_MODE__NORMAL);
+    }
+    if (_isPropertyEnabled(PropTriggerActive)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERACTIVE, DCAMPROP_TRIGGERACTIVE__EDGE);
+    }
+    if (_isPropertyEnabled(PropTriggerPolarity)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY, DCAMPROP_TRIGGERPOLARITY__POSITIVE);
+    }
+    if (_isPropertyEnabled(PropOutputTriggerKind)) {
+        _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE, true);
+    }
 }
 
 AcquiredImage HamamatsuCamera::_derivedAcquireSingleImage() {
