@@ -254,7 +254,8 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>> IDSPeakCamera::_derivedG
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> descriptors;
 
     if (_getSizeOfRawImages() != _cropSize) {
-        descriptors.emplace_back(new IPDCrop(_cropSize.first, _cropSize.second));
+        // _cropSize is (width, height); IPDCrop takes (nRows, nCols) = (height, width).
+        descriptors.emplace_back(new IPDCrop(_cropSize.second, _cropSize.first));
     }
     
     return descriptors;
@@ -331,7 +332,7 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
             break;
     }
 
-    AcquiredImage image = NewRecycledImage(pixelFormat, width, height);
+    AcquiredImage image = NewRecycledImage(pixelFormat, height, width);
     memcpy(image.getData().get(), frameInfo.buffer.memoryAddress, frameInfo.bytesWritten);
     
     return image;

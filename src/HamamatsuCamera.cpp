@@ -656,7 +656,7 @@ std::optional<AcquiredImage> HamamatsuCamera::_waitForNewImageWithTimeout(int ti
     }
 
     auto actualImageSize = _getSizeOfRawImages();
-    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, actualImageSize.first, actualImageSize.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, actualImageSize.second, actualImageSize.first);
     _copyLatestImage(reinterpret_cast<std::uint16_t*>(image.getData().get()), image.getNRows() * image.getNCols() * sizeof(std::uint16_t));
 
     return image;

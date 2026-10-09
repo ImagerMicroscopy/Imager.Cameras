@@ -60,7 +60,7 @@ std::pair<int, int> DummyCamera::_getSizeOfRawImages() {
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> DummyCamera::_derivedGetAdditionalImageProcessingDescriptors() {
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> descs;
     if (_getSensorSize() != _getCurrentCropping()) {
-        descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_getCurrentCropping().first, _getCurrentCropping().second)));
+        descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_getCurrentCropping().second, _getCurrentCropping().first)));
     }
     if (_getCurrentBinning() != 1) {
         descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_getCurrentBinning())));
@@ -127,7 +127,7 @@ std::pair<int, int> DummyCamera::_getSensorSize() const {
 
 AcquiredImage DummyCamera::_generateNewImage() {
     std::pair<int, int> imageDimensions = _getSizeOfRawImages();
-    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageDimensions.first, imageDimensions.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageDimensions.second, imageDimensions.first);
     _fillImage(reinterpret_cast<std::uint16_t*>(image.getData().get()), imageDimensions.first * imageDimensions.second);
     return image;
 }
@@ -141,7 +141,7 @@ void DummyCamera::_fillImage(std::uint16_t * data, size_t nPixels) {
 
 AcquiredImage DummyCamera::_derivedAcquireSingleImage() {
     auto imageDimensions = _getSizeOfRawImages();
-    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageDimensions.first, imageDimensions.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageDimensions.second, imageDimensions.first);
     _fillImage(reinterpret_cast<std::uint16_t*>(image.getData().get()), imageDimensions.first * imageDimensions.second);
     return image;
 }

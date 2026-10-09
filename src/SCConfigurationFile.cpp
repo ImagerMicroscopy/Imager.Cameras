@@ -6,7 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "ImageProcessingUtils.h"
+#include "ImagerPluginCore/ImageProcessingUtils.h"
 
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> GetProcessingOptionsForCamera(ConfigManager& configManager, const std::string& cameraName) {
 

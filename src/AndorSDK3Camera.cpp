@@ -165,7 +165,7 @@ std::optional<AcquiredImage> AndorSDK3Camera::_waitForNewImageWithTimeout(int ti
     }
 
     auto [aoiWidth, aoiHeight] = _getSizeOfRawImages();
-    AcquiredImage acquiredImage = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, (int)aoiWidth, (int)aoiHeight);
+    AcquiredImage acquiredImage = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, (int)aoiHeight, (int)aoiWidth);
 
     // the docs mention that the image rows may be padded so we'll use a conversion function
     AT_64 aoiStrideInBytes = 0;
@@ -394,7 +394,7 @@ std::vector<std::shared_ptr<ImageProcessingDescriptor>>
 AndorSDK3Camera::_derivedGetAdditionalImageProcessingDescriptors() {
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> descriptors;
     if (_getSizeOfRawImages() != _cropSize) {
-        descriptors.emplace_back(new IPDCrop(_cropSize.first, _cropSize.second));
+        descriptors.emplace_back(new IPDCrop(_cropSize.second, _cropSize.first));
     }
     return descriptors;
 }

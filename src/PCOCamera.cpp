@@ -157,7 +157,7 @@ double PCOCamera::_getExposureTime() {
 std::vector<std::shared_ptr<ImageProcessingDescriptor>> PCOCamera::_derivedGetAdditionalImageProcessingDescriptors() {
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> descs;
     if (_getSensorSize() != _desiredCropSize) {
-        descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_desiredCropSize.first, _desiredCropSize.second)));
+        descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDCrop(_desiredCropSize.second, _desiredCropSize.first)));
     }
     if (_desiredBinningFactor != 1) {
         descs.push_back(std::shared_ptr<ImageProcessingDescriptor>(new IPDBin(_desiredBinningFactor)));
@@ -245,7 +245,7 @@ std::optional<AcquiredImage> PCOCamera::_waitForNewImageWithTimeout(int timeoutM
 #endif
 
     auto imageSize = _getSensorSize();
-    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageSize.first, imageSize.second);
+    AcquiredImage image = NewRecycledImage(AcquiredImage::PixelFormat::Mono16, imageSize.second, imageSize.first);
     int nPixelsInImage = imageSize.first * imageSize.second;
     std::uint16_t *thisImagePtr = _frameBuffer.data() + _nextBufferToReadIndex * nPixelsInImage;
 
