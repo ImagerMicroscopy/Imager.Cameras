@@ -7,10 +7,13 @@
 #include "ImagerPluginCore/CameraUtils.h"
 #include "ImagerPluginCore/StandardCameraProperties.h"
 
+#include "Utils.h"
+
 IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
     _camDescriptor(camDescriptor),
     _camHandle(nullptr),
-    _nextExpectedImageInSequenceIdx(0)
+    _nextExpectedImageInSequenceIdx(0),
+    _haveSyncedToFirstFrame(false)
 {
     peak_status status = PEAK_STATUS_SUCCESS;
 
@@ -267,6 +270,7 @@ void IDSPeakCamera::_derivedStartBoundedAsyncAcquisition([[maybe_unused]] std::u
     }
 
     _nextExpectedImageInSequenceIdx = 0;
+    _haveSyncedToFirstFrame = false;
 }
 
 void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
@@ -286,8 +290,11 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
         throw std::runtime_error("can't wait for IDS Peak frame");
     }
 
-    if (!_peakAPIWrapper.peak_Frame_IsComplete(peakFrameH)) {
+    Finally finally([=, this]() {
         _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
+    });
+
+    if (!_peakAPIWrapper.peak_Frame_IsComplete(peakFrameH)) {
         throw std::runtime_error("IDS Peak frame incomplete");
     }
 
@@ -297,7 +304,12 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
         throw std::runtime_error("can't read IDS Peak frame info");
     }
 
-    if (frameInfo.frameID != _nextExpectedImageInSequenceIdx) {
+    if (!_haveSyncedToFirstFrame) {
+        // The camera resets its frame ID on acquisition start, but the first
+        // delivered ID is not guaranteed to be 0 - match to it.
+        _nextExpectedImageInSequenceIdx = frameInfo.frameID;
+        _haveSyncedToFirstFrame = true;
+    } else if (frameInfo.frameID != _nextExpectedImageInSequenceIdx) {
         throw std::runtime_error("IDS Peak appears to have dropped an image");
     }
     _nextExpectedImageInSequenceIdx += 1;
@@ -321,8 +333,6 @@ void IDSPeakCamera::_derivedAbortAsyncAcquisition() {
 
     AcquiredImage image = NewRecycledImage(pixelFormat, width, height);
     memcpy(image.getData().get(), frameInfo.buffer.memoryAddress, frameInfo.bytesWritten);
-
-    _peakAPIWrapper.peak_Frame_Release(_camHandle, peakFrameH);
     
     return image;
 }

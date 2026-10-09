@@ -49,7 +49,8 @@ private:
     IDSPeakAPIWrapper _peakAPIWrapper;
     peak_camera_descriptor _camDescriptor;
     peak_camera_handle _camHandle;
-    int _nextExpectedImageInSequenceIdx;
+    std::uint64_t _nextExpectedImageInSequenceIdx;
+    bool _haveSyncedToFirstFrame;
 
     std::pair<int, int> _cropSize;
 };
