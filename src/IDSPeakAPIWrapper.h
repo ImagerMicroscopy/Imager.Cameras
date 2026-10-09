@@ -79,19 +79,28 @@ public:
     decltype(&::peak_Frame_Release) peak_Frame_Release = nullptr;
 
     IDSPeakAPIWrapper() {
-        const char* libraryName =
+        // The comfortC library was renamed in newer IDS Peak SDK versions
+        // (libpeak_comfort_c.so -> libids_peak_comfort_c.so), so try both names.
 #ifdef _WIN32
-            "peak_comfort_c.dll";
+        const char* libraryNames[] = { "ids_peak_comfort_c.dll", "peak_comfort_c.dll" };
 #else
-            "libpeak_comfort_c.so";
+        const char* libraryNames[] = { "libids_peak_comfort_c.so", "libpeak_comfort_c.so" };
 #endif
 
-        _hModule = LOAD_LIBRARY(libraryName);
+        for (const char* libraryName : libraryNames) {
+            _hModule = LOAD_LIBRARY(libraryName);
+            if (_hModule) break;
+        }
         if (!_hModule) {
             // we don't have the library, so the runtime probably isn't installed.
             _allFunctionsLoaded = false;
             return;
         }
+
+        // 261009 - On Linux the IDS Peak runtime looks for a library called
+        // libomp.so.5. However, the library installed by the distribution may
+        // be called libomp.so. In that case a symbolic link needs to be made.
+        // Also: don't forget to add the user to the 'ueye' group.
 
         // Library functions
         peak_Library_Init = reinterpret_cast<decltype(peak_Library_Init)>(GET_PROC_ADDRESS(_hModule, "peak_Library_Init"));
