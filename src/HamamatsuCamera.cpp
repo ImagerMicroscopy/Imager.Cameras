@@ -7,20 +7,66 @@
 #include <algorithm>
 #include <cctype>
 #include <format>
+#include <iterator>
 #include <stdexcept>
+#include <utility>
 
 namespace {
+// Canonical string values for the settings read from the configuration file.
+constexpr const char* kPositive = "Positive";
+constexpr const char* kNegative = "Negative";
+constexpr const char* kOutputTriggerKindProgrammable = "Programmable";
+constexpr const char* kOutputTriggerKindLow = "Low";
+constexpr const char* kOutputTriggerKindGlobalExposure = "Global Exposure";
+constexpr const char* kOutputTriggerKindTriggerReady = "Trigger Ready";
+constexpr const char* kOutputTriggerKindHigh = "High";
+constexpr const char* kOutputTriggerKindAnyRowExposure = "Any Row Exposure";
+
+std::string ToLower(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
+    return str;
+}
+
 // Returns true for "Positive", false for "Negative" (case-insensitive). Throws on anything else.
 bool ParsePolaritySetting(const std::string& value, const std::string& configKey) {
-    std::string lowered = value;
-    std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) { return std::tolower(c); });
-    if (lowered == "positive") {
+    const std::string lowered = ToLower(value);
+    if (lowered == ToLower(kPositive)) {
         return true;
     }
-    if (lowered == "negative") {
+    if (lowered == ToLower(kNegative)) {
         return false;
     }
-    throw std::invalid_argument(std::format("Invalid value '{}' for setting '{}' in the configuration file. Allowed values are 'Positive' and 'Negative'.", value, configKey));
+    throw std::invalid_argument(std::format("Invalid value '{}' for setting '{}' in the configuration file. Allowed values are '{}' and '{}'.",
+                                            value, configKey, kPositive, kNegative));
+}
+
+// Returns the DCAMPROP_OUTPUTTRIGGER_KIND__* value for the given setting (case-insensitive). Throws on anything else.
+int ParseOutputTriggerKindSetting(const std::string& value, const std::string& configKey) {
+    static const std::pair<const char*, int> kOutputTriggerKinds[] = {
+        { kOutputTriggerKindProgrammable, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE },
+        { kOutputTriggerKindLow, DCAMPROP_OUTPUTTRIGGER_KIND__LOW },
+        { kOutputTriggerKindGlobalExposure, DCAMPROP_OUTPUTTRIGGER_KIND__GLOBALEXPOSURE },
+        { kOutputTriggerKindTriggerReady, DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGERREADY },
+        { kOutputTriggerKindHigh, DCAMPROP_OUTPUTTRIGGER_KIND__HIGH },
+        { kOutputTriggerKindAnyRowExposure, DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE },
+    };
+    const std::string lowered = ToLower(value);
+    for (const auto& [name, dcamValue] : kOutputTriggerKinds) {
+        if (lowered == ToLower(name)) {
+            return dcamValue;
+        }
+    }
+    std::string allowedValues;
+    for (std::size_t i = 0; i < std::size(kOutputTriggerKinds); ++i) {
+        if (i > 0) {
+            allowedValues += ", ";
+        }
+        allowedValues += "'";
+        allowedValues += kOutputTriggerKinds[i].first;
+        allowedValues += "'";
+    }
+    throw std::invalid_argument(std::format("Invalid value '{}' for setting '{}' in the configuration file. Allowed values are {}.",
+                                            value, configKey, allowedValues));
 }
 }
 
@@ -89,9 +135,6 @@ std::vector<CameraProperty> HamamatsuCamera::_derivedGetCameraProperties() {
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGER_MODE)) {
         properties.push_back(_getSetTriggerMode(GetProperty, std::string()));
     }
-    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND)) {
-        properties.push_back(_getSetOutputTriggerKind(GetProperty, std::string()));
-    }
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_PERIOD)) {
         properties.push_back(_getSetOutputTriggerPeriod(GetProperty, 0.0001));
     }
@@ -154,9 +197,6 @@ void HamamatsuCamera::_derivedSetCameraProperties(const std::vector<CameraProper
                 break;
             case PropTriggerActive:
                 _getSetTriggerActive(SetProperty, prop.getCurrentOption());
-                break;
-            case PropOutputTriggerKind:
-                _getSetOutputTriggerKind(SetProperty, prop.getCurrentOption());
                 break;
             case PropOutputTriggerPeriod:
                 _getSetOutputTriggerPeriod(SetProperty, prop.getValue());
@@ -293,62 +333,8 @@ CameraProperty HamamatsuCamera::_getSetOutputTriggerPeriod(GetOrSetProperty getO
 }
 
 
-CameraProperty HamamatsuCamera::_getSetOutputTriggerKind(GetOrSetProperty getOrSet, const std::string& mode)
-{
-    static const char* programmable = "Programmable";
-    static const char* low          = "Low";
-    static const char* globalexp    = "Global Exposure";
-    static const char* triggerready = "Trigger Ready";
-    static const char* high         = "High";
-    static const char* anyrowexp    = "Any Row Exposure";
-    if (getOrSet == SetProperty) {
-
-        if (mode == programmable) {
-            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE);
-        } else if (mode == low) {
-            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__LOW);
-        } else if (mode == globalexp) {
-            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__GLOBALEXPOSURE);
-        } else if (mode == triggerready) {
-            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGERREADY);
-        } else if (mode == high) {
-            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__HIGH);
-        } else if (mode == anyrowexp) {
-            _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE);       
-        }
-        else {
-            throw std::runtime_error("unknown argument to _getSetOutputTriggerKind()");
-        }
-    }
-    int currentSource = _getPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND);
-    const char* actual = nullptr;
-    switch (currentSource) {
-        case DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE:
-            actual = programmable;
-            break;
-        case DCAMPROP_OUTPUTTRIGGER_KIND__LOW:
-            actual = low;
-            break;
-        case DCAMPROP_OUTPUTTRIGGER_KIND__GLOBALEXPOSURE:
-            actual = globalexp;
-            break;
-        case DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGERREADY:
-            actual = triggerready;
-            break;
-        case DCAMPROP_OUTPUTTRIGGER_KIND__HIGH:
-            actual = high;
-            break;
-        case DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE:
-            actual = anyrowexp;
-            break;
-
-        default:
-            throw std::runtime_error("_getSetOutputTriggerKind() but unknown mode");
-            break;
-    }   
-    CameraProperty prop(PropOutputTriggerKind, "Trigger kind");
-    prop.setDiscrete(actual, {programmable, low, globalexp, triggerready, high, anyrowexp });
-    return prop;
+void HamamatsuCamera::_setOutputTriggerKind(int kind) {
+    _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, kind);
 }
 
 void HamamatsuCamera::_setOutputTriggerPolarity(bool isPositive) {
@@ -505,22 +491,26 @@ void HamamatsuCamera::_setDefaults() {
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERSOURCE, DCAMPROP_TRIGGERSOURCE__INTERNAL);
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGER_MODE, DCAMPROP_TRIGGER_MODE__NORMAL);
     _setPropertyValue(_camHandle, DCAM_IDPROP_TRIGGERACTIVE, DCAMPROP_TRIGGERACTIVE__EDGE);
-    _setPropertyValue(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND, DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE,true);
-    // Trigger polarities are applied from the configuration file in _derivedApplyConfigFileSettings(),
-    // but only if the camera supports them.
+    // Trigger polarities and the output trigger kind are applied from the configuration file
+    // in _derivedApplyConfigFileSettings(), but only if the camera supports them.
 
 }
 
 void HamamatsuCamera::_derivedApplyConfigFileSettings() {
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_TRIGGERPOLARITY)) {
-        bool isPositive = ParsePolaritySetting(configSection().getStringSettingOrDefault("triggerPolarity", "Positive").value,
+        bool isPositive = ParsePolaritySetting(configSection().getStringSettingOrDefault("triggerPolarity", kPositive).value,
                                                "triggerPolarity");
         _setTriggerPolarity(isPositive);
     }
     if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_POLARITY)) {
-        bool isPositive = ParsePolaritySetting(configSection().getStringSettingOrDefault("outputTriggerPolarity", "Positive").value,
+        bool isPositive = ParsePolaritySetting(configSection().getStringSettingOrDefault("outputTriggerPolarity", kPositive).value,
                                                "outputTriggerPolarity");
         _setOutputTriggerPolarity(isPositive);
+    }
+    if (_propertyIsSupported(_camHandle, DCAM_IDPROP_OUTPUTTRIGGER_KIND)) {
+        int kind = ParseOutputTriggerKindSetting(configSection().getStringSettingOrDefault("outputTriggerKind", kOutputTriggerKindGlobalExposure).value,
+                                                 "outputTriggerKind");
+        _setOutputTriggerKind(kind);
     }
 }
 
