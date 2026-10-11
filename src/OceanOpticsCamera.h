@@ -1,7 +1,7 @@
 #ifndef OCEANOPTICS_H
 #define OCEANTOPICS_H
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 
 #include <future>
 #include <string>
@@ -12,7 +12,7 @@
 
 #include "api/seabreezeapi/SeaBreezeAPI.h"
 
-class OceanOpticsCamera : public BaseCameraClass {
+class OceanOpticsCamera : public SCCameraBase {
 public:
     enum GetOrSetProperty {
         GetProperty,
@@ -25,7 +25,7 @@ public:
         PropOffsetToSubtract
     };
 
-    OceanOpticsCamera(long deviceID);
+    OceanOpticsCamera(long deviceID, ConfigManager& configManager);
     virtual ~OceanOpticsCamera();
 
     std::string getIdentifierStr() const final;

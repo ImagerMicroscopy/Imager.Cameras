@@ -8,7 +8,7 @@
 #include "HamamatsuCamera.h"
 #include "SCPrinter.h"
 
-std::vector<std::unique_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
+std::vector<std::unique_ptr<BaseCameraClass>> OpenHamamatsuCameras(ConfigManager& configManager) {
     HamamatsuAPIWrapper apiWrapper = GetHamamatsuAPIWrapper();
     if (!apiWrapper.areAllFunctionsLoaded()) {
         return std::vector<std::unique_ptr<BaseCameraClass>>();
@@ -38,7 +38,7 @@ std::vector<std::unique_ptr<BaseCameraClass>> OpenHamamatsuCameras() {
             throw std::runtime_error("unable to open DCAM camera");
         }
         HDCAM hdCam = devOpen.hdcam;
-        cameras.emplace_back(new HamamatsuCamera(hdCam));
+        cameras.emplace_back(new HamamatsuCamera(hdCam, configManager));
     }
 
     return cameras;

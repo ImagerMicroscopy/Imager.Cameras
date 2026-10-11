@@ -34,22 +34,22 @@ CameraManager::~CameraManager() {
 void CameraManager::discoverCameras() {
     _availableCameras.clear();
 
-    std::vector<std::unique_ptr<BaseCameraClass>> photometricsCameras = OpenPhotometricsCameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> photometricsCameras = OpenPhotometricsCameras(*_configManager);
     for (auto& c : photometricsCameras) {
         _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::unique_ptr<BaseCameraClass>> andorCameras = OpenAndorSDK3Cameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> andorCameras = OpenAndorSDK3Cameras(*_configManager);
     for (auto& c : andorCameras) {
         _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::unique_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> hamamatsuCameras = OpenHamamatsuCameras(*_configManager);
     for (auto& c : hamamatsuCameras) {
         _availableCameras.insert(std::make_pair(c->getIdentifierStr(), std::move(c)));
     }
 
-    std::vector<std::unique_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras();
+    std::vector<std::unique_ptr<BaseCameraClass>> idsCams = OpenIDSPeakCameras(*_configManager);
     for (auto& cam : idsCams) {
         _availableCameras.insert(std::make_pair(cam->getIdentifierStr(), std::move(cam)));
     }
@@ -67,7 +67,7 @@ void CameraManager::discoverCameras() {
             if (pcoCamHandle == nullptr) {
                 break;
             }
-            std::unique_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle));
+            std::unique_ptr<BaseCameraClass> pcoCamera(new PCOCamera(pcoCamHandle, *_configManager));
             _availableCameras.insert(std::make_pair(pcoCamera->getIdentifierStr(), std::move(pcoCamera)));
         }
     }
@@ -78,19 +78,17 @@ void CameraManager::discoverCameras() {
     seabreezeAPI->probeDevices();
     int nOODevices = seabreezeAPI->getDeviceIDs(ooDeviceIDs, sizeof(ooDeviceIDs));
     for (int i = 0; i < nOODevices; i += 1) {
-        std::unique_ptr<BaseCameraClass> ooCamera(new OceanOpticsCamera(ooDeviceIDs[i]));
+        std::unique_ptr<BaseCameraClass> ooCamera(new OceanOpticsCamera(ooDeviceIDs[i], *_configManager));
         _availableCameras.emplace(ooCamera->getIdentifierStr(), ooCamera);
     }
 
 #endif
 
 #ifdef WITH_DUMMYCAM
-    _availableCameras.emplace("DummyCam1", new DummyCamera());
-    _availableCameras.emplace("DummyCam2", new DummyCamera());
+    _availableCameras.emplace("DummyCam1", new DummyCamera(*_configManager));
+    _availableCameras.emplace("DummyCam2", new DummyCamera(*_configManager));
 #endif
 
-
-    _applyCameraOrientationOptions();
 }
 
 std::vector<std::string> CameraManager::getCameraIdentifiers() const {
@@ -120,12 +118,5 @@ std::shared_ptr<BaseCameraClass> CameraManager::getFirstCamera() const {
 void CameraManager::abortRunningAcquisitions() {
     for (auto& it : _availableCameras) {
         it.second->abortAsyncAcquisitionIfRunning();
-    }
-}
-
-void CameraManager::_applyCameraOrientationOptions() {
-    for (const auto& [name, camera] : _availableCameras) {
-        std::vector<std::shared_ptr<ImageProcessingDescriptor>> imageProcessingDescriptors = GetProcessingOptionsForCamera(*_configManager, name);
-        camera->setImageProcessingOps(imageProcessingDescriptors);
     }
 }

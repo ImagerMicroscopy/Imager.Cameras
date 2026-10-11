@@ -1,7 +1,7 @@
 #ifndef PCOCAMERA_H
 #define PCOCAMERA_H
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 
 #include <limits>
 #include <string>
@@ -21,7 +21,7 @@
 
 const int kPCOImagesInBuffer = 4;
 
-class PCOCamera : public BaseCameraClass {
+class PCOCamera : public SCCameraBase {
 public:
     enum GetOrSetProperty {
         GetProperty,
@@ -32,7 +32,7 @@ public:
         PropReadoutSpeed = CameraProperty::FirstAvailablePropertyID,
     };
 
-    PCOCamera(HANDLE camHandle);
+    PCOCamera(HANDLE camHandle, ConfigManager& configManager);
     virtual ~PCOCamera();
 
     std::string getIdentifierStr() override;

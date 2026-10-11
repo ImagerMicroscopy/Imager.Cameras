@@ -1,16 +1,16 @@
 #ifndef SRC_SCCONFIGURATIONFILE_H
 #define SRC_SCCONFIGURATIONFILE_H
 
-#include <filesystem>
-#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "ImagerPluginCore/ConfigManager.h"
-
 class ImageProcessingDescriptor;
 
-std::vector<std::shared_ptr<ImageProcessingDescriptor>> GetProcessingOptionsForCamera(ConfigManager& configManager, const std::string &cameraName);
-
+// Parses an orientation options string (semicolon-separated tokens, e.g.
+// "RotateCW;FlipVertical") into image processing descriptors.
+// Throws std::runtime_error on an invalid token.
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> ParseOrientationOptions(const std::string& orientationStr);
 
 #endif //SRC_SCCONFIGURATIONFILE_H
+

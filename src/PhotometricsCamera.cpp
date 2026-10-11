@@ -27,7 +27,8 @@ std::string PhotometricsCamera::SpeedEntry::_generateDescriptor() const {
     return std::string(buf);
 }
 
-PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
+PhotometricsCamera::PhotometricsCamera(const std::string& cameraName, ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _apiWrapper(GetPhotometricsAPIWrapper()),
     _pvcamHandle(0),
     _installedCallbackFunction(false),
@@ -45,6 +46,8 @@ PhotometricsCamera::PhotometricsCamera(const std::string& cameraName) :
     _postProcessingFeatures = _listPostProcessingFeatures();
 
     _setDefaults();
+
+    applyConfigFileSettings();
 }
 
 PhotometricsCamera::~PhotometricsCamera() {

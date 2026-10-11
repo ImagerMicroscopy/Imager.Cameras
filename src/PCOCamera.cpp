@@ -4,7 +4,8 @@
 
 #include "ImagerPluginCore/StandardCameraProperties.h"
 
-PCOCamera::PCOCamera(HANDLE camHandle) :
+PCOCamera::PCOCamera(HANDLE camHandle, ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _camHandle(camHandle),
     _pcoAPIWrapper(GetPCOAPIWrapper()),
     _camDescription({0}),
@@ -15,6 +16,8 @@ PCOCamera::PCOCamera(HANDLE camHandle) :
     _desiredCropSize = _getSensorSize();
     _desiredBinningFactor = 1;
     _numberOfImagesDelivered = 0;
+
+    applyConfigFileSettings();
 }
 
 PCOCamera::~PCOCamera() {

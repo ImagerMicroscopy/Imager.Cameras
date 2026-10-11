@@ -7,10 +7,10 @@
 #include "PVCAM/master.h"
 #include "PVCAM/pvcam.h"
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 #include "PhotometricsAPIWrapper.h"
 
-class PhotometricsCamera : public BaseCameraClass {
+class PhotometricsCamera : public SCCameraBase {
 
     enum GetOrSetProperty {
         GetProperty,
@@ -121,7 +121,7 @@ class PhotometricsCamera : public BaseCameraClass {
     };
 
 public:
-    PhotometricsCamera(const std::string& cameraName);
+    PhotometricsCamera(const std::string& cameraName, ConfigManager& configManager);
     ~PhotometricsCamera();
 
     std::string getIdentifierStr() override;

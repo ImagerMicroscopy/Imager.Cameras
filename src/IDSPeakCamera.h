@@ -5,9 +5,9 @@
 
 #include "IDSPeakAPIWrapper.h"
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 
-class IDSPeakCamera : public BaseCameraClass {
+class IDSPeakCamera : public SCCameraBase {
 public:
     enum GetOrSetProperty {
         GetProperty,
@@ -19,7 +19,7 @@ public:
         PropGain
     };
 
-    IDSPeakCamera(const peak_camera_descriptor& camDescriptor);
+    IDSPeakCamera(const peak_camera_descriptor& camDescriptor, ConfigManager& configManager);
     virtual ~IDSPeakCamera();
 
     std::string getIdentifierStr() override;

@@ -7,11 +7,11 @@
 
 #include "blockingconcurrentqueue.h"
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 
-class DummyCamera : public BaseCameraClass {
+class DummyCamera : public SCCameraBase {
 public:
-    DummyCamera();
+    DummyCamera(ConfigManager& configManager);
     virtual ~DummyCamera() { ; }
 
     std::string getIdentifierStr() override { return std::format("ZZ__DummyCam_{}", _cameraID); };

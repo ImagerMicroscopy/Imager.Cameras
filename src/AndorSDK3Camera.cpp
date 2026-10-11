@@ -6,7 +6,8 @@
 #include "ImagerPluginCore/CameraUtils.h"
 #include "ImagerPluginCore/StandardCameraProperties.h"
 
-AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
+AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle, ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _camHandle(camHandle),
     _apiWrapper(GetAndorSDK3APIWrapper()),
     _singleImageSizeInBytes(0),
@@ -16,6 +17,8 @@ AndorSDK3Camera::AndorSDK3Camera(const AT_H camHandle) :
     _setDefaults();
 
     _cropSize = AndorSDK3Camera::_getSizeOfRawImages();
+
+    applyConfigFileSettings();
 }
 
 AndorSDK3Camera::~AndorSDK3Camera() {

@@ -71,7 +71,7 @@ static void EnsureGenTLPathIsSet(const IDSPeakAPIWrapper& apiWrapper) {
 }
 #endif
 
-std::vector<std::unique_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
+std::vector<std::unique_ptr<BaseCameraClass>> OpenIDSPeakCameras(ConfigManager& configManager) {
     IDSPeakAPIWrapper apiWrapper;
     if (!apiWrapper.areAllFunctionsLoaded()) {
         return std::vector<std::unique_ptr<BaseCameraClass>>();
@@ -103,7 +103,7 @@ std::vector<std::unique_ptr<BaseCameraClass>> OpenIDSPeakCameras() {
         std::vector<std::unique_ptr<BaseCameraClass>> cameras;
         for (size_t i = 0; i < nCameras; ++i) {
             try {
-                cameras.emplace_back(new IDSPeakCamera(camDescriptors[i]));
+                cameras.emplace_back(new IDSPeakCamera(camDescriptors[i], configManager));
             } catch (const std::exception& e) {
                 Print("Failed to open IDS Peak camera: " + std::string(e.what()));
             }

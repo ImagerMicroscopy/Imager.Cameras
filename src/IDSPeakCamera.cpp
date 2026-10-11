@@ -9,7 +9,8 @@
 
 #include "Utils.h"
 
-IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
+IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor, ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _camDescriptor(camDescriptor),
     _camHandle(nullptr),
     _nextExpectedImageInSequenceIdx(0),
@@ -34,6 +35,8 @@ IDSPeakCamera::IDSPeakCamera(const peak_camera_descriptor& camDescriptor) :
     }
 
     _cropSize = _getSizeOfRawImages();
+
+    applyConfigFileSettings();
 }
 
 IDSPeakCamera::~IDSPeakCamera() {

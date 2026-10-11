@@ -8,10 +8,7 @@
 
 #include "ImagerPluginCore/ImageProcessingUtils.h"
 
-std::vector<std::shared_ptr<ImageProcessingDescriptor>> GetProcessingOptionsForCamera(ConfigManager& configManager, const std::string& cameraName) {
-
-    auto setting = configManager.getStringSettingOrDefault(cameraName / "orientation", "");
-    std::string orientationStr = setting.value;
+std::vector<std::shared_ptr<ImageProcessingDescriptor>> ParseOrientationOptions(const std::string& orientationStr) {
 
     std::vector<std::shared_ptr<ImageProcessingDescriptor>> result;
 

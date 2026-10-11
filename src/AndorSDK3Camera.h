@@ -5,10 +5,10 @@
 
 #include "Andor/atcore.h"
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 #include "AndorSDK3APIWrapper.h"
 
-class AndorSDK3Camera : public BaseCameraClass {
+class AndorSDK3Camera : public SCCameraBase {
 public:
 
     enum AndorSDK3PropIDs {
@@ -40,7 +40,7 @@ public:
 
     const size_t kNBufferImages = 10;
 
-    AndorSDK3Camera(const AT_H camHandle);
+    AndorSDK3Camera(const AT_H camHandle, ConfigManager& configManager);
     virtual ~AndorSDK3Camera();
 
     std::string getIdentifierStr() override;

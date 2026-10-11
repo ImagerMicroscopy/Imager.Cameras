@@ -6,7 +6,8 @@
 
 #include "Utils.h"
 
-OceanOpticsCamera::OceanOpticsCamera(long deviceID) :
+OceanOpticsCamera::OceanOpticsCamera(long deviceID, ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _seabreezeAPI(SeaBreezeAPI::getInstance()),
     _deviceID(deviceID),
     _nSpectraToAverage(1),
@@ -43,6 +44,8 @@ OceanOpticsCamera::OceanOpticsCamera(long deviceID) :
         throw std::runtime_error("error getting max exposure time");
     }
     _setDefaults();
+
+    applyConfigFileSettings();
 }
 
 OceanOpticsCamera::~OceanOpticsCamera() {

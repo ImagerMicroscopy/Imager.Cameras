@@ -4,7 +4,8 @@
 
 #include "ImagerPluginCore/StandardCameraProperties.h"
 
-HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
+HamamatsuCamera::HamamatsuCamera(HDCAM camHandle, ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _camHandle(camHandle),
     _apiWrapper(GetHamamatsuAPIWrapper()),
     _softwareTriggeredAcquisitionRunning(false),
@@ -23,6 +24,8 @@ HamamatsuCamera::HamamatsuCamera(HDCAM camHandle) :
     _camName += "_" + serialNumber.substr(5);
     
     _setDefaults();
+
+    applyConfigFileSettings();
 }
 
 HamamatsuCamera::~HamamatsuCamera() {

@@ -4,7 +4,7 @@
 #include "PhotometricsAPIWrapper.h"
 #include "SCPrinter.h"
 
-std::vector<std::unique_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
+std::vector<std::unique_ptr<BaseCameraClass>> OpenPhotometricsCameras(ConfigManager& configManager) {
     std::vector<std::unique_ptr<BaseCameraClass>> cameras;
 
     PhotometricsAPIWrapper apiWrapper = GetPhotometricsAPIWrapper();
@@ -31,7 +31,7 @@ std::vector<std::unique_ptr<BaseCameraClass>> OpenPhotometricsCameras() {
     }
 
     for (const std::string& name : cameraNames) {
-        cameras.emplace_back(new PhotometricsCamera(name));
+        cameras.emplace_back(new PhotometricsCamera(name, configManager));
     }
 
     return cameras;

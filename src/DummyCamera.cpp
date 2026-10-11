@@ -9,7 +9,8 @@
 
 #include "ImagerPluginCore/StandardCameraProperties.h"
 
-DummyCamera::DummyCamera() :
+DummyCamera::DummyCamera(ConfigManager& configManager) :
+    SCCameraBase(configManager),
     _exposureTime(50.0e-3),
     _currentBinFactor(1),
     _emGain(5.0),
@@ -21,6 +22,8 @@ DummyCamera::DummyCamera() :
     _currentCropping = _getSensorSize();
     _cameraID = _camCounter;
     _camCounter += 1;
+
+    applyConfigFileSettings();
 }
 
 double DummyCamera::getFrameRate() {

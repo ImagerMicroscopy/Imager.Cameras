@@ -1,7 +1,7 @@
 #ifndef HAMAMATSUCAMERA_H
 #define HAMAMATSUCAMERA_H
 
-#include "ImagerPluginCore/BaseCameraClass.h"
+#include "SCCameraBase.h"
 #include "HamamatsuAPIWrapper.h"
 
 #include <string>
@@ -11,7 +11,7 @@
 
 const int kHamamatsuImagesInBuffer = 10;
 
-class HamamatsuCamera : public BaseCameraClass {
+class HamamatsuCamera : public SCCameraBase {
 public:
     enum GetOrSetProperty {
         GetProperty,
@@ -33,7 +33,7 @@ public:
         PropOutputTriggerPolarity
     };
 
-    HamamatsuCamera(HDCAM camHandle);
+    HamamatsuCamera(HDCAM camHandle, ConfigManager& configManager);
     virtual ~HamamatsuCamera();
 
     std::string getIdentifierStr() override;

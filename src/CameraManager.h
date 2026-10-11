@@ -9,8 +9,6 @@
 
 #include "ImagerPluginCore/ConfigManager.h"
 
-#include "SCConfigurationFile.h"
-
 class BaseCameraClass;
 
 class CameraManager {
@@ -28,8 +26,6 @@ public:
     void abortRunningAcquisitions();
 
 private:
-    void _applyCameraOrientationOptions();
-
     ConfigManager* _configManager = nullptr;
     std::map<std::string, std::unique_ptr<BaseCameraClass>> _availableCameras;
 };

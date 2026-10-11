@@ -11,7 +11,7 @@
 #include "AndorSDK3APIWrapper.h"
 #include "SCPrinter.h"
 
-std::vector<std::unique_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
+std::vector<std::unique_ptr<BaseCameraClass>> OpenAndorSDK3Cameras(ConfigManager& configManager) {
     AndorSDK3APIWrapper apiWrapper = GetAndorSDK3APIWrapper();
     if (!apiWrapper.areAllFunctionsLoaded()) {
         return std::vector<std::unique_ptr<BaseCameraClass>>();
@@ -42,7 +42,7 @@ std::vector<std::unique_ptr<BaseCameraClass>> OpenAndorSDK3Cameras() {
         if (err != AT_SUCCESS) {
             throw std::runtime_error("can't open Andor3 camera");
         }
-        cameras.emplace_back(new AndorSDK3Camera(camHandle));
+        cameras.emplace_back(new AndorSDK3Camera(camHandle, configManager));
     }
         
     return cameras;
